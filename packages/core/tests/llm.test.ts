@@ -25,9 +25,9 @@ vi.mock('@anthropic-ai/sdk', () => ({
   },
 }));
 
-import { createAnthropicProvider } from '../src/llm/anthropic.js';
-import { createOpenAIProvider } from '../src/llm/openai.js';
-import { createProvider } from '../src/llm/provider.js';
+import { createAnthropicProvider } from '../src/llm/anthropic';
+import { createOpenAIProvider } from '../src/llm/openai';
+import { createProvider } from '../src/llm/provider';
 
 describe('createProvider 分派', () => {
   beforeEach(() => {

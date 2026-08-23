@@ -1,2 +1,2 @@
-export * from './schema/index.js';
-export { loadAgentConfig } from './loader/index.js';
+export * from './schema/index';
+export { loadAgentConfig } from './loader/index';

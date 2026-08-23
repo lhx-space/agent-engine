@@ -1,7 +1,7 @@
 import type { ModelConfig } from '@agent-engine/config';
-import { createAnthropicProvider } from './anthropic.js';
-import { createOpenAIProvider } from './openai.js';
-import type { LLMProvider } from './types.js';
+import { createAnthropicProvider } from './anthropic';
+import { createOpenAIProvider } from './openai';
+import type { LLMProvider } from './types';
 
 export type ProviderFactory = (config: ModelConfig) => LLMProvider;
 

@@ -3,7 +3,7 @@ import { extname } from 'node:path';
 import { createJiti } from 'jiti';
 import JSON5 from 'json5';
 import { parse as parseYaml } from 'yaml';
-import { AgentConfigSchema, type AgentConfig } from '../schema/index.js';
+import { AgentConfigSchema, type AgentConfig } from '../schema/index';
 
 function createConfigError(path: string, message: string, cause?: unknown): Error {
   return new Error(`Failed to load agent config "${path}": ${message}`, { cause });

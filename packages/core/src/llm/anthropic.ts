@@ -7,7 +7,7 @@ import type {
   LLMProvider,
   ToolCall,
   ToolDefinition,
-} from './types.js';
+} from './types';
 
 type AnthropicMessage = Anthropic.Messages.MessageParam;
 type AnthropicContentBlock = Anthropic.Messages.ContentBlockParam;

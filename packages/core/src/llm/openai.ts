@@ -7,7 +7,7 @@ import type {
   LLMProvider,
   ToolCall,
   ToolDefinition,
-} from './types.js';
+} from './types';
 
 function resolveApiKey(): string {
   return process.env.DEEPSEEK_API_KEY ?? process.env.OPENAI_API_KEY ?? '';
