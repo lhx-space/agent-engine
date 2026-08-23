@@ -182,10 +182,10 @@ docs/（Rspress）为独立站点，无运行时依赖
 
 ### 5.4 上下文层（Agent「知道什么」）
 
-- **system-prompt**：系统提示词，由「模板 + 变量 + 各模块（skills/rules/plugins）注入的片段」组装而成。组装已落地 `context` 模块：`buildSystemPrompt(query, { systemPrompt, ruleLoader })` 做模板渲染（`renderTemplate`，`{{var}}` 正则替换、未提供变量保留原样、null/undefined 空串）+ rules 注入（`rules` 为内置变量，模板用 `{{rules}}` 占位符声明注入点，未声明时兜底追加规则文本）。`AgentLoop.systemPrompt` 支持静态字符串或函数式（`(userInput) => string | Promise<string>`），每次 `run` 动态解析，使 rules 按需检索结果真正进入 system prompt。
+- **system-prompt**：系统提示词，由「模板 + 变量 + 各模块（skills/rules/plugins）注入的片段」组装而成。组装已落地 `context` 模块：`buildSystemPrompt(query, { systemPrompt, ruleLoader })` 做模板渲染（`renderTemplate`，`{{var}}` 正则替换、未提供变量保留原样、null/undefined 空串）+ rules 注入（`rules` 为内置变量，模板用 `{{rules}}` 占位符声明注入点，未声明时兜底追加规则文本）。`AgentLoop.systemPrompt` 支持三种形态——静态字符串 / `SystemPrompt` 模板对象（配 `rules` 每次 `run` 内建检索注入）/ 函数式（完全自定义），每次 `run` 动态解析，使 rules 按需检索结果真正进入 system prompt。
 - **memory**：记忆管理，分两层：
-  - **会话上下文**：单次会话的 message 窗口管理（含窗口裁剪/压缩）。
-  - **长期记忆**：跨会话的持久化 + 向量检索（可选，后端可插拔）。
+  - **会话上下文**：单次会话的 message 窗口管理（含窗口裁剪）。已落地 `ConversationMemory`（历史管理 + `maxMessages` 窗口裁剪，不存 system——system 每次 run 动态组装）；`AgentLoop.memory` 选项注入后跨 run 累积历史实现多轮对话（异常不回写）。压缩（LLM 摘要）留后续。
+  - **长期记忆**：跨会话的持久化 + 向量检索（可选，后端可插拔，M3）。
 
 ### 关系速记
 

@@ -98,3 +98,41 @@ TBD - created by archiving change add-agent-loop. Update Purpose after archive.
 
 - **WHEN** 某工具执行抛错
 - **THEN** 错误信息作为 tool 消息回填，循环继续，由模型决定下一步
+
+### Requirement: 会话记忆集成
+
+系统 SHALL 支持在 `AgentLoop` 注入 `ConversationMemory`（`memory` 选项，可选）；`run` 时把历史消息拼进 messages（system + 历史 + 当前 user），正常结束时把本轮消息（system 之外）写回 memory；异常时保持 memory 不变。
+
+#### Scenario: 跨 run 累积历史
+
+- **WHEN** 注入 memory 并连续 run 两次
+- **THEN** 第二次 run 的 LLM 调用携带第一次 run 的历史消息
+
+#### Scenario: 未注入 memory
+
+- **WHEN** 不注入 memory
+- **THEN** 行为与以往一致，无历史累积
+
+#### Scenario: 异常不回写
+
+- **WHEN** run 过程中抛错
+- **THEN** memory 保持原历史不变
+
+### Requirement: 内建规则检索注入
+
+系统 SHALL 支持 `systemPrompt` 为模板对象（`SystemPrompt`）并配合 `rules`（上下文规则）在每次 `run` 自动完成「检索 → 注入」：模板经变量渲染，`rules` 经 `RuleLoader` 按 userInput 检索后注入；guardrail 注册表字段 SHALL 命名为 `guardrails`，与上下文规则 `rules` 分离。
+
+#### Scenario: 模板对象 + rules 自动检索
+
+- **WHEN** `systemPrompt` 为模板对象且提供 `rules`（含 always 与 on-demand）
+- **THEN** 每次 run 渲染模板变量，并注入 always 规则与 BM25 召回的相关 on-demand 规则
+
+#### Scenario: 模板对象无 rules
+
+- **WHEN** `systemPrompt` 为模板对象但未提供 `rules`
+- **THEN** 仅渲染模板变量，不注入规则
+
+#### Scenario: guardrails 与 rules 分离
+
+- **WHEN** 注入 guardrail 注册表与上下文规则
+- **THEN** guardrail 走 `guardrails` 字段，上下文规则走 `rules` 字段，互不干扰
