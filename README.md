@@ -14,7 +14,7 @@ In one line: **Configuration as Agent** — make `plugins` / `mcp` / `skills` / 
 
 ## Architecture
 
-```
+```text
                 ┌── cli
 config ← core ←┼── server ──(HTTP API)──▶ apps/web (React 19 + Rsbuild)
                 └── plugins

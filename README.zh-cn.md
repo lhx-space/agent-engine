@@ -14,7 +14,7 @@
 
 ## 架构概览
 
-```
+```text
                 ┌── cli
 config ← core ←┼── server ──(HTTP API)──▶ apps/web（React 19 + Rsbuild）
                 └── plugins

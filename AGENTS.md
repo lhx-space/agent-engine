@@ -46,6 +46,7 @@
 | 代码检查    | Rslint（Go 引擎，兼容 ESLint/TS-ESLint 规则） | 快，内置 TypeScript-ESLint 规则                                                   |
 | 格式化      | Prettier                                      | 统一代码风格                                                                      |
 | 拼写检查    | cspell                                        | 术语一致性                                                                        |
+| Markdown    | markdownlint-cli2                             | 与 Prettier 互补（Prettier 排版 / markdownlint 规则）                             |
 | 类型检查    | tsc --noEmit                                  | 全仓类型检查                                                                      |
 | Git hooks   | husky + lint-staged + commitlint              | 提交前自动检查 + 提交信息校验                                                     |
 | 测试        | Rstest                                        | web-infra-dev 生态，API 兼容 Vitest（`vi`→`rs`）                                  |
@@ -76,14 +77,17 @@
 
 边界清单：
 
-| 复用（用库，不自己写）                    | 自研（核心资产）                  |
-| ----------------------------------------- | --------------------------------- |
-| `openai` / `@anthropic-ai/sdk`（LLM）     | Agent Loop（ReAct）               |
-| `@modelcontextprotocol/sdk`（MCP）        | 多 Agent 编排器                   |
-| `zod` / `yaml` / `json5` / `jiti`（配置） | Plugin 系统、Hook 管线、Rule 引擎 |
-| `pgvector` / `ioredis` / `minio`（后端）  | system-prompt 组装、memory 薄层   |
-| `pino` / OTel（可观测）                   | 配置归一化 resolve                |
-| React 生态 / Monaco / React Flow（Web）   | ——                                |
+| 复用（用库，不自己写）                               | 自研（核心资产）                  |
+| ---------------------------------------------------- | --------------------------------- |
+| `openai` / `@anthropic-ai/sdk`（LLM）                | Agent Loop（ReAct）               |
+| `@modelcontextprotocol/sdk`（MCP）                   | 多 Agent 编排器                   |
+| `zod` / `yaml` / `json5` / `jiti`（配置）            | Plugin 系统、Hook 管线、Rule 引擎 |
+| `pgvector` / `ioredis` / `minio`（后端）             | system-prompt 组装、memory 薄层   |
+| `@mozilla/readability` + `linkedom`（HTML 正文提取） | ——                                |
+| `expr-eval`（表达式求值，calculator）                | ——                                |
+| `pino` / OTel（可观测）                              | 配置归一化 resolve                |
+| `rtk`（命令输出压缩，沙箱镜像内二进制）              | ——                                |
+| React 生态 / Monaco / React Flow（Web）              | ——                                |
 
 > 一句话：**库（SDK）照用，框架（LangChain）不引入。**
 
@@ -91,7 +95,7 @@
 
 ## 4. 目录结构（monorepo）
 
-```
+```text
 agent-engine/
 ├── CLAUDE.md                  # Claude Code 入口说明（@本文件）
 ├── AGENTS.md                  # 本文件，权威文档
@@ -102,6 +106,7 @@ agent-engine/
 ├── rslint.config.ts           # 代码检查（Rslint，ESLint flat config 兼容）
 ├── .prettierrc                # 格式化（Prettier）
 ├── cspell.json                # 拼写检查
+├── .markdownlint-cli2.jsonc   # Markdown 质量检查（markdownlint）
 ├── commitlint.config.mjs      # 提交信息校验（Conventional Commits）
 ├── lint-staged.config.mjs     # 暂存文件提交前检查
 ├── rstest.config.ts           # 测试配置（Rstest）
@@ -118,23 +123,27 @@ agent-engine/
 │   │       ├── agent/         #   Agent Loop、单/多 Agent 编排器
 │   │       ├── llm/           #   Provider 抽象（OpenAI/Anthropic/自定义）
 │   │       ├── tools/         #   Tool 注册表与执行器
-│   │       ├── mcp/           #   MCP client 接入，tools 归一化
+│   │       │   ├── builtin/   #   内置工具（todo/read/write/bash/web/sitesearch/calculator/...）
+│   │       │   └── utils/     #   非 tool 支撑（http/搜索/路径/domain/html/store/policy）
+│   │       ├── sandbox/       #   SandboxBackend（docker / nsjail 执行沙箱）
 │   │       ├── memory/        #   会话上下文 + 长期记忆抽象
 │   │       ├── skills/        #   Skill 加载/注册/触发
 │   │       ├── plugins/       #   插件系统与 PluginContext
 │   │       ├── hooks/         #   生命周期钩子管线
 │   │       ├── rules/         #   上下文规则加载/检索 + guardrail 拦截
 │   │       ├── context/       #   system-prompt 组装、上下文窗口管理
-│   │       ├── events/        #   事件总线、可观测
+│   │       ├── retrieval/     #   统一能力检索（CapabilityRegistry / CapabilityLoader，BM25）
+│   │       ├── mcp/           #   MCP client 接入（M3 规划）
+│   │       ├── events/        #   事件总线、可观测（M3 规划）
 │   │       └── types.ts       #   对外核心类型
 │   ├── config/                # @agent-engine/config —— 配置加载 + Schema
 │   │   └── src/
 │   │       ├── schema/        #   Zod Schema（AgentConfig 等）
 │   │       ├── loader/        #   yaml/json5/jiti 加载器
-│   │       └── resolve/       #   配置归一化、引用解析、校验
+│   │       └── resolve/       #   配置归一化、引用解析、校验（M3 规划）
 │   ├── cli/                   # @agent-engine/cli   —— 命令行入口
 │   ├── server/                # @agent-engine/server —— HTTP 服务（Docker 部署）
-│   └── plugins/               # 内置插件（如 logger、otel 等）
+│   └── plugins/               # 内置插件（otel、git 等）
 ├── examples/                  # 垂直领域 Agent 配置示例
 │   ├── devops-agent/
 │   └── code-review-agent/
@@ -146,7 +155,7 @@ agent-engine/
 
 ### 依赖方向（保持单向，避免循环依赖）
 
-```
+```text
                 ┌── cli
 config ← core ←┼── server ──(HTTP API)──▶ apps/web（React 19 + Rsbuild）
                 └── plugins
@@ -173,7 +182,7 @@ docs/（Rspress）为独立站点，无运行时依赖
 
 ### 5.2 扩展层（能力的「打包与分发」单元）
 
-- **plugins**：最大的扩展单元，可打包「多个 tools + skills + hooks + rules + memory 后端 + system-prompt 片段」整体注册/卸载。插件通过 `PluginContext` 注入能力，是实现「开箱即用领域能力」的载体。已落地 `Plugin` 类型 + `PluginContext`（registerTool / registerSkill / registerHook / registerRule / provideSystemPrompt）+ `PluginManager`（install → `PluginAssembly`）+ `assembleAgentLoop`（async 装配工厂，安装 plugins 并合并能力）。
+- **plugins**：最大的扩展单元，可打包「多个 tools + skills + hooks + rules + memory 后端 + system-prompt 片段」整体注册/卸载。插件通过 `PluginContext` 注入能力，是实现「开箱即用领域能力」的载体。已落地 `Plugin` 类型 + `PluginContext`（registerTool / registerSkill / registerHook / registerRule / provideSystemPrompt）+ `PluginManager`（install → `PluginAssembly`）+ `assembleAgentLoop`（async 装配工厂，安装 plugins 并合并能力）；内置插件 `@agent-engine/plugin-git`（git 工具套件，只读默认、破坏性子命令阻断、经沙箱执行，`packages/plugins/git/`）。
 
 ### 5.3 执行控制层（Agent「如何做」的约束）
 
@@ -190,7 +199,7 @@ docs/（Rspress）为独立站点，无运行时依赖
 
 ### 关系速记
 
-```
+```text
 plugin（分发单元，最大）
   ├── 可打包 → skill（能力包）→ tool（原子能力）
   ├── 可打包 → hooks / rules / memory 后端 / prompt 片段
@@ -248,6 +257,7 @@ rules / skills / mcp tools / plugins 共享「**meta + 按需加载**」的机�
 - **双后端**：`docker`（跨平台含 macOS，`docker run` 加固：`--network none --read-only --cap-drop ALL --security-opt no-new-privileges --pids-limit --memory --cpus --user`）+ `nsjail`（Linux，补「无 Docker」场景）；`auto` 探测：docker 可用 → docker，否则 Linux 且 nsjail 可用 → nsjail，否则「不可用」。
 - **安全默认**：`bash.enabled` 默认 `false`；**沙箱不可用即禁用，绝不回退宿主进程裸奔**。
 - **复用优先**：沙箱复用系统二进制 `docker` / `nsjail`（`node:child_process` 驱动），不引第三方 npm 沙箱库、不自研沙箱。
+- **输出压缩（rtk）**：`security.sandbox.compact`（默认 false）开启后，docker / nsjail 后端以 `rtk` 包装命令（`rtk <cmd>`）压缩输出省 token；rtk 是沙箱镜像内的系统二进制（复用 [Rust Token Killer](https://github.com/rtk-ai/rtk)，不自研）。
 - **WASM/WASI 边界（明确分离）**：WASI 沙箱的是「编译成 wasm 的代码」，**不能**沙箱原生 `bash`/`kubectl`/`git`。不可信**用户代码/工具函数**的沙箱是另一个正交需求，留 M3 立 `FunctionSandbox`（wasmtime/wasmer，零 Docker 依赖），**不要用 wasm 替代 bash 的沙箱**。
 
 > 落地矩阵：`bash` 沙箱 = 有 Docker 用 docker；Linux 无 Docker 用 nsjail；macOS 无 Docker 则禁用 bash（只保留 read/write/web_search/todo）。
@@ -258,7 +268,7 @@ rules / skills / mcp tools / plugins 共享「**meta + 按需加载**」的机�
 
 ### 6.1 单 Agent 执行循环（ReAct）
 
-```
+```text
 启动
  └─ 加载配置 → 归一化 AgentConfig → 校验
       └─ 装配：注册 plugins / tools / skills / mcp
@@ -285,7 +295,7 @@ rules / skills / mcp tools / plugins 共享「**meta + 按需加载**」的机�
 
 Task Planner 不是内核的一等公民，而是「工具 + 编排」的自然涌现——**能配置解决的不改内核**。
 
-- **单 Agent 场景（ReAct + 工具引导）**：提供内置 `todo` 工具 + system prompt 引导「复杂任务先列计划再执行」，LLM 在现有 ReAct 循环内自然完成规划，内核零改动。
+- **单 Agent 场景（ReAct + 工具引导）**（✅ 已落地）：提供内置 `todo` 工具 + `assembleAgentLoop` 注册 todo 时自动注入「复杂任务先列计划再执行」引导片段，LLM 在现有 ReAct 循环内自然完成规划，内核零改动。
 - **多 Agent 场景（orchestrator 即规划者）**：主 Agent 天然承担规划职责，`spawn` 子 Agent 执行子任务，任务分解在多 Agent 编排中自然涌现（见 6.3）。
 - **内核 plan-execute 策略（不作为默认）**：仅在需要「严格计划跟踪 / 自动 replan」时，才考虑在 orchestration 中引入 `strategy: plan-execute`，作为 ReAct 的可选增强。
 
@@ -401,6 +411,7 @@ security:
     backend: auto # docker | nsjail | auto
     image: agent-engine/sandbox
     workspaceRoot: /workspace
+    compact: false # 开启后经 rtk 压缩命令输出省 token（沙箱镜像需含 rtk）
   bash:
     enabled: true # 默认 false；开启后命令经沙箱执行
     allowCommands: [kubectl, git, ls, cat]
@@ -445,7 +456,7 @@ orchestration:
 
 ### 8.2 新增一个 skill
 
-```
+```text
 skills/<skill-name>/
 └── SKILL.md      # frontmatter: name, description；正文为指令
     └── (可选) 脚本 / 资源文件
@@ -470,8 +481,8 @@ interface PluginContext {
   registerSkill(skill: Skill): void;
   registerHook(hook: Hook): void;
   registerRule(rule: Rule): void;
-  registerMemoryBackend(backend: MemoryBackend): void;
   provideSystemPrompt(fragment: string): void;
+  // registerMemoryBackend(backend: MemoryBackend): void; // M3 长期记忆后端
 }
 ```
 
@@ -554,6 +565,8 @@ pnpm lint               # Rslint 代码检查
 pnpm lint:fix           # Rslint 自动修复
 pnpm format             # Prettier 格式化
 pnpm format:check       # Prettier 格式校验
+pnpm lint:md            # Markdown 质量检查（markdownlint）
+pnpm lint:md:fix        # Markdown 自动修复
 pnpm typecheck          # 全仓类型检查（tsc --noEmit）
 pnpm spell              # cspell 拼写检查
 pnpm test               # 运行测试（Rstest）
@@ -596,7 +609,7 @@ pnpm --filter @agent-engine/cli run agent run \
 
 > 其余本地镜像（`infra-*`、`sandbox-*`、`yjs-docs-*`、`nacos`、`envoy`、`kindest` 等）属于其他项目，本仓库不纳入。
 >
-> `bash` 沙箱使用本仓库自建的精简镜像 `agent-engine/sandbox`（`docker/` 下构建），与上表第三方 `sandbox-*` 镜像无关；`SandboxBackend` 抽象下 docker / nsjail 双后端可选（见 5.6）。
+> `bash` 沙箱使用本仓库自建的精简镜像 `agent-engine/sandbox`（`docker/` 下构建），与上表第三方 `sandbox-*` 镜像无关；`SandboxBackend` 抽象下 docker / nsjail 双后端可选（见 5.6）。镜像需含 `git` 与 `rtk`（`security.sandbox.compact` 开启时经 rtk 压缩命令输出省 token）。
 
 ### 13.2 容器构建
 
@@ -638,7 +651,18 @@ services:
 ## 14. 下一步里程碑（建议）
 
 1. **M1 内核骨架**（✅ 已完成）：monorepo 搭建（tsdown 构建）+ `config` 包（Schema + 三格式加载）+ `core` 包（LLM Provider 抽象——**默认接 DeepSeek**、Tool 注册表、单 Agent Loop）。
-2. **M2 配置化能力**：hooks、rules、skills、plugins 系统 + system-prompt 组装 + 会话 memory + 内置工具（含 `todo` 任务规划）+ 执行沙箱（`SandboxBackend`：docker / nsjail 双后端，bash 默认禁用）。
-3. **M3 扩展接入**：MCP client、长期记忆后端（pgvector）、多 Agent 编排。
+2. **M2 配置化能力**（✅ 已完成）：hooks、rules、skills、plugins 系统 + system-prompt 组装 + 会话 memory + 内置工具（`todo` / `read_file` / `write_file` / `bash` / `web_search` / `web_fetch` / `sitesearch` / `calculator` / `datetime` / `json` / `base64`）+ 执行沙箱（`SandboxBackend`：docker / nsjail 双后端，bash 默认禁用，rtk 输出压缩）+ `@agent-engine/plugin-git`。
+3. **M3 扩展接入**：MCP client、长期记忆后端（pgvector）、多 Agent 编排、config resolve 层（AgentConfig→AgentLoop 一键装配）、FunctionSandbox（WASM/WASI）。
 4. **M4 服务化**：server（HTTP API）+ CLI。
 5. **M5 平台与文档**：apps/web 一体化平台 + docs（Rspress）+ Docker 编排 + 示例垂直领域 Agent。
+
+### 复盘纪要（截至 M2 收尾）
+
+M2 落地过程中沉淀的坑点与约定，后续开发直接复用：
+
+- **Zod 默认值不级联**：`z.object({...}).default({})` 返回字面 `{}`，**不会**应用内层字段默认值——需显式给全量默认（`defaultSecurityConfig = SecurityConfigSchema.parse({})`）或子 schema 各自 `.default(全量)`。
+- **LLM 工具 schema 用扁平结构**：`z.discriminatedUnion` 对 LLM 函数调用不够友好（分支匹配严格），工具入参改「`action` 枚举 + 可选字段」的扁平 schema，必需字段在执行期手动校验报错。
+- **类型集中、职责分离**：类型定义集中文件顶部（`// ============ 类型 ============` 区），非 tool 的支撑代码（http/搜索/路径/domain/html/store/policy）下沉 `tools/utils/`，`builtin/` 只留工具工厂 + 装配。
+- **路径约束两侧 realpath**：macOS 上 `/var → /private/var` 是符号链接，越界校验时 `roots` 与目标路径**都要** `realpath`，否则根内路径会被误判越界。
+- **readability 需 DOM lib**：`@mozilla/readability` 依赖 DOM 类型，`core` 的 tsconfig 需 `lib: ["ES2023", "DOM"]`。
+- **复用优先持续生效**：HTML 正文提取（readability+linkedom）、表达式求值（expr-eval）、命令输出压缩（rtk）均为成熟三方方案，未自研。
