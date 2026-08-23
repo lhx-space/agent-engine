@@ -257,6 +257,13 @@ Task Planner 不是内核的一等公民，而是「工具 + 编排」的自然�
 | `onSessionEnd`   | 会话结束                                 |
 | `onError`        | 任何错误                                 |
 
+hooks 是内核执行流程的**有限生命周期锚点**，不会随模块膨胀：
+
+- **模块复用而非新增**：rule（guardrail 走 beforeToolCall）、skill（触发走 beforeLLM）、memory（写入走 afterLLM / afterToolCall）、plugin（日志走任意锚点）都**复用**现有钩子点，不各自发明「rule hook」「skill hook」。
+- **模块特定事件走 events 总线**：需要「规则命中」等业务事件时，用 `events/` 事件总线（发布/订阅，见目录结构），而非扩充 hooks。
+- **分层钩子**：装配级（onInit）/ 会话级（onSessionStart/End）/ 循环级（beforeLLM…onStepEnd）/ 错误级（onError）；多 Agent 编排（M3）会有独立的**编排级钩子**（如 onSubagentStart/End），不与单 Agent 循环钩子混用。
+- **职责边界**：hooks 负责「观察 + 改写（增强）」，**不做阻断**；阻断是 rules（guardrail）的职责。
+
 ---
 
 ## 7. 配置系统
