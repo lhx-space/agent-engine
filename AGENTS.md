@@ -229,13 +229,21 @@ memory       ← 会话上下文 + 长期记忆（后端可插拔）
  └─ hooks.onSessionEnd
 ```
 
-### 6.2 多 Agent 编排
+### 6.2 任务规划（Task Planner）
+
+Task Planner 不是内核的一等公民，而是「工具 + 编排」的自然涌现——**能配置解决的不改内核**。
+
+- **单 Agent 场景（ReAct + 工具引导）**：提供内置 `todo` 工具 + system prompt 引导「复杂任务先列计划再执行」，LLM 在现有 ReAct 循环内自然完成规划，内核零改动。
+- **多 Agent 场景（orchestrator 即规划者）**：主 Agent 天然承担规划职责，`spawn` 子 Agent 执行子任务，任务分解在多 Agent 编排中自然涌现（见 6.3）。
+- **内核 plan-execute 策略（不作为默认）**：仅在需要「严格计划跟踪 / 自动 replan」时，才考虑在 orchestration 中引入 `strategy: plan-execute`，作为 ReAct 的可选增强。
+
+### 6.3 多 Agent 编排
 
 - **orchestrator + subagents**：主 Agent 可 `spawn` 子 Agent，支持顺序/并行执行，结果汇总回主 Agent。
 - 编排拓扑通过配置声明（如 `orchestration: { mode: "sequential" | "parallel" | "graph" }`）。
 - 每个 subagent 可拥有独立的 system-prompt / tools / memory 作用域。
 
-### 6.3 生命周期钩子（hooks）清单
+### 6.4 生命周期钩子（hooks）清单
 
 | 钩子             | 触发时机                                 |
 | ---------------- | ---------------------------------------- |
@@ -538,8 +546,8 @@ services:
 
 ## 14. 下一步里程碑（建议）
 
-1. **M1 内核骨架**：monorepo 搭建（tsdown 构建）+ `config` 包（Schema + 三格式加载）+ `core` 包（LLM Provider 抽象——**默认接 DeepSeek**、Tool 注册表、单 Agent Loop）。
-2. **M2 配置化能力**：hooks、rules、skills、plugins 系统 + system-prompt 组装 + 会话 memory。
+1. **M1 内核骨架**（✅ 已完成）：monorepo 搭建（tsdown 构建）+ `config` 包（Schema + 三格式加载）+ `core` 包（LLM Provider 抽象——**默认接 DeepSeek**、Tool 注册表、单 Agent Loop）。
+2. **M2 配置化能力**：hooks、rules、skills、plugins 系统 + system-prompt 组装 + 会话 memory + 内置工具（含 `todo` 任务规划）。
 3. **M3 扩展接入**：MCP client、长期记忆后端（pgvector）、多 Agent 编排。
 4. **M4 服务化**：server（HTTP API）+ CLI。
 5. **M5 平台与文档**：apps/web 一体化平台 + docs（Rspress）+ Docker 编排 + 示例垂直领域 Agent。
