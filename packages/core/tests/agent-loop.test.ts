@@ -1,0 +1,147 @@
+import { describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
+import { AgentLoop } from '../src/agent/loop';
+import type { ChatCompletionResult, ChatMessage, LLMProvider } from '../src/llm/types';
+import { ToolRegistry } from '../src/tools/registry';
+
+/** 按顺序返回响应，最后一个响应无限重复（便于测试 maxSteps 兜底）。 */
+function makeProvider(responses: ChatCompletionResult[]): LLMProvider {
+  let i = 0;
+  return {
+    name: 'mock',
+    async chatCompletion() {
+      const r = responses[Math.min(i, responses.length - 1)];
+      i += 1;
+      return r as ChatCompletionResult;
+    },
+  };
+}
+
+function makeWeatherTool() {
+  return {
+    name: 'get_weather',
+    description: 'Get weather for a city',
+    inputSchema: z.object({ city: z.string() }),
+    execute: async (input: { city: string }) => ({ temp: 20, city: input.city }),
+  };
+}
+
+const weatherCall: ChatMessage = {
+  role: 'assistant',
+  content: '',
+  toolCalls: [
+    {
+      id: 'call_1',
+      type: 'function',
+      function: { name: 'get_weather', arguments: '{"city":"beijing"}' },
+    },
+  ],
+};
+
+describe('AgentLoop', () => {
+  it('单轮直接回答', async () => {
+    const provider = makeProvider([{ message: { role: 'assistant', content: 'Hello!' } }]);
+    const loop = new AgentLoop({
+      provider,
+      registry: new ToolRegistry(),
+      systemPrompt: 'you are helpful',
+    });
+
+    const result = await loop.run('hi');
+
+    expect(result.finalMessage.content).toBe('Hello!');
+    expect(result.steps).toBe(1);
+    expect(result.messages[0]).toMatchObject({ role: 'system' });
+    expect(result.messages[1]).toMatchObject({ role: 'user', content: 'hi' });
+  });
+
+  it('多轮工具循环并回填结果', async () => {
+    const registry = new ToolRegistry();
+    registry.register(makeWeatherTool());
+
+    const provider = makeProvider([
+      { message: weatherCall },
+      { message: { role: 'assistant', content: 'Beijing is 20 degrees' } },
+    ]);
+    const loop = new AgentLoop({ provider, registry, systemPrompt: 'you are helpful' });
+
+    const result = await loop.run('weather in beijing?');
+
+    expect(result.steps).toBe(2);
+    expect(result.finalMessage.content).toBe('Beijing is 20 degrees');
+
+    const toolMsg = result.messages.find((m) => m.role === 'tool');
+    expect(toolMsg?.content).toContain('20');
+    expect(toolMsg?.toolCallId).toBe('call_1');
+  });
+
+  it('maxSteps 兜底终止', async () => {
+    const registry = new ToolRegistry();
+    registry.register(makeWeatherTool());
+
+    // provider 一直返回 toolCalls，永不自然终止
+    const provider = makeProvider([{ message: weatherCall }]);
+    const loop = new AgentLoop({ provider, registry, systemPrompt: 's', maxSteps: 3 });
+
+    const result = await loop.run('x');
+
+    expect(result.steps).toBe(3);
+  });
+
+  it('工具执行错误回填而非终止', async () => {
+    const registry = new ToolRegistry();
+    registry.register({
+      name: 'failing',
+      description: 'always fails',
+      inputSchema: z.object({}),
+      execute: async () => {
+        throw new Error('boom');
+      },
+    });
+
+    const failingCall: ChatMessage = {
+      role: 'assistant',
+      content: '',
+      toolCalls: [
+        { id: 'call_x', type: 'function', function: { name: 'failing', arguments: '{}' } },
+      ],
+    };
+
+    const provider = makeProvider([
+      { message: failingCall },
+      { message: { role: 'assistant', content: 'tool failed, fallback answer' } },
+    ]);
+    const loop = new AgentLoop({ provider, registry, systemPrompt: 's' });
+
+    const result = await loop.run('x');
+
+    const toolMsg = result.messages.find((m) => m.role === 'tool');
+    expect(toolMsg?.content).toContain('Error: boom');
+    expect(result.finalMessage.content).toBe('tool failed, fallback answer');
+  });
+
+  it('hooks 调用点按序触发', async () => {
+    const registry = new ToolRegistry();
+    registry.register(makeWeatherTool());
+
+    const provider = makeProvider([
+      { message: weatherCall },
+      { message: { role: 'assistant', content: 'done' } },
+    ]);
+
+    const hooks = {
+      beforeLLM: vi.fn(),
+      afterLLM: vi.fn(),
+      beforeToolCall: vi.fn(),
+      afterToolCall: vi.fn(),
+    };
+
+    const loop = new AgentLoop({ provider, registry, systemPrompt: 's', hooks });
+    await loop.run('x');
+
+    expect(hooks.beforeLLM).toHaveBeenCalledTimes(2);
+    expect(hooks.afterLLM).toHaveBeenCalledTimes(2);
+    expect(hooks.beforeToolCall).toHaveBeenCalledWith('get_weather', '{"city":"beijing"}');
+    expect(hooks.afterToolCall).toHaveBeenCalledWith('get_weather', expect.stringContaining('20'));
+  });
+});
