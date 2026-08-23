@@ -12,6 +12,8 @@ export interface SandboxExecRequest {
   network?: 'none' | 'allowed';
   /** 资源限制（各后端映射：docker 用 --memory/--cpus/--pids-limit，nsjail 用 --rlimit_as/--rlimit_cpu）。 */
   limits?: { cpu?: string; memory?: string; pids?: number };
+  /** 输出压缩：true 时以 rtk 包装命令（`rtk <command> <args>`）。 */
+  compact?: boolean;
 }
 
 /** 沙箱执行结果。 */
@@ -32,6 +34,8 @@ export interface SandboxBackendOptions {
   timeoutMs?: number;
   maxOutputBytes?: number;
   env?: Record<string, string>;
+  /** 输出压缩默认值（来自 security.sandbox.compact；单次请求可覆盖）。 */
+  compact?: boolean;
 }
 
 /** 沙箱后端接口：聚焦「隔离执行原生命令」。 */

@@ -37,6 +37,20 @@ describe('buildDockerArgs', () => {
     expect(args[args.indexOf('--memory') + 1]).toBe('256m');
     expect(args[args.indexOf('--cpus') + 1]).toBe('0.5');
   });
+
+  it('compact 时 rtk 包装', () => {
+    const args = buildDockerArgs({ command: 'git', args: ['status'], compact: true }, {});
+    const imageIdx = args.indexOf('agent-engine/sandbox');
+    expect(args[imageIdx + 1]).toBe('rtk');
+    expect(args[imageIdx + 2]).toBe('git');
+    expect(args[imageIdx + 3]).toBe('status');
+  });
+
+  it('默认不包装 rtk', () => {
+    const args = buildDockerArgs({ command: 'git', args: ['status'] }, {});
+    const imageIdx = args.indexOf('agent-engine/sandbox');
+    expect(args[imageIdx + 1]).toBe('git');
+  });
 });
 
 describe('buildNsJailArgs', () => {
@@ -57,6 +71,14 @@ describe('buildNsJailArgs', () => {
   it('network allowed 加 --net', () => {
     const args = buildNsJailArgs({ command: 'echo', network: 'allowed' }, {});
     expect(args).toContain('--net');
+  });
+
+  it('compact 时 rtk 包装', () => {
+    const args = buildNsJailArgs({ command: 'git', args: ['status'], compact: true }, {});
+    const sep = args.indexOf('--');
+    expect(args[sep + 1]).toBe('rtk');
+    expect(args[sep + 2]).toBe('git');
+    expect(args[sep + 3]).toBe('status');
   });
 });
 

@@ -146,6 +146,7 @@ export function registerBuiltinTools(
       const resolution = resolveSandbox(security.sandbox.backend, {
         workspaceRoot: security.sandbox.workspaceRoot,
         image: security.sandbox.image,
+        compact: security.sandbox.compact,
       });
       if (!resolution.available) {
         throw new Error(`bash enabled but no sandbox available: ${resolution.reason}`);

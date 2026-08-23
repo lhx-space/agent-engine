@@ -27,6 +27,9 @@ export function buildDockerArgs(req: SandboxExecRequest, options: SandboxBackend
   if (root) args.push('-v', `${root}:${DEFAULT_WORKDIR}`);
 
   args.push(options.image ?? 'agent-engine/sandbox');
+
+  const compact = req.compact ?? options.compact ?? false;
+  if (compact) args.push('rtk');
   args.push(req.command);
   if (req.args && req.args.length > 0) args.push(...req.args);
 

@@ -27,7 +27,11 @@ export function buildNsJailArgs(req: SandboxExecRequest, options: SandboxBackend
   // nsjail 默认创建独立 netns（无网络）；--net 共享宿主网络即开放。
   if (req.network === 'allowed') args.push('--net');
 
-  args.push('--', req.command);
+  args.push('--');
+
+  const compact = req.compact ?? options.compact ?? false;
+  if (compact) args.push('rtk');
+  args.push(req.command);
   if (req.args && req.args.length > 0) args.push(...req.args);
 
   return args;

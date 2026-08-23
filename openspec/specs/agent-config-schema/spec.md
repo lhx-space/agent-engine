@@ -54,12 +54,12 @@ TBD - created by archiving change add-config-schema. Update Purpose after archiv
 
 ### Requirement: security 配置
 
-系统 SHALL 定义 `security` 子 Schema，含 `sandbox`（`backend` 默认 `auto`、`image` 默认 `agent-engine/sandbox`、`workspaceRoot`）、`bash`（`enabled` 默认 `false`、`allowCommands`、`denyPatterns`、`allowNetwork` 默认 `false`、`timeoutMs`、`maxOutputBytes`）、`files`（`roots`、`maxFileBytes`）、`webSearch`（`provider` 默认 `duckduckgo`、`maxResults`、`timeoutMs`）、`webFetch`（`web 策略`：`allowDomains`、`denyDomains`、`timeoutMs`、`maxOutputBytes`）。
+系统 SHALL 定义 `security` 子 Schema，含 `sandbox`（`backend` 默认 `auto`、`image` 默认 `agent-engine/sandbox`、`workspaceRoot`、`compact` 默认 `false`）、`bash`（`enabled` 默认 `false`、`allowCommands`、`denyPatterns`、`allowNetwork` 默认 `false`、`timeoutMs`、`maxOutputBytes`）、`files`（`roots`、`maxFileBytes`）、`webSearch`（`provider` 默认 `duckduckgo`、`maxResults`、`timeoutMs`）、`webFetch`（`web 策略`：`allowDomains`、`denyDomains`、`timeoutMs`、`maxOutputBytes`）。
 
 #### Scenario: security 缺省安全
 
 - **WHEN** 配置未声明 `security`
-- **THEN** 解析后 `security` 存在且 `sandbox.backend` 为 `auto`、`bash.enabled` 为 `false`、`bash.allowNetwork` 为 `false`
+- **THEN** 解析后 `security` 存在且 `sandbox.backend` 为 `auto`、`bash.enabled` 为 `false`、`bash.allowNetwork` 为 `false`、`sandbox.compact` 为 `false`
 
 #### Scenario: bash 显式开启
 

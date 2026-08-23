@@ -117,6 +117,7 @@ export const SandboxConfigSchema = z.object({
   backend: SandboxBackendKindSchema.default('auto'),
   image: z.string().default('agent-engine/sandbox'),
   workspaceRoot: z.string().optional(),
+  compact: z.boolean().default(false),
 });
 export type SandboxConfig = z.infer<typeof SandboxConfigSchema>;
 
