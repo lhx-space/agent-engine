@@ -20,7 +20,7 @@ const baseConfig = {
   name: 'devops-agent',
   model: { model: 'deepseek-chat' },
   systemPrompt: { template: 'you are {{role}}', variables: { role: 'devops' } },
-  rules: [{ id: 'r1', kind: 'guardrail', on: 'beforeToolCall' }],
+  rules: [{ id: 'r1', kind: 'on-demand', description: '规则说明', content: '规则内容' }],
 };
 
 describe('loadAgentConfig', () => {
@@ -40,8 +40,9 @@ describe('loadAgentConfig', () => {
         '    role: devops',
         'rules:',
         '  - id: r1',
-        '    kind: guardrail',
-        '    on: beforeToolCall',
+        '    kind: on-demand',
+        '    description: 规则说明',
+        '    content: 规则内容',
       ].join('\n'),
     );
 
@@ -59,7 +60,7 @@ describe('loadAgentConfig', () => {
 
     expect(fromJson).toEqual(fromYaml);
     expect(fromTs).toEqual(fromYaml);
-    expect(fromYaml.rules[0]).toMatchObject({ kind: 'guardrail', on: 'beforeToolCall' });
+    expect(fromYaml.rules[0]).toMatchObject({ kind: 'on-demand', content: '规则内容' });
   });
 
   it('非法配置抛含路径的错误', async () => {

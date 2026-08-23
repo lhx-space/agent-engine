@@ -121,6 +121,34 @@ describe('AgentLoop', () => {
     expect(result.finalMessage.content).toBe('tool failed, fallback answer');
   });
 
+  it('systemPrompt 支持函数式动态生成', async () => {
+    const provider = makeProvider([{ message: { role: 'assistant', content: 'Hello!' } }]);
+    const systemPrompt = vi.fn((userInput: string) => `你是 ${userInput} 专家`);
+    const loop = new AgentLoop({
+      provider,
+      registry: new ToolRegistry(),
+      systemPrompt,
+    });
+
+    const result = await loop.run('Vue');
+
+    expect(systemPrompt).toHaveBeenCalledWith('Vue');
+    expect(result.messages[0]).toMatchObject({ role: 'system', content: '你是 Vue 专家' });
+  });
+
+  it('systemPrompt 支持异步函数', async () => {
+    const provider = makeProvider([{ message: { role: 'assistant', content: 'Hi' } }]);
+    const loop = new AgentLoop({
+      provider,
+      registry: new ToolRegistry(),
+      systemPrompt: async (input: string) => `prompt:${input}`,
+    });
+
+    const result = await loop.run('x');
+
+    expect(result.messages[0]).toMatchObject({ role: 'system', content: 'prompt:x' });
+  });
+
   it('hooks 调用点按序触发', async () => {
     const registry = new ToolRegistry();
     registry.register(makeWeatherTool());

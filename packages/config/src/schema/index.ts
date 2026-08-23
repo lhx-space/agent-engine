@@ -37,22 +37,16 @@ export const HookPointSchema = z.enum([
 ]);
 export type HookPoint = z.infer<typeof HookPointSchema>;
 
-export const StaticRuleSchema = z.object({
-  id: z.string(),
-  description: z.string().optional(),
-  kind: z.literal('static'),
-});
-export type StaticRule = z.infer<typeof StaticRuleSchema>;
+export const RuleKindSchema = z.enum(['always', 'on-demand']);
+export type RuleKind = z.infer<typeof RuleKindSchema>;
 
-export const GuardrailRuleSchema = z.object({
+export const RuleSchema = z.object({
   id: z.string(),
-  description: z.string().optional(),
-  kind: z.literal('guardrail'),
-  on: HookPointSchema,
+  kind: RuleKindSchema.default('on-demand'),
+  description: z.string(),
+  content: z.string(),
+  tags: z.array(z.string()).default([]),
 });
-export type GuardrailRule = z.infer<typeof GuardrailRuleSchema>;
-
-export const RuleSchema = z.discriminatedUnion('kind', [StaticRuleSchema, GuardrailRuleSchema]);
 export type Rule = z.infer<typeof RuleSchema>;
 
 export const HookConfigSchema = z.object({

@@ -18,23 +18,39 @@ describe('AgentConfigSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('guardrail 规则缺 on 时校验失败', () => {
+  it('规则缺 content 时校验失败', () => {
     const result = AgentConfigSchema.safeParse({
       name: 'test-agent',
       model: { model: 'deepseek-chat' },
       systemPrompt: { template: 'hello' },
-      rules: [{ id: 'r1', kind: 'guardrail' }],
+      rules: [{ id: 'r1', description: 'x' }],
     });
     expect(result.success).toBe(false);
   });
 
-  it('guardrail 规则带 on 时校验通过', () => {
+  it('规则 kind 缺省默认 on-demand', () => {
     const result = AgentConfigSchema.safeParse({
       name: 'test-agent',
       model: { model: 'deepseek-chat' },
       systemPrompt: { template: 'hello' },
-      rules: [{ id: 'r1', kind: 'guardrail', on: 'beforeToolCall' }],
+      rules: [{ id: 'r1', description: 'x', content: 'y' }],
     });
     expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.rules[0]).toMatchObject({ kind: 'on-demand' });
+    }
+  });
+
+  it('规则含 content 与 tags 时校验通过', () => {
+    const result = AgentConfigSchema.safeParse({
+      name: 'test-agent',
+      model: { model: 'deepseek-chat' },
+      systemPrompt: { template: 'hello' },
+      rules: [{ id: 'r1', kind: 'always', description: 'x', content: 'y', tags: ['vue'] }],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.rules[0]).toMatchObject({ kind: 'always', tags: ['vue'] });
+    }
   });
 });
