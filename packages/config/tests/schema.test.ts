@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from '@rstest/core';
 import { AgentConfigSchema, ModelConfigSchema } from '../src/schema/index';
 
 describe('ModelConfigSchema', () => {

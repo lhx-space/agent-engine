@@ -1,7 +1,7 @@
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from '@rstest/core';
 import { z } from 'zod';
 import { AgentLoop } from '../src/agent/loop';
 import { buildSystemPrompt } from '../src/context/build-system-prompt';

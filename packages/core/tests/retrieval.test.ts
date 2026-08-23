@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from '@rstest/core';
 import type { Rule } from '@agent-engine/config';
 import { CapabilityLoader } from '../src/retrieval/loader';
 import { CapabilityRegistry } from '../src/retrieval/registry';

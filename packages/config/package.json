@@ -24,7 +24,8 @@
   ],
   "scripts": {
     "build": "tsdown",
-    "dev": "tsdown --watch"
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "jiti": "^2.7.0",

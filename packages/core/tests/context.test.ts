@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from '@rstest/core';
 import { buildSystemPrompt, renderTemplate } from '../src/context/build-system-prompt';
 
 describe('renderTemplate', () => {

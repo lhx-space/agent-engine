@@ -22,6 +22,8 @@ export type { CapabilityHit, CapabilityMeta, CapabilityType } from './retrieval/
 export type { CapabilityRecord, CapabilityRecordHit } from './retrieval/loader';
 // skills
 export type { Skill } from './skills/types';
+// plugins
+export type { Plugin, PluginAssembly, PluginContext } from './plugins/types';
 // memory
 export type { ConversationMemoryOptions } from './memory/types';
 // context

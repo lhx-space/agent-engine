@@ -1,13 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, rs } from '@rstest/core';
 
-const mocks = vi.hoisted(() => ({
-  openaiCreate: vi.fn(),
-  anthropicCreate: vi.fn(),
+const mocks = rs.hoisted(() => ({
+  openaiCreate: rs.fn(),
+  anthropicCreate: rs.fn(),
   openaiOptions: null as { apiKey: string; baseURL?: string } | null,
   anthropicOptions: null as { apiKey: string; baseURL?: string } | null,
 }));
 
-vi.mock('openai', () => ({
+rs.mock('openai', () => ({
   default: class {
     chat = { completions: { create: mocks.openaiCreate } };
     constructor(opts: { apiKey: string; baseURL?: string }) {
@@ -16,7 +16,7 @@ vi.mock('openai', () => ({
   },
 }));
 
-vi.mock('@anthropic-ai/sdk', () => ({
+rs.mock('@anthropic-ai/sdk', () => ({
   default: class {
     messages = { create: mocks.anthropicCreate };
     constructor(opts: { apiKey: string; baseURL?: string }) {
@@ -39,7 +39,7 @@ describe('createProvider 分派', () => {
     delete process.env.DEEPSEEK_API_KEY;
     delete process.env.OPENAI_API_KEY;
     delete process.env.ANTHROPIC_API_KEY;
-    vi.clearAllMocks();
+    rs.clearAllMocks();
   });
 
   it('openai-compatible 分派到 OpenAI 兼容实现', () => {

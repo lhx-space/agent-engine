@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from '@rstest/core';
 import { HookPipeline } from '../src/hooks/pipeline';
 
 describe('HookPipeline', () => {

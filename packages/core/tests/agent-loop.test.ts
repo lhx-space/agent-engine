@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, rs } from '@rstest/core';
 import { z } from 'zod';
 import { AgentLoop } from '../src/agent/loop';
 import { HookPipeline } from '../src/hooks/pipeline';
@@ -124,7 +124,7 @@ describe('AgentLoop', () => {
 
   it('systemPrompt 支持函数式动态生成', async () => {
     const provider = makeProvider([{ message: { role: 'assistant', content: 'Hello!' } }]);
-    const systemPrompt = vi.fn((userInput: string) => `你是 ${userInput} 专家`);
+    const systemPrompt = rs.fn((userInput: string) => `你是 ${userInput} 专家`);
     const loop = new AgentLoop({
       provider,
       registry: new ToolRegistry(),
@@ -159,10 +159,10 @@ describe('AgentLoop', () => {
       { message: { role: 'assistant', content: 'done' } },
     ]);
 
-    const beforeLLM = vi.fn();
-    const afterLLM = vi.fn();
-    const beforeToolCall = vi.fn();
-    const afterToolCall = vi.fn();
+    const beforeLLM = rs.fn();
+    const afterLLM = rs.fn();
+    const beforeToolCall = rs.fn();
+    const afterToolCall = rs.fn();
 
     const hooks = new HookPipeline();
     hooks.register({ name: 'test', beforeLLM, afterLLM, beforeToolCall, afterToolCall });

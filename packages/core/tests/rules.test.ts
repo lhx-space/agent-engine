@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, rs } from '@rstest/core';
 import { z } from 'zod';
 import { AgentLoop } from '../src/agent/loop';
 import type { ChatCompletionResult, ChatMessage, LLMProvider } from '../src/llm/types';
@@ -22,7 +22,7 @@ function makeBashTool() {
     name: 'bash',
     description: 'run command',
     inputSchema: z.object({ cmd: z.string() }),
-    execute: vi.fn(async () => ({ ok: true })),
+    execute: rs.fn(async () => ({ ok: true })),
   };
 }
 
@@ -123,7 +123,7 @@ describe('guardrail 拦截', () => {
       name: 'read_file',
       description: 'read file',
       inputSchema: z.object({ path: z.string() }),
-      execute: vi.fn(async () => ({ content: 'secret data' })),
+      execute: rs.fn(async () => ({ content: 'secret data' })),
     });
 
     const rules = new RuleRegistry();

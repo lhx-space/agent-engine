@@ -9,7 +9,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "pnpm -r --filter './packages/**' run build",
+    "build": "turbo run build --filter './packages/**'",
     "dev": "pnpm -r --parallel --filter './packages/**' run dev",
     "web:dev": "pnpm --filter @agent-engine/web dev",
     "web:build": "pnpm --filter @agent-engine/web build",
@@ -19,17 +19,18 @@
     "lint:fix": "rslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "pnpm -r exec tsc --noEmit",
+    "typecheck": "turbo run typecheck --filter './packages/**'",
     "spell": "cspell \"**/*.{ts,tsx,mts,cts,js,mjs,cjs,json,yaml,yml,md}\"",
     "spell:fix": "cspell --write \"**/*.{ts,tsx,mts,cts,js,mjs,cjs,json,yaml,yml,md}\"",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "rstest",
+    "test:watch": "rstest --watch",
     "prepare": "husky"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^21.2.2",
     "@rslint/core": "^0.8.1",
+    "@rstest/core": "^0.11.9",
     "@types/node": "^26.2.0",
     "cspell": "^10.1.0",
     "husky": "^9.1.7",
@@ -37,7 +38,7 @@
     "prettier": "^3.9.6",
     "tsdown": "^0.22.14",
     "tsx": "^4.23.12",
-    "typescript": "^5.9.3",
-    "vitest": "^4.1.11"
+    "turbo": "^2.10.11",
+    "typescript": "^5.9.3"
   }
 }

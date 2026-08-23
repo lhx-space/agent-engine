@@ -15,4 +15,7 @@ export { CapabilityLoader } from './retrieval/loader';
 export { renderTemplate, buildSystemPrompt } from './context';
 export { ConversationMemory } from './memory';
 export { loadSkillFromPath } from './skills';
+export { PluginManager } from './plugins';
 export { AgentLoop } from './agent/loop';
+export { assembleAgentLoop } from './agent/assemble';
+export type { AssembleAgentLoopOptions } from './agent/assemble';
