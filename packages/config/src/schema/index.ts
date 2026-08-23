@@ -108,6 +108,68 @@ export const OrchestrationSchema = z.object({
 });
 export type Orchestration = z.infer<typeof OrchestrationSchema>;
 
+// ============ security / sandbox ============
+
+export const SandboxBackendKindSchema = z.enum(['docker', 'nsjail', 'auto']);
+export type SandboxBackendKind = z.infer<typeof SandboxBackendKindSchema>;
+
+export const SandboxConfigSchema = z.object({
+  backend: SandboxBackendKindSchema.default('auto'),
+  image: z.string().default('agent-engine/sandbox'),
+  workspaceRoot: z.string().optional(),
+});
+export type SandboxConfig = z.infer<typeof SandboxConfigSchema>;
+
+export const BashPolicySchema = z.object({
+  enabled: z.boolean().default(false),
+  allowCommands: z.array(z.string()).default([]),
+  denyPatterns: z.array(z.string()).default([]),
+  allowNetwork: z.boolean().default(false),
+  timeoutMs: z.number().int().positive().default(30_000),
+  maxOutputBytes: z.number().int().positive().default(65_536),
+});
+export type BashPolicy = z.infer<typeof BashPolicySchema>;
+
+export const FilePolicySchema = z.object({
+  roots: z.array(z.string()).default([]),
+  maxFileBytes: z.number().int().positive().default(1_048_576),
+});
+export type FilePolicy = z.infer<typeof FilePolicySchema>;
+
+export const WebPolicySchema = z.object({
+  allowDomains: z.array(z.string()).default([]),
+  denyDomains: z.array(z.string()).default([]),
+  timeoutMs: z.number().int().positive().default(15_000),
+  maxOutputBytes: z.number().int().positive().default(32_768),
+});
+export type WebPolicy = z.infer<typeof WebPolicySchema>;
+
+export const WebSearchPolicySchema = z.object({
+  provider: z.string().default('duckduckgo'),
+  maxResults: z.number().int().positive().default(8),
+  timeoutMs: z.number().int().positive().default(10_000),
+});
+export type WebSearchPolicy = z.infer<typeof WebSearchPolicySchema>;
+
+// 各子 Schema 的完整默认值（Zod `.default({})` 不会级联内层字段默认值，故显式给出全量默认）。
+const DEFAULT_SANDBOX = SandboxConfigSchema.parse({});
+const DEFAULT_BASH = BashPolicySchema.parse({});
+const DEFAULT_FILES = FilePolicySchema.parse({});
+const DEFAULT_WEB_SEARCH = WebSearchPolicySchema.parse({});
+const DEFAULT_WEB_FETCH = WebPolicySchema.parse({});
+
+export const SecurityConfigSchema = z.object({
+  sandbox: SandboxConfigSchema.default(DEFAULT_SANDBOX),
+  bash: BashPolicySchema.default(DEFAULT_BASH),
+  files: FilePolicySchema.default(DEFAULT_FILES),
+  webSearch: WebSearchPolicySchema.default(DEFAULT_WEB_SEARCH),
+  webFetch: WebPolicySchema.default(DEFAULT_WEB_FETCH),
+});
+export type SecurityConfig = z.infer<typeof SecurityConfigSchema>;
+
+/** 完整默认安全配置（security 未声明或需兜底时使用）。 */
+export const defaultSecurityConfig = SecurityConfigSchema.parse({});
+
 // ============ AgentConfig ============
 
 export const AgentConfigSchema = z.object({
@@ -124,5 +186,6 @@ export const AgentConfigSchema = z.object({
   hooks: z.array(HookConfigSchema).default([]),
   plugins: z.array(z.string()).default([]),
   orchestration: OrchestrationSchema.optional(),
+  security: SecurityConfigSchema.default(defaultSecurityConfig),
 });
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;

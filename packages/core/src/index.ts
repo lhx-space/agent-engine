@@ -7,6 +7,31 @@ export type { ProviderFactory } from './llm/provider';
 export { createOpenAIProvider } from './llm/openai';
 export { createAnthropicProvider } from './llm/anthropic';
 export { ToolRegistry } from './tools/registry';
+export {
+  TodoStore,
+  registerBuiltinTools,
+  createTodoTool,
+  createReadFileTool,
+  createWriteFileTool,
+  createBashTool,
+  createWebSearchTool,
+  createWebFetchTool,
+  createSiteSearchTool,
+  createCalculatorTool,
+  createDatetimeTool,
+  createJsonTool,
+  createBase64Tool,
+  createDuckDuckGoSearchProvider,
+  defaultFetch,
+} from './tools/builtin';
+export type { RegisterBuiltinToolsDeps } from './tools/builtin';
+export {
+  createDockerSandbox,
+  createNsJailSandbox,
+  resolveSandboxBackend,
+  SandboxUnavailableError,
+} from './sandbox';
+export type { SandboxResolution } from './sandbox';
 export { HookPipeline } from './hooks/pipeline';
 export { RuleRegistry } from './rules/registry';
 export { loadRulesText } from './rules/load';

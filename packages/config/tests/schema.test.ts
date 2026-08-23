@@ -53,4 +53,47 @@ describe('AgentConfigSchema', () => {
       expect(result.data.rules[0]).toMatchObject({ kind: 'always', tags: ['vue'] });
     }
   });
+
+  it('缺省 security 时默认安全', () => {
+    const result = AgentConfigSchema.safeParse({
+      name: 'test-agent',
+      model: { model: 'deepseek-chat' },
+      systemPrompt: { template: 'hello' },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.security.sandbox.backend).toBe('auto');
+      expect(result.data.security.sandbox.image).toBe('agent-engine/sandbox');
+      expect(result.data.security.bash.enabled).toBe(false);
+      expect(result.data.security.bash.allowNetwork).toBe(false);
+      expect(result.data.security.files.maxFileBytes).toBe(1048576);
+      expect(result.data.security.webSearch.provider).toBe('duckduckgo');
+      expect(result.data.security.webSearch.maxResults).toBe(8);
+    }
+  });
+
+  it('bash 显式开启并声明策略', () => {
+    const result = AgentConfigSchema.safeParse({
+      name: 'test-agent',
+      model: { model: 'deepseek-chat' },
+      systemPrompt: { template: 'hello' },
+      security: { bash: { enabled: true, allowCommands: ['kubectl'], allowNetwork: true } },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.security.bash.enabled).toBe(true);
+      expect(result.data.security.bash.allowCommands).toEqual(['kubectl']);
+      expect(result.data.security.bash.allowNetwork).toBe(true);
+    }
+  });
+
+  it('非法 sandbox backend 校验失败', () => {
+    const result = AgentConfigSchema.safeParse({
+      name: 'test-agent',
+      model: { model: 'deepseek-chat' },
+      systemPrompt: { template: 'hello' },
+      security: { sandbox: { backend: 'k8s' } },
+    });
+    expect(result.success).toBe(false);
+  });
 });
