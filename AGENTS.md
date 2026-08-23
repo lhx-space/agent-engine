@@ -327,6 +327,15 @@ orchestration:
   mode: single # single | sequential | parallel | graph
 ```
 
+### 7.3 多模型设计（能力分离 + 实例级覆盖）
+
+模型配置遵循社区主流做法（借鉴 OpenAI Agents SDK / Claude Code / LlamaIndex）。关键：**「模型角色」是两个正交维度，不能混为一个角色字典**。
+
+- **能力维度（顶层分字段）**：chat（推理 + tool call）与 embedding（向量化）是不同能力、不同接口、不同协议，**顶层分开**。默认推理模型用 `model`；向量模型用独立的 `embedding` 字段（做长期记忆时引入，M3）。
+- **角色维度（实例级覆盖）**：subagent 用哪个模型，是在 **subagent 定义里覆盖**（如 `subagents[].model`），而非全局一个 `subagent model` 字段。
+- **vision 多模态**：不配置，交给自定义工具（能力外置）。
+- **接口边界**：`LLMProvider` 只覆盖 chat（chat completion）；embedding 是另一个抽象（`EmbeddingProvider`），不要塞进 `LLMProvider`。
+
 ---
 
 ## 8. 扩展机制
