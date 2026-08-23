@@ -61,6 +61,8 @@
 | 容器        | 多阶段 Dockerfile                             | 配置以卷挂载，支持热更新                                                          |
 
 > 说明：长期记忆/向量库不锁定具体产品，内核只定义 `MemoryBackend` / `VectorStore` 抽象接口。开发默认 `in-memory`，生产默认 `pgvector`（本地已有 `pgvector/pgvector:pg16` 镜像），`chroma` / `lanceDB` / `meilisearch` 等以插件形式接入。
+>
+> 说明：缓存同样是**可插拔后端**——内核定义 `CacheBackend` 抽象接口（`get` / `set` / `delete` / `clear` + TTL），开发默认 `in-memory`，生产默认 `redis`（本地已有 `redis:7-alpine` 镜像）。LLM 响应、检索结果、会话状态等各层复用同一缓存抽象。
 
 ### 3.1 框架选型：自研内核 + SDK 复用（不引入 LangChain）
 
@@ -68,7 +70,7 @@
 
 理由：
 
-1. **内核即核心资产**：本项目价值在于「可配置化的执行引擎」，hooks（可拦截/阻断）、rules（guardrail）是第一等公民。LangChain 的抽象（Runnable/Chain/AgentExecutor）反而束缚对执行链路的精细控制，套框架需额外写 adapter。
+1. **内核即核心资产**：本项目价值在于「可配置化的执行引擎」，hooks（可拦截/阻断）、rules（上下文约束）、guardrail（安全拦截）是第一等公民。LangChain 的抽象（Runnable/Chain/AgentExecutor）反而束缚对执行链路的精细控制，套框架需额外写 adapter。
 2. **稳定性风险**：LangChain.js 版本迭代频繁（v0.1 → v0.3 多次破坏性变更），不宜作为长期内核依赖。
 3. **自研的是「胶水层」，非重复造轮子**：循环 + 编排 + 装配本质是少量胶水代码，无现成库能直接满足「八大项全可配置」；有成熟库的部分一律复用，不违背「复用优先」。
 
@@ -120,7 +122,7 @@ agent-engine/
 │   │       ├── skills/        #   Skill 加载/注册/触发
 │   │       ├── plugins/       #   插件系统与 PluginContext
 │   │       ├── hooks/         #   生命周期钩子管线
-│   │       ├── rules/         #   规则引擎（静态约束 + 动态 guardrail）
+│   │       ├── rules/         #   上下文规则加载/检索 + guardrail 拦截
 │   │       ├── context/       #   system-prompt 组装、上下文窗口管理
 │   │       ├── events/        #   事件总线、可观测
 │   │       └── types.ts       #   对外核心类型
@@ -175,13 +177,12 @@ docs/（Rspress）为独立站点，无运行时依赖
 ### 5.3 执行控制层（Agent「如何做」的约束）
 
 - **hooks**：生命周期事件拦截点，用于无侵入地增强执行流程（日志、审计、限流、埋点、内容过滤）。
-- **rules**：规则/约束，分两类：
-  - **静态规则**：作为约束文本注入 system-prompt。
-  - **动态规则（guardrail）**：在关键节点（如 `beforeToolCall` / `afterToolCall`）做拦截与校验，可阻断危险行为。
+- **rules**：上下文规则，作为「约束文本」注入 system-prompt，按 `kind` 决定加载策略——`always` 强制注入 / `on-demand` 按需检索（BM25）注入；每条规则 = `id` + `description`（匹配面）+ `content`（markdown 正文）+ `tags`（同义词）。
+- **guardrail（安全拦截，独立于 rules）**：在关键节点（如 `beforeToolCall` / `afterToolCall`）做拦截与校验、可阻断危险行为的**可执行代码**（`RuleRegistry` / `GuardrailRule`），与「配置文本类 rules」分离。
 
 ### 5.4 上下文层（Agent「知道什么」）
 
-- **system-prompt**：系统提示词，由「模板 + 变量 + 各模块（skills/rules/plugins）注入的片段」组装而成。
+- **system-prompt**：系统提示词，由「模板 + 变量 + 各模块（skills/rules/plugins）注入的片段」组装而成。组装已落地 `context` 模块：`buildSystemPrompt(query, { systemPrompt, ruleLoader })` 做模板渲染（`renderTemplate`，`{{var}}` 正则替换、未提供变量保留原样、null/undefined 空串）+ rules 注入（`rules` 为内置变量，模板用 `{{rules}}` 占位符声明注入点，未声明时兜底追加规则文本）。`AgentLoop.systemPrompt` 支持静态字符串或函数式（`(userInput) => string | Promise<string>`），每次 `run` 动态解析，使 rules 按需检索结果真正进入 system prompt。
 - **memory**：记忆管理，分两层：
   - **会话上下文**：单次会话的 message 窗口管理（含窗口裁剪/压缩）。
   - **长期记忆**：跨会话的持久化 + 向量检索（可选，后端可插拔）。
@@ -199,6 +200,37 @@ mcp → 外部 server → 归一化为 tool（与内置 tool 平级）
 system-prompt ← 模板 + variables + skills/rules/plugins 注入片段
 memory       ← 会话上下文 + 长期记忆（后端可插拔）
 ```
+
+### 5.5 统一能力检索调度（Capability Registry）
+
+rules / skills / mcp tools / plugins 共享「**meta + 按需加载**」的机制，统一为一个「能力发现 + 调度」pipeline：
+
+- **统一 meta**：每个能力都有 `id` + `description`（匹配面），注册进统一的 `CapabilityRegistry`。
+- **BM25 检索召回**：user input 进来后，用 BM25 对 meta（description）打分，召回 **top-k** 相关能力——避免让 LLM 理解全部能力（token 爆炸 + 注意力分散）。
+- **LLM 有限范围理解**：只把 top-k 候选给 LLM 理解/选择，而非全量。
+- **差异加载**：检索层统一（meta + BM25），加载层按 `type` 分派——rule 注入 content 文本、skill 注入 SKILL.md + 捆绑工具、mcp 注册工具到 ToolRegistry、plugin 注册能力。
+- **加载策略（kind）**：`always`（强制加载，绕过检索）与 `on-demand`（参与 BM25 检索）。
+
+> 这个统一 pipeline 是 rules / skills / mcp / plugins 复用的「套壳」机制；先以 rules 落地验证（content 为纯文本最简），再推广到 skills / mcp / plugins。
+
+**首版范围（M2）**：
+
+- `CapabilityRegistry` 统一 meta：`id` + `type` + `description`（匹配面）+ `tags`（同义词，缓解漏检）。
+- BM25 检索召回 top-k，**输出每个能力的得分**（可观测，排查漏召回）。
+- 加载策略 `always`（强制，绕过检索）/ `on-demand`（参与 BM25 检索）。
+- **C1 空集合兜底**：无候选时告知「无可用能力」或退化为「无规则注入」。
+- rules 第一个接入（content 纯文本最简）。
+
+**后续演进（M3+，明确延后）**：
+
+- RRF 融合召回（BM25 + embedding，依赖 M3 的 embedding 模型）。
+- Reranker 重排序、记忆反馈（历史调用增强查询）、动态 k、缓存、权限校验（meta 预留 tags 字段）。
+
+**坑点对策**：
+
+- **召回漏检**：meta 加 `tags`（同义词）；向量融合留 M3。
+- **meta 质量是检索核心**：`description` 要精准、不过短不过冗长。
+- **C1 空集合**：必须有兜底分支。
 
 ---
 
@@ -218,7 +250,7 @@ memory       ← 会话上下文 + 长期记忆（后端可插拔）
    ├─ LLM 调用（messages + 可用 tools）
    ├─ hooks.afterLLM
    ├─ 若返回 tool_calls：
-   │    ├─ rules 动态校验（guardrail）
+   │    ├─ guardrail 动态校验
    │    ├─ hooks.beforeToolCall
    │    ├─ 执行 tools（含 MCP 归一化工具）
    │    ├─ hooks.afterToolCall
@@ -259,10 +291,10 @@ Task Planner 不是内核的一等公民，而是「工具 + 编排」的自然�
 
 hooks 是内核执行流程的**有限生命周期锚点**，不会随模块膨胀：
 
-- **模块复用而非新增**：rule（guardrail 走 beforeToolCall）、skill（触发走 beforeLLM）、memory（写入走 afterLLM / afterToolCall）、plugin（日志走任意锚点）都**复用**现有钩子点，不各自发明「rule hook」「skill hook」。
+- **模块复用而非新增**：guardrail（走 beforeToolCall）、skill（触发走 beforeLLM）、memory（写入走 afterLLM / afterToolCall）、plugin（日志走任意锚点）都**复用**现有钩子点，不各自发明「rule hook」「skill hook」。
 - **模块特定事件走 events 总线**：需要「规则命中」等业务事件时，用 `events/` 事件总线（发布/订阅，见目录结构），而非扩充 hooks。
 - **分层钩子**：装配级（onInit）/ 会话级（onSessionStart/End）/ 循环级（beforeLLM…onStepEnd）/ 错误级（onError）；多 Agent 编排（M3）会有独立的**编排级钩子**（如 onSubagentStart/End），不与单 Agent 循环钩子混用。
-- **职责边界**：hooks 负责「观察 + 改写（增强）」，**不做阻断**；阻断是 rules（guardrail）的职责。
+- **职责边界**：hooks 负责「观察 + 改写（增强）」，**不做阻断**；阻断是 guardrail 的职责。
 
 ---
 
@@ -302,11 +334,17 @@ systemPrompt:
 rules:
   - id: no-destructive-command
     description: 禁止执行破坏性命令
-    kind: guardrail
-    on: beforeToolCall
-  - id: always-explain
-    description: 执行前先说明意图
-    kind: static
+    kind: always # 强制注入，绕过检索
+    content: |
+      禁止执行 rm -rf、DROP TABLE、DROP DATABASE 等破坏性命令；
+      执行前须说明影响范围并征得确认。
+    tags: [安全, 运维]
+  - id: k8s-diagnosis
+    description: Kubernetes 故障诊断规范
+    kind: on-demand # 按需检索注入
+    content: |
+      排查顺序：kubectl get events → describe pod → logs → 逐层定位。
+    tags: [k8s, kubernetes, 诊断]
 
 tools:
   - use: builtin.read_file
@@ -502,15 +540,15 @@ pnpm --filter @agent-engine/cli run agent run \
 
 本机已具备以下基础设施镜像，作为各「可插拔后端」的具体落地，直接纳入 compose 编排，无需重复部署：
 
-| 镜像                                            | 项目用途                                     |
-| ----------------------------------------------- | -------------------------------------------- |
-| `pgvector/pgvector:pg16` + `postgres:16-alpine` | 长期记忆向量后端（生产默认）                 |
-| `ollama/ollama:latest`                          | 本地 LLM 推理（**后期可选**接入，非默认）    |
-| `redis:7-alpine`                                | 会话缓存 / 消息队列 / 分布式锁               |
-| `minio/minio:latest`                            | 对象存储（文件、artifact 持久化）            |
-| `getmeili/meilisearch:latest`                   | 全文 / 语义检索（可选）                      |
-| `prom/prometheus` + `grafana/grafana`           | 可观测性（pino/OTel → Prometheus → Grafana） |
-| `nginx` / `caddy:2-alpine`                      | 反向代理网关（webApp + server）              |
+| 镜像                                            | 项目用途                                           |
+| ----------------------------------------------- | -------------------------------------------------- |
+| `pgvector/pgvector:pg16` + `postgres:16-alpine` | 长期记忆向量后端（生产默认）                       |
+| `ollama/ollama:latest`                          | 本地 LLM 推理（**后期可选**接入，非默认）          |
+| `redis:7-alpine`                                | 通用 CacheBackend / 会话缓存 / 消息队列 / 分布式锁 |
+| `minio/minio:latest`                            | 对象存储（文件、artifact 持久化）                  |
+| `getmeili/meilisearch:latest`                   | 全文 / 语义检索（可选）                            |
+| `prom/prometheus` + `grafana/grafana`           | 可观测性（pino/OTel → Prometheus → Grafana）       |
+| `nginx` / `caddy:2-alpine`                      | 反向代理网关（webApp + server）                    |
 
 > 其余本地镜像（`infra-*`、`sandbox-*`、`yjs-docs-*`、`nacos`、`envoy`、`kindest` 等）属于其他项目，本仓库不纳入。
 
