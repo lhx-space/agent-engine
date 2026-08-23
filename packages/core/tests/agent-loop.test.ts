@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { AgentLoop } from '../src/agent/loop';
 import { HookPipeline } from '../src/hooks/pipeline';
+import { ConversationMemory } from '../src/memory/conversation-memory';
 import type { ChatCompletionResult, ChatMessage, LLMProvider } from '../src/llm/types';
 import { ToolRegistry } from '../src/tools/registry';
 
@@ -173,5 +174,84 @@ describe('AgentLoop', () => {
     expect(afterLLM).toHaveBeenCalledTimes(2);
     expect(beforeToolCall).toHaveBeenCalledWith('get_weather', '{"city":"beijing"}');
     expect(afterToolCall).toHaveBeenCalledWith('get_weather', expect.stringContaining('20'));
+  });
+
+  it('注入 memory 后跨 run 累积历史', async () => {
+    const memory = new ConversationMemory();
+    const seen: ChatMessage[][] = [];
+    const provider: LLMProvider = {
+      name: 'mock',
+      async chatCompletion(params) {
+        seen.push(params.messages);
+        return { message: { role: 'assistant', content: 'answer' } };
+      },
+    };
+    const loop = new AgentLoop({
+      provider,
+      registry: new ToolRegistry(),
+      systemPrompt: 's',
+      memory,
+    });
+
+    await loop.run('第一问');
+    await loop.run('第二问');
+
+    // 第二轮调用应携带第一轮的历史
+    const second = seen[1];
+    expect(second?.some((m) => m.role === 'user' && m.content === '第一问')).toBe(true);
+    expect(second?.some((m) => m.role === 'assistant' && m.content === 'answer')).toBe(true);
+    expect(memory.size).toBe(4); // 第一轮 user+assistant，第二轮 user+assistant
+  });
+
+  it('异常时不回写 memory', async () => {
+    const memory = new ConversationMemory();
+    const provider: LLMProvider = {
+      name: 'mock',
+      async chatCompletion() {
+        throw new Error('boom');
+      },
+    };
+    const loop = new AgentLoop({
+      provider,
+      registry: new ToolRegistry(),
+      systemPrompt: 's',
+      memory,
+    });
+
+    await expect(loop.run('x')).rejects.toThrow('boom');
+    expect(memory.size).toBe(0);
+  });
+
+  it('systemPrompt 模板对象 + rules 自动检索注入', async () => {
+    const captured: ChatMessage[][] = [];
+    const provider: LLMProvider = {
+      name: 'mock',
+      async chatCompletion(params) {
+        captured.push(params.messages);
+        return { message: { role: 'assistant', content: 'ok' } };
+      },
+    };
+    const loop = new AgentLoop({
+      provider,
+      registry: new ToolRegistry(),
+      systemPrompt: { template: '你是 {{role}}。\n{{rules}}', variables: { role: '专家' } },
+      rules: [
+        { id: 'r1', kind: 'always', description: '简洁', content: '回答要简洁', tags: [] },
+        {
+          id: 'r2',
+          kind: 'on-demand',
+          description: 'Vue3 编码规范',
+          content: '使用 script setup',
+          tags: ['vue'],
+        },
+      ],
+    });
+
+    await loop.run('帮我写 Vue 组件');
+
+    const systemMsg = captured[0]?.find((m) => m.role === 'system');
+    expect(systemMsg?.content).toContain('专家');
+    expect(systemMsg?.content).toContain('回答要简洁');
+    expect(systemMsg?.content).toContain('使用 script setup');
   });
 });

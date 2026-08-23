@@ -79,7 +79,7 @@ describe('guardrail 拦截', () => {
       { message: bashCall('rm -rf /') },
       { message: { role: 'assistant', content: 'ok' } },
     ]);
-    const loop = new AgentLoop({ provider, registry: tools, systemPrompt: 's', rules });
+    const loop = new AgentLoop({ provider, registry: tools, systemPrompt: 's', guardrails: rules });
 
     const result = await loop.run('x');
 
@@ -108,7 +108,7 @@ describe('guardrail 拦截', () => {
       { message: bashCall('ls -la') },
       { message: { role: 'assistant', content: 'done' } },
     ]);
-    const loop = new AgentLoop({ provider, registry: tools, systemPrompt: 's', rules });
+    const loop = new AgentLoop({ provider, registry: tools, systemPrompt: 's', guardrails: rules });
 
     const result = await loop.run('x');
 
@@ -152,7 +152,7 @@ describe('guardrail 拦截', () => {
       { message: readCall },
       { message: { role: 'assistant', content: 'done' } },
     ]);
-    const loop = new AgentLoop({ provider, registry: tools, systemPrompt: 's', rules });
+    const loop = new AgentLoop({ provider, registry: tools, systemPrompt: 's', guardrails: rules });
 
     const result = await loop.run('x');
 

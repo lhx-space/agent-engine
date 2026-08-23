@@ -1,13 +1,20 @@
-import type { ChatCompletionResult, ChatMessage, LLMProvider } from '../llm/types';
+import type { Rule, SystemPrompt } from '@agent-engine/config';
+import { buildSystemPrompt } from '../context/build-system-prompt';
 import type { HookPipeline } from '../hooks/pipeline';
+import type { ChatCompletionResult, ChatMessage, LLMProvider } from '../llm/types';
+import type { ConversationMemory } from '../memory/conversation-memory';
+import { RuleLoader } from '../rules/loader';
 import type { RuleRegistry } from '../rules/registry';
 import type { ToolRegistry } from '../tools/registry';
 
 /**
- * system prompt 可以是静态字符串，或按 user input 动态生成的函数。
- * 函数式用于每次 run 动态组装（如模板渲染 + rules 按需检索注入）。
+ * system prompt 三种形态：
+ * - string：静态字符串；
+ * - SystemPrompt：模板对象（配合 `rules` 每次 run 自动检索注入）；
+ * - 函数：按 userInput 动态生成（完全自定义组装）。
  */
-export type SystemPromptInput = string | ((userInput: string) => string | Promise<string>);
+export type SystemPromptInput =
+  string | SystemPrompt | ((userInput: string) => string | Promise<string>);
 
 export interface AgentLoopOptions {
   provider: LLMProvider;
@@ -17,8 +24,15 @@ export interface AgentLoopOptions {
   maxSteps?: number;
   /** 生命周期钩子管线，可省略。 */
   hooks?: HookPipeline;
-  /** guardrail 规则注册表，可省略。 */
-  rules?: RuleRegistry;
+  /**
+   * 上下文规则（可配置文本规则）。`systemPrompt` 为模板对象时，
+   * 每次 run 自动按 userInput 检索并注入；否则被忽略。
+   */
+  rules?: Rule[];
+  /** guardrail 规则注册表（安全拦截），可省略。 */
+  guardrails?: RuleRegistry;
+  /** 会话记忆（可选），注入后跨 run 累积历史，实现多轮对话。 */
+  memory?: ConversationMemory;
 }
 
 export interface AgentLoopResult {
@@ -37,7 +51,9 @@ export class AgentLoop {
   private readonly systemPrompt: SystemPromptInput;
   private readonly maxSteps: number;
   private readonly hooks: HookPipeline | undefined;
-  private readonly rules: RuleRegistry | undefined;
+  private readonly guardrails: RuleRegistry | undefined;
+  private readonly ruleLoader: RuleLoader | undefined;
+  private readonly memory: ConversationMemory | undefined;
 
   constructor(options: AgentLoopOptions) {
     this.provider = options.provider;
@@ -45,15 +61,22 @@ export class AgentLoop {
     this.systemPrompt = options.systemPrompt;
     this.maxSteps = options.maxSteps ?? 10;
     this.hooks = options.hooks;
-    this.rules = options.rules;
+    this.guardrails = options.guardrails;
+    this.ruleLoader =
+      options.rules && options.rules.length > 0 ? new RuleLoader(options.rules) : undefined;
+    this.memory = options.memory;
   }
 
   async run(userInput: string): Promise<AgentLoopResult> {
     const systemPrompt = await this.resolveSystemPrompt(userInput);
+    const history = this.memory?.getMessages() ?? [];
     const messages: ChatMessage[] = [
       { role: 'system', content: systemPrompt },
+      ...history,
       { role: 'user', content: userInput },
     ];
+    // 本轮新增消息的起始索引（system + 历史之后），正常结束时回写 memory。
+    const sessionStart = 1 + history.length;
 
     let finalMessage: ChatMessage = { role: 'assistant', content: '' };
     let steps = 0;
@@ -91,7 +114,7 @@ export class AgentLoop {
 
           // guardrail beforeToolCall：校验入参，阻断则不执行工具。
           let toolResult: string;
-          const beforeRules = this.rules?.forPoint('beforeToolCall') ?? [];
+          const beforeRules = this.guardrails?.forPoint('beforeToolCall') ?? [];
           let blocked = false;
           let blockedReason: string | undefined;
           for (const rule of beforeRules) {
@@ -115,7 +138,7 @@ export class AgentLoop {
           }
 
           // guardrail afterToolCall：校验结果，阻断则替换结果。
-          const afterRules = this.rules?.forPoint('afterToolCall') ?? [];
+          const afterRules = this.guardrails?.forPoint('afterToolCall') ?? [];
           for (const rule of afterRules) {
             const verdict = await rule.validate({ toolName: name, result: toolResult });
             if (!verdict.allowed) {
@@ -147,14 +170,25 @@ export class AgentLoop {
       throw err;
     }
 
+    // 正常结束（自然终止 / maxSteps 兜底）时，把本轮消息（system 之外）写回会话记忆。
+    // 异常路径（catch 内 throw）不会执行到这里，故不回写，保持历史不变。
+    this.memory?.append(messages.slice(sessionStart));
+
     return { finalMessage, messages, steps };
   }
 
-  /** 解析本次 system prompt：函数式按 userInput 动态生成，静态字符串原样返回。 */
+  /** 解析本次 system prompt：函数式动态生成 / 静态字符串原样返回 / 模板对象自动检索组装。 */
   private async resolveSystemPrompt(userInput: string): Promise<string> {
     if (typeof this.systemPrompt === 'function') {
       return this.systemPrompt(userInput);
     }
-    return this.systemPrompt;
+    if (typeof this.systemPrompt === 'string') {
+      return this.systemPrompt;
+    }
+    // SystemPrompt 模板对象：渲染变量 + 按需检索注入 rules。
+    return buildSystemPrompt(userInput, {
+      systemPrompt: this.systemPrompt,
+      ruleLoader: this.ruleLoader,
+    });
   }
 }

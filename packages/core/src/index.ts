@@ -14,5 +14,7 @@ export type { CapabilityHit, CapabilityMeta, CapabilityType } from './retrieval/
 export { CapabilityRegistry } from './retrieval/registry';
 export type { BuildSystemPromptOptions } from './context';
 export { renderTemplate, buildSystemPrompt } from './context';
+export type { ConversationMemoryOptions } from './memory';
+export { ConversationMemory } from './memory';
 export type { AgentLoopOptions, AgentLoopResult, SystemPromptInput } from './agent/loop';
 export { AgentLoop } from './agent/loop';
