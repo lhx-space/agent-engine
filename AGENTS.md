@@ -167,7 +167,7 @@ docs/（Rspress）为独立站点，无运行时依赖
 
 ### 5.1 能力层（Agent 能「做什么」）
 
-- **tools**：原子能力单元，一个函数即一个工具（如 `read_file`、`bash`、`web_search`）。注册进 **Tool Registry**。
+- **tools**：原子能力单元，一个函数即一个工具（如 `read_file`、`bash`、`web_search`）。注册进 **Tool Registry**。已落地内置工具 `todo` / `read_file` / `write_file` / `bash` / `web_search` / `web_fetch` / `sitesearch` / `calculator` / `datetime` / `json` / `base64`（`core/tools/builtin/`），其中 `bash` 默认禁用、经 `SandboxBackend` 沙箱执行（见 5.6）；非 tool 的支撑代码（http/搜索后端/路径/domain/html/store/policy）统一在 `core/tools/utils/`。
 - **skills**：可复用能力包 = 一份指令（`SKILL.md`）+ 可选捆绑的 tools/资源。按需动态加载，加载后将其指令注入上下文、工具并入注册表。已落地 `Skill` 类型 + 统一 `CapabilityLoader`（BM25 检索，复用 `CapabilityRegistry`）+ `loadSkillFromPath`（gray-matter 解析 SKILL.md）；`AgentLoop.skills` 注入后按需注入指令 + 注册捆绑工具。
 - **mcp**：通过 Model Context Protocol 接入的**外部能力来源**。一个外部 MCP server 的 `tools/resources` 会被归一化为标准 Tool，纳入同一注册表，内核无感知差异。
 
@@ -232,6 +232,25 @@ rules / skills / mcp tools / plugins 共享「**meta + 按需加载**」的机�
 - **召回漏检**：meta 加 `tags`（同义词）；向量融合留 M3。
 - **meta 质量是检索核心**：`description` 要精准、不过短不过冗长。
 - **C1 空集合**：必须有兜底分支。
+
+### 5.6 执行沙箱（Execution Sandbox）
+
+内置 `bash` / `write_file` 本质是把「任意命令执行 / 任意文件写入」交给一个不可完全信任的模型，存在 prompt injection 风险。只靠 prompt/rules 是软约束，必须有**不依赖模型自觉的硬边界**——四层防御：
+
+| 层                | 机制                                               | 职责                                                          |
+| ----------------- | -------------------------------------------------- | ------------------------------------------------------------- |
+| 0 配置层权限      | `security` 声明式 allowlist                        | 决定「允许做什么」（bash 白/黑名单、文件 roots、web domains） |
+| 1 Guardrail 拦截  | `beforeToolCall` 可执行校验                        | 执行前阻断（路径越界 / 命中黑名单），复用 5.3 guardrail       |
+| 2 Sandbox 隔离    | `SandboxBackend` 可插拔                            | 决定「爆炸半径」，进程跑在受限环境                            |
+| 3 资源限制 + 审计 | timeout / cpu / mem / pids / 输出截断 + hooks/OTel | 代价可控 + 可追溯                                             |
+
+- **`SandboxBackend` 接口**（`core/sandbox/`）：只暴露 `exec(req)`，聚焦「隔离执行原生命令」；`SandboxExecRequest` 声明 `timeoutMs` / `maxOutputBytes` / `network` / `limits`。
+- **双后端**：`docker`（跨平台含 macOS，`docker run` 加固：`--network none --read-only --cap-drop ALL --security-opt no-new-privileges --pids-limit --memory --cpus --user`）+ `nsjail`（Linux，补「无 Docker」场景）；`auto` 探测：docker 可用 → docker，否则 Linux 且 nsjail 可用 → nsjail，否则「不可用」。
+- **安全默认**：`bash.enabled` 默认 `false`；**沙箱不可用即禁用，绝不回退宿主进程裸奔**。
+- **复用优先**：沙箱复用系统二进制 `docker` / `nsjail`（`node:child_process` 驱动），不引第三方 npm 沙箱库、不自研沙箱。
+- **WASM/WASI 边界（明确分离）**：WASI 沙箱的是「编译成 wasm 的代码」，**不能**沙箱原生 `bash`/`kubectl`/`git`。不可信**用户代码/工具函数**的沙箱是另一个正交需求，留 M3 立 `FunctionSandbox`（wasmtime/wasmer，零 Docker 依赖），**不要用 wasm 替代 bash 的沙箱**。
+
+> 落地矩阵：`bash` 沙箱 = 有 Docker 用 docker；Linux 无 Docker 用 nsjail；macOS 无 Docker 则禁用 bash（只保留 read/write/web_search/todo）。
 
 ---
 
@@ -377,6 +396,28 @@ hooks:
 plugins:
   - '@agent-engine/plugin-otel'
 
+security:
+  sandbox:
+    backend: auto # docker | nsjail | auto
+    image: agent-engine/sandbox
+    workspaceRoot: /workspace
+  bash:
+    enabled: true # 默认 false；开启后命令经沙箱执行
+    allowCommands: [kubectl, git, ls, cat]
+    denyPatterns: ['rm -rf', 'DROP TABLE', 'DROP DATABASE']
+    allowNetwork: true # kubectl 需连集群，默认 false
+    timeoutMs: 30000
+    maxOutputBytes: 65536
+  files:
+    roots: [/workspace]
+    maxFileBytes: 1048576
+  webSearch:
+    provider: duckduckgo # 搜索后端（可插拔：tavily / serpapi / searxng）
+    maxResults: 8
+  webFetch:
+    allowDomains: []
+    denyDomains: []
+
 orchestration:
   mode: single # single | sequential | parallel | graph
 ```
@@ -399,6 +440,8 @@ orchestration:
 1. 在对应包中实现 `Tool` 接口（`name` / `description` / `inputSchema` / `execute`）。
 2. 通过 `ToolRegistry.register()` 或配置文件 `tools` 段注册。
 3. 覆盖 `inputSchema`（Zod），保证 LLM 可正确理解参数。
+
+> 内置工具（`todo` / `read_file` / `write_file` / `bash` / `web_search` / `web_fetch` / `sitesearch` / `calculator` / `datetime` / `json` / `base64`）已提供（`core/tools/builtin/`），通过 `registerBuiltinTools` 统一装配；`bash` 默认禁用、经 `security` 段开启（见 5.6 / 7.2）。非 tool 支撑在 `core/tools/utils/`。
 
 ### 8.2 新增一个 skill
 
@@ -552,6 +595,8 @@ pnpm --filter @agent-engine/cli run agent run \
 | `nginx` / `caddy:2-alpine`                      | 反向代理网关（webApp + server）                    |
 
 > 其余本地镜像（`infra-*`、`sandbox-*`、`yjs-docs-*`、`nacos`、`envoy`、`kindest` 等）属于其他项目，本仓库不纳入。
+>
+> `bash` 沙箱使用本仓库自建的精简镜像 `agent-engine/sandbox`（`docker/` 下构建），与上表第三方 `sandbox-*` 镜像无关；`SandboxBackend` 抽象下 docker / nsjail 双后端可选（见 5.6）。
 
 ### 13.2 容器构建
 
@@ -593,7 +638,7 @@ services:
 ## 14. 下一步里程碑（建议）
 
 1. **M1 内核骨架**（✅ 已完成）：monorepo 搭建（tsdown 构建）+ `config` 包（Schema + 三格式加载）+ `core` 包（LLM Provider 抽象——**默认接 DeepSeek**、Tool 注册表、单 Agent Loop）。
-2. **M2 配置化能力**：hooks、rules、skills、plugins 系统 + system-prompt 组装 + 会话 memory + 内置工具（含 `todo` 任务规划）。
+2. **M2 配置化能力**：hooks、rules、skills、plugins 系统 + system-prompt 组装 + 会话 memory + 内置工具（含 `todo` 任务规划）+ 执行沙箱（`SandboxBackend`：docker / nsjail 双后端，bash 默认禁用）。
 3. **M3 扩展接入**：MCP client、长期记忆后端（pgvector）、多 Agent 编排。
 4. **M4 服务化**：server（HTTP API）+ CLI。
 5. **M5 平台与文档**：apps/web 一体化平台 + docs（Rspress）+ Docker 编排 + 示例垂直领域 Agent。
