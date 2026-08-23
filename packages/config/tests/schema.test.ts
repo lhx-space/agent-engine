@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AgentConfigSchema, ModelConfigSchema } from './schema/index.js';
+import { AgentConfigSchema, ModelConfigSchema } from '../src/schema/index.js';
 
 describe('ModelConfigSchema', () => {
   it('provider 缺省时默认 openai-compatible', () => {

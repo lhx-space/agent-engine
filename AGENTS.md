@@ -464,6 +464,7 @@ pnpm --filter @agent-engine/cli run agent run \
 
 ## 12. 测试策略
 
+- **目录约定**：每个包的测试统一放在该包的 `tests/` 目录（如 `packages/config/tests/`），文件以 `.test.ts` 结尾；**不在 `src/` 内混放测试**。
 - **单元测试**：`core` 各模块（tools、memory、hooks、rules、config loader/schema）。
 - **集成测试**：用一个最小 `AgentConfig` 跑通完整 Agent Loop（mock LLM）。
 - **契约测试**：三种配置格式（YAML/JSON/TS）加载后产出等价的 `AgentConfig`。
