@@ -27,24 +27,38 @@ TBD - created by archiving change add-context-assembly. Update Purpose after arc
 
 ### Requirement: system prompt 组装
 
-系统 SHALL 提供 `buildSystemPrompt(query, options)`，渲染 `systemPrompt.template`（用户变量 + 内置 `rules` 变量），返回本次调用的 system prompt；`rules` 变量值为 `ruleLoader.loadForQuery(query)` 的结果。
+系统 SHALL 提供 `buildSystemPrompt(options)`，渲染 `systemPrompt.template`（用户变量 + 内置 `rules` / `skills` 变量），返回本次调用的 system prompt；`rules` 变量值为 `options.rulesText`、`skills` 变量值为 `options.skillsText`（调用方检索后传入的文本片段）。
 
 #### Scenario: 模板渲染 + rules 占位符注入
 
-- **WHEN** 模板含 `{{rules}}` 且 `ruleLoader` 检索到规则
+- **WHEN** 模板含 `{{rules}}` 且 `rulesText` 非空
 - **THEN** 用户变量被替换，`{{rules}}` 被替换为规则文本，结果不含 `{{rules}}` 字面量
 
 #### Scenario: 模板无 rules 占位符时兜底追加
 
-- **WHEN** 模板不含 `{{rules}}` 且 `ruleLoader` 检索到非空规则文本
+- **WHEN** 模板不含 `{{rules}}` 且 `rulesText` 非空
 - **THEN** 规则文本追加到渲染结果末尾
 
-#### Scenario: 未提供 ruleLoader
+#### Scenario: 未提供 rulesText
 
-- **WHEN** `options.ruleLoader` 未提供
+- **WHEN** `options.rulesText` 未提供或为空串
 - **THEN** `rules` 变量为空串，不注入任何规则文本
 
 #### Scenario: 无匹配规则
 
-- **WHEN** `ruleLoader` 对 query 无候选（返回空串）
+- **WHEN** `rulesText` 为空串（无候选）
 - **THEN** `{{rules}}` 替换为空串，输出不含残留占位符
+
+### Requirement: skills 片段注入
+
+系统 SHALL 支持 `buildSystemPrompt` 注入 skills 指令片段：`skills` 为内置变量（命中 skills 的 instruction 拼接文本），模板用 `{{skills}}` 声明注入点；未声明占位符且文本非空时兜底追加。
+
+#### Scenario: {{skills}} 占位符注入
+
+- **WHEN** 模板含 `{{skills}}` 且提供非空 skills 文本
+- **THEN** `{{skills}}` 被替换为 skills 指令文本，结果不含 `{{skills}}` 字面量
+
+#### Scenario: 无 skills 文本
+
+- **WHEN** 未提供 skills 文本或命中为空
+- **THEN** `{{skills}}` 替换为空串，不注入任何内容

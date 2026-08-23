@@ -31,7 +31,7 @@ TBD - created by archiving change add-capability-retrieval. Update Purpose after
 
 ### Requirement: rules 按需加载
 
-系统 SHALL 提供 `loadRulesForQuery(query, topK)`：`always` 规则的 content 全部注入 + `on-demand` 规则 BM25 召回 top-k 的 content，输出「本次注入的规则文本」。
+系统 SHALL 提供 `loadRulesText(rules, loader, query, topK)`：`always` 规则的 content 全部注入 + `on-demand` 规则经 `CapabilityLoader` BM25 召回 top-k 的 content，去重拼接，输出「本次注入的规则文本」。
 
 #### Scenario: always 规则强制注入
 
@@ -51,3 +51,17 @@ TBD - created by archiving change add-capability-retrieval. Update Purpose after
 
 - **WHEN** 所有 on-demand 规则均与 query 不相关
 - **THEN** 输出为空文本，流程正常继续
+
+### Requirement: CapabilityLoader 统一加载
+
+系统 SHALL 提供 `CapabilityLoader<T>`，接收能力记录（含 `id` / `description` / `tags`）与 `type`，统一注册进 `CapabilityRegistry` 并按 query BM25 检索，返回命中的记录（含 `score`）。
+
+#### Scenario: 注册与检索
+
+- **WHEN** 以 `type='rule'` 构造 `CapabilityLoader` 并注册若干记录
+- **THEN** `loadForQuery` 返回命中的 `{ record, score }` 列表
+
+#### Scenario: 按 type 过滤
+
+- **WHEN** 注册表混有 rule / skill 记录
+- **THEN** `CapabilityLoader('rule')` 的 `loadForQuery` 只返回 `type='rule'` 的记录

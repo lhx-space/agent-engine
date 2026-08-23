@@ -167,7 +167,7 @@ docs/（Rspress）为独立站点，无运行时依赖
 ### 5.1 能力层（Agent 能「做什么」）
 
 - **tools**：原子能力单元，一个函数即一个工具（如 `read_file`、`bash`、`web_search`）。注册进 **Tool Registry**。
-- **skills**：可复用能力包 = 一份指令（`SKILL.md`）+ 可选捆绑的 tools/资源。按需动态加载，加载后将其指令注入上下文、工具并入注册表。
+- **skills**：可复用能力包 = 一份指令（`SKILL.md`）+ 可选捆绑的 tools/资源。按需动态加载，加载后将其指令注入上下文、工具并入注册表。已落地 `Skill` 类型 + 统一 `CapabilityLoader`（BM25 检索，复用 `CapabilityRegistry`）+ `loadSkillFromPath`（gray-matter 解析 SKILL.md）；`AgentLoop.skills` 注入后按需注入指令 + 注册捆绑工具。
 - **mcp**：通过 Model Context Protocol 接入的**外部能力来源**。一个外部 MCP server 的 `tools/resources` 会被归一化为标准 Tool，纳入同一注册表，内核无感知差异。
 
 ### 5.2 扩展层（能力的「打包与分发」单元）
@@ -182,7 +182,7 @@ docs/（Rspress）为独立站点，无运行时依赖
 
 ### 5.4 上下文层（Agent「知道什么」）
 
-- **system-prompt**：系统提示词，由「模板 + 变量 + 各模块（skills/rules/plugins）注入的片段」组装而成。组装已落地 `context` 模块：`buildSystemPrompt(query, { systemPrompt, ruleLoader })` 做模板渲染（`renderTemplate`，`{{var}}` 正则替换、未提供变量保留原样、null/undefined 空串）+ rules 注入（`rules` 为内置变量，模板用 `{{rules}}` 占位符声明注入点，未声明时兜底追加规则文本）。`AgentLoop.systemPrompt` 支持三种形态——静态字符串 / `SystemPrompt` 模板对象（配 `rules` 每次 `run` 内建检索注入）/ 函数式（完全自定义），每次 `run` 动态解析，使 rules 按需检索结果真正进入 system prompt。
+- **system-prompt**：系统提示词，由「模板 + 变量 + 各模块（skills/rules/plugins）注入的片段」组装而成。组装已落地 `context` 模块：`buildSystemPrompt({ systemPrompt, rulesText, skillsText })` 做模板渲染（`renderTemplate`，`{{var}}` 正则替换、未提供变量保留原样、null/undefined 空串）+ rules / skills 注入（`rules` / `skills` 为内置变量，模板用 `{{rules}}` / `{{skills}}` 占位符声明注入点，未声明时兜底追加）；检索由 AgentLoop 用统一 `CapabilityLoader` 完成。`AgentLoop.systemPrompt` 支持三种形态——静态字符串 / `SystemPrompt` 模板对象（配 `rules` 每次 `run` 内建检索注入）/ 函数式（完全自定义），每次 `run` 动态解析，使 rules 按需检索结果真正进入 system prompt。
 - **memory**：记忆管理，分两层：
   - **会话上下文**：单次会话的 message 窗口管理（含窗口裁剪）。已落地 `ConversationMemory`（历史管理 + `maxMessages` 窗口裁剪，不存 system——system 每次 run 动态组装）；`AgentLoop.memory` 选项注入后跨 run 累积历史实现多轮对话（异常不回写）。压缩（LLM 摘要）留后续。
   - **长期记忆**：跨会话的持久化 + 向量检索（可选，后端可插拔，M3）。
@@ -219,7 +219,7 @@ rules / skills / mcp tools / plugins 共享「**meta + 按需加载**」的机�
 - BM25 检索召回 top-k，**输出每个能力的得分**（可观测，排查漏召回）。
 - 加载策略 `always`（强制，绕过检索）/ `on-demand`（参与 BM25 检索）。
 - **C1 空集合兜底**：无候选时告知「无可用能力」或退化为「无规则注入」。
-- rules 第一个接入（content 纯文本最简）。
+- rules 第一个接入（content 纯文本最简），skills 第二个接入（指令注入 + 捆绑工具注册）。
 
 **后续演进（M3+，明确延后）**：
 
