@@ -1,13 +1,6 @@
 import type { ChatCompletionResult, ChatMessage, LLMProvider } from '../llm/types';
+import type { HookPipeline } from '../hooks/pipeline';
 import type { ToolRegistry } from '../tools/registry';
-
-/** 生命周期钩子。首版为可选节点，M2 实现配置驱动的 hooks 管线。 */
-export interface AgentHooks {
-  beforeLLM?(messages: ChatMessage[]): Promise<void>;
-  afterLLM?(result: ChatCompletionResult): Promise<void>;
-  beforeToolCall?(name: string, args: string): Promise<void>;
-  afterToolCall?(name: string, result: string): Promise<void>;
-}
 
 export interface AgentLoopOptions {
   provider: LLMProvider;
@@ -15,7 +8,8 @@ export interface AgentLoopOptions {
   systemPrompt: string;
   /** 最大 LLM 调用步数，默认 10，用于防死循环。 */
   maxSteps?: number;
-  hooks?: AgentHooks;
+  /** 生命周期钩子管线，可省略。 */
+  hooks?: HookPipeline;
 }
 
 export interface AgentLoopResult {
@@ -33,14 +27,14 @@ export class AgentLoop {
   private readonly registry: ToolRegistry;
   private readonly systemPrompt: string;
   private readonly maxSteps: number;
-  private readonly hooks: AgentHooks;
+  private readonly hooks: HookPipeline | undefined;
 
   constructor(options: AgentLoopOptions) {
     this.provider = options.provider;
     this.registry = options.registry;
     this.systemPrompt = options.systemPrompt;
     this.maxSteps = options.maxSteps ?? 10;
-    this.hooks = options.hooks ?? {};
+    this.hooks = options.hooks;
   }
 
   async run(userInput: string): Promise<AgentLoopResult> {
@@ -52,51 +46,65 @@ export class AgentLoop {
     let finalMessage: ChatMessage = { role: 'assistant', content: '' };
     let steps = 0;
 
-    while (steps < this.maxSteps) {
-      steps += 1;
+    try {
+      while (steps < this.maxSteps) {
+        steps += 1;
 
-      await this.hooks.beforeLLM?.(messages);
+        // beforeLLM 改写的是「本次调用入参」，内部 messages 保持真实历史。
+        const llmMessages = await this.hooks?.beforeLLM(messages);
 
-      const tools = this.registry.toToolDefinitions();
-      const result = await this.provider.chatCompletion({
-        messages,
-        ...(tools.length > 0 ? { tools } : {}),
-      });
+        const tools = this.registry.toToolDefinitions();
+        let result: ChatCompletionResult = await this.provider.chatCompletion({
+          messages: llmMessages ?? messages,
+          ...(tools.length > 0 ? { tools } : {}),
+        });
 
-      await this.hooks.afterLLM?.(result);
+        result = (await this.hooks?.afterLLM(result)) ?? result;
 
-      const assistantMessage = result.message;
-      messages.push(assistantMessage);
-      finalMessage = assistantMessage;
+        const assistantMessage = result.message;
+        messages.push(assistantMessage);
+        finalMessage = assistantMessage;
 
-      const toolCalls = assistantMessage.toolCalls ?? [];
-      if (toolCalls.length === 0) {
-        break;
-      }
-
-      for (const toolCall of toolCalls) {
-        const name = toolCall.function.name;
-        const args = toolCall.function.arguments;
-
-        await this.hooks.beforeToolCall?.(name, args);
-
-        let toolResult: string;
-        try {
-          const output = await this.registry.execute(name, args);
-          toolResult = JSON.stringify(output);
-        } catch (error) {
-          toolResult = `Error: ${error instanceof Error ? error.message : String(error)}`;
+        const toolCalls = assistantMessage.toolCalls ?? [];
+        if (toolCalls.length === 0) {
+          await this.hooks?.onStepEnd(steps);
+          break;
         }
 
-        await this.hooks.afterToolCall?.(name, toolResult);
+        for (const toolCall of toolCalls) {
+          const name = toolCall.function.name;
+          const args =
+            (await this.hooks?.beforeToolCall(name, toolCall.function.arguments)) ??
+            toolCall.function.arguments;
 
-        messages.push({
-          role: 'tool',
-          content: toolResult,
-          toolCallId: toolCall.id,
-          name,
-        });
+          let toolResult: string;
+          try {
+            const output = await this.registry.execute(name, args);
+            toolResult = JSON.stringify(output);
+          } catch (error) {
+            toolResult = `Error: ${error instanceof Error ? error.message : String(error)}`;
+          }
+
+          toolResult = (await this.hooks?.afterToolCall(name, toolResult)) ?? toolResult;
+
+          messages.push({
+            role: 'tool',
+            content: toolResult,
+            toolCallId: toolCall.id,
+            name,
+          });
+        }
+
+        await this.hooks?.onStepEnd(steps);
       }
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      try {
+        await this.hooks?.onError(err, 'agent-loop');
+      } catch {
+        // onError 钩子自身错误忽略，保留原错误。
+      }
+      throw err;
     }
 
     return { finalMessage, messages, steps };

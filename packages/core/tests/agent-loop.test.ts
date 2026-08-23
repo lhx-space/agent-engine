@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { AgentLoop } from '../src/agent/loop';
+import { HookPipeline } from '../src/hooks/pipeline';
 import type { ChatCompletionResult, ChatMessage, LLMProvider } from '../src/llm/types';
 import { ToolRegistry } from '../src/tools/registry';
 
@@ -129,19 +130,20 @@ describe('AgentLoop', () => {
       { message: { role: 'assistant', content: 'done' } },
     ]);
 
-    const hooks = {
-      beforeLLM: vi.fn(),
-      afterLLM: vi.fn(),
-      beforeToolCall: vi.fn(),
-      afterToolCall: vi.fn(),
-    };
+    const beforeLLM = vi.fn();
+    const afterLLM = vi.fn();
+    const beforeToolCall = vi.fn();
+    const afterToolCall = vi.fn();
+
+    const hooks = new HookPipeline();
+    hooks.register({ name: 'test', beforeLLM, afterLLM, beforeToolCall, afterToolCall });
 
     const loop = new AgentLoop({ provider, registry, systemPrompt: 's', hooks });
     await loop.run('x');
 
-    expect(hooks.beforeLLM).toHaveBeenCalledTimes(2);
-    expect(hooks.afterLLM).toHaveBeenCalledTimes(2);
-    expect(hooks.beforeToolCall).toHaveBeenCalledWith('get_weather', '{"city":"beijing"}');
-    expect(hooks.afterToolCall).toHaveBeenCalledWith('get_weather', expect.stringContaining('20'));
+    expect(beforeLLM).toHaveBeenCalledTimes(2);
+    expect(afterLLM).toHaveBeenCalledTimes(2);
+    expect(beforeToolCall).toHaveBeenCalledWith('get_weather', '{"city":"beijing"}');
+    expect(afterToolCall).toHaveBeenCalledWith('get_weather', expect.stringContaining('20'));
   });
 });
