@@ -17,6 +17,9 @@ importers:
       '@rslint/core':
         specifier: ^0.8.1
         version: 0.8.1(jiti@2.7.0)
+      '@types/node':
+        specifier: ^26.2.0
+        version: 26.2.0
       cspell:
         specifier: ^10.1.0
         version: 10.1.0
