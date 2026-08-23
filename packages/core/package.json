@@ -30,6 +30,7 @@
     "@agent-engine/config": "workspace:*",
     "@anthropic-ai/sdk": "^0.120.0",
     "@modelcontextprotocol/sdk": "^1.30.0",
+    "gray-matter": "^4.0.3",
     "minisearch": "^7.2.0",
     "openai": "^7.5.0",
     "pino": "^10.3.1",

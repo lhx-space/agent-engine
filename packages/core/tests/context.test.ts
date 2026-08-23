@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Rule } from '@agent-engine/config';
 import { buildSystemPrompt, renderTemplate } from '../src/context/build-system-prompt';
-import { RuleLoader } from '../src/rules/loader';
 
 describe('renderTemplate', () => {
   it('替换变量', () => {
@@ -24,25 +22,13 @@ describe('renderTemplate', () => {
 });
 
 describe('buildSystemPrompt', () => {
-  const rules: Rule[] = [
-    { id: 'always-concise', kind: 'always', description: '简洁', content: '回答要简洁', tags: [] },
-    {
-      id: 'vue-ts',
-      kind: 'on-demand',
-      description: 'Vue3 TypeScript 编码规范',
-      content: '使用 <script setup> 语法',
-      tags: ['vue'],
-    },
-  ];
-
   it('模板渲染 + {{rules}} 占位符注入', () => {
-    const loader = new RuleLoader(rules);
-    const prompt = buildSystemPrompt('帮我写 Vue 组件', {
+    const prompt = buildSystemPrompt({
       systemPrompt: {
         template: '你是 {{role}}。\n必须遵守：\n{{rules}}',
         variables: { role: '前端专家' },
       },
-      ruleLoader: loader,
+      rulesText: '回答要简洁\n\n使用 <script setup> 语法',
     });
 
     expect(prompt).toContain('你是 前端专家');
@@ -52,35 +38,37 @@ describe('buildSystemPrompt', () => {
   });
 
   it('模板无 {{rules}} 占位符时追加规则文本', () => {
-    const loader = new RuleLoader(rules);
-    const prompt = buildSystemPrompt('帮我写 Vue 组件', {
+    const prompt = buildSystemPrompt({
       systemPrompt: { template: '你是助手' },
-      ruleLoader: loader,
+      rulesText: '回答要简洁',
     });
 
     expect(prompt).toContain('你是助手');
     expect(prompt).toContain('回答要简洁');
-    expect(prompt).toContain('使用 <script setup> 语法');
   });
 
-  it('未提供 ruleLoader 时不注入规则', () => {
-    const prompt = buildSystemPrompt('hi', {
-      systemPrompt: { template: '你是助手' },
-    });
+  it('未提供 rulesText 时不注入规则', () => {
+    const prompt = buildSystemPrompt({ systemPrompt: { template: '你是助手' } });
 
     expect(prompt).toBe('你是助手');
   });
 
   it('无匹配规则时 {{rules}} 替换为空串', () => {
-    const loader = new RuleLoader([
-      { id: 'vue-ts', kind: 'on-demand', description: 'Vue 规范', content: 'x', tags: [] },
-    ]);
-    const prompt = buildSystemPrompt('今天天气如何', {
+    const prompt = buildSystemPrompt({
       systemPrompt: { template: '规则：\n{{rules}}' },
-      ruleLoader: loader,
+      rulesText: '',
     });
 
-    expect(prompt).not.toContain('x');
     expect(prompt).not.toContain('{{rules}}');
+  });
+
+  it('{{skills}} 占位符注入 + 兜底追加', () => {
+    const prompt = buildSystemPrompt({
+      systemPrompt: { template: '技能：\n{{skills}}' },
+      skillsText: '## weather-qa\n查询天气后给穿衣建议。',
+    });
+
+    expect(prompt).toContain('穿衣建议');
+    expect(prompt).not.toContain('{{skills}}');
   });
 });

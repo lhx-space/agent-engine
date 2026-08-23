@@ -108,6 +108,9 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.30.0
         version: 1.30.0(zod@4.4.3)
+      gray-matter:
+        specifier: ^4.0.3
+        version: 4.0.3
       minisearch:
         specifier: ^7.2.0
         version: 7.2.0

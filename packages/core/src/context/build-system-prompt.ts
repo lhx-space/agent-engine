@@ -1,5 +1,4 @@
-import type { SystemPrompt } from '@agent-engine/config';
-import type { RuleLoader } from '../rules/loader';
+import type { BuildSystemPromptOptions } from './types';
 
 /**
  * 渲染模板变量：`{{name}}` → 变量值。
@@ -17,33 +16,31 @@ export function renderTemplate(template: string, variables: Record<string, unkno
   });
 }
 
-export interface BuildSystemPromptOptions {
-  /** system-prompt 模板与用户变量。 */
-  systemPrompt: SystemPrompt;
-  /** 规则按需加载器（可选，未提供则不注入规则）。 */
-  ruleLoader?: RuleLoader;
-}
-
 /**
- * 组装本次调用的 system prompt：
- * 1. 模板渲染（用户变量 + 内置 `rules` 变量）；
- * 2. 模板未声明 `{{rules}}` 占位符时，规则文本追加到末尾兜底。
+ * 组装 system prompt（纯组装，不检索）：
+ * 1. 模板渲染（用户变量 + 内置 `rules` / `skills` 变量）；
+ * 2. 模板未声明对应占位符时，rules / skills 文本追加到末尾兜底。
  *
- * `rules` 为内置变量：值为 `ruleLoader.loadForQuery(query)` 的结果，
- * 无候选或未提供 loader 时为空串。
+ * `rules` / `skills` 为内置变量：值为 `options.rulesText` / `options.skillsText`。
  */
-export function buildSystemPrompt(query: string, options: BuildSystemPromptOptions): string {
-  const rulesText = options.ruleLoader?.loadForQuery(query) ?? '';
+export function buildSystemPrompt(options: BuildSystemPromptOptions): string {
+  const rulesText = options.rulesText ?? '';
+  const skillsText = options.skillsText ?? '';
 
   const variables: Record<string, unknown> = {
     ...(options.systemPrompt.variables ?? {}),
     rules: rulesText,
+    skills: skillsText,
   };
   const rendered = renderTemplate(options.systemPrompt.template, variables);
 
-  const hasRulesPlaceholder = /\{\{\s*rules\s*\}\}/.test(options.systemPrompt.template);
-  if (rulesText && !hasRulesPlaceholder) {
-    return `${rendered}\n\n${rulesText}`;
+  const template = options.systemPrompt.template;
+  const fallback: string[] = [];
+  if (rulesText && !/\{\{\s*rules\s*\}\}/.test(template)) {
+    fallback.push(rulesText);
   }
-  return rendered;
+  if (skillsText && !/\{\{\s*skills\s*\}\}/.test(template)) {
+    fallback.push(skillsText);
+  }
+  return fallback.length > 0 ? `${rendered}\n\n${fallback.join('\n\n')}` : rendered;
 }

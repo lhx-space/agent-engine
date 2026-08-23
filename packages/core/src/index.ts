@@ -1,20 +1,18 @@
-export * from './llm/types';
+// 对外核心类型出口（集中 re-export）。
+export * from './types';
+
+// 值导出。
 export { createProvider } from './llm/provider';
 export type { ProviderFactory } from './llm/provider';
 export { createOpenAIProvider } from './llm/openai';
 export { createAnthropicProvider } from './llm/anthropic';
-export type { Tool } from './tools/types';
 export { ToolRegistry } from './tools/registry';
-export type { Hook } from './hooks/types';
 export { HookPipeline } from './hooks/pipeline';
-export type { GuardrailContext, GuardrailResult, GuardrailRule } from './rules/types';
 export { RuleRegistry } from './rules/registry';
-export { RuleLoader } from './rules/loader';
-export type { CapabilityHit, CapabilityMeta, CapabilityType } from './retrieval/types';
+export { loadRulesText } from './rules/load';
 export { CapabilityRegistry } from './retrieval/registry';
-export type { BuildSystemPromptOptions } from './context';
+export { CapabilityLoader } from './retrieval/loader';
 export { renderTemplate, buildSystemPrompt } from './context';
-export type { ConversationMemoryOptions } from './memory';
 export { ConversationMemory } from './memory';
-export type { AgentLoopOptions, AgentLoopResult, SystemPromptInput } from './agent/loop';
+export { loadSkillFromPath } from './skills';
 export { AgentLoop } from './agent/loop';

@@ -1,48 +1,14 @@
-import type { Rule, SystemPrompt } from '@agent-engine/config';
+import type { Rule } from '@agent-engine/config';
 import { buildSystemPrompt } from '../context/build-system-prompt';
 import type { HookPipeline } from '../hooks/pipeline';
 import type { ChatCompletionResult, ChatMessage, LLMProvider } from '../llm/types';
 import type { ConversationMemory } from '../memory/conversation-memory';
-import { RuleLoader } from '../rules/loader';
+import { loadRulesText } from '../rules/load';
 import type { RuleRegistry } from '../rules/registry';
+import { CapabilityLoader } from '../retrieval/loader';
+import type { Skill } from '../skills/types';
 import type { ToolRegistry } from '../tools/registry';
-
-/**
- * system prompt 三种形态：
- * - string：静态字符串；
- * - SystemPrompt：模板对象（配合 `rules` 每次 run 自动检索注入）；
- * - 函数：按 userInput 动态生成（完全自定义组装）。
- */
-export type SystemPromptInput =
-  string | SystemPrompt | ((userInput: string) => string | Promise<string>);
-
-export interface AgentLoopOptions {
-  provider: LLMProvider;
-  registry: ToolRegistry;
-  systemPrompt: SystemPromptInput;
-  /** 最大 LLM 调用步数，默认 10，用于防死循环。 */
-  maxSteps?: number;
-  /** 生命周期钩子管线，可省略。 */
-  hooks?: HookPipeline;
-  /**
-   * 上下文规则（可配置文本规则）。`systemPrompt` 为模板对象时，
-   * 每次 run 自动按 userInput 检索并注入；否则被忽略。
-   */
-  rules?: Rule[];
-  /** guardrail 规则注册表（安全拦截），可省略。 */
-  guardrails?: RuleRegistry;
-  /** 会话记忆（可选），注入后跨 run 累积历史，实现多轮对话。 */
-  memory?: ConversationMemory;
-}
-
-export interface AgentLoopResult {
-  /** 最终 assistant 消息。 */
-  finalMessage: ChatMessage;
-  /** 完整消息序列（system + user + assistant/tool 交替）。 */
-  messages: ChatMessage[];
-  /** 实际执行的 LLM 调用步数。 */
-  steps: number;
-}
+import type { AgentLoopOptions, AgentLoopResult, SystemPromptInput } from './types';
 
 /** 单 Agent ReAct 执行循环。 */
 export class AgentLoop {
@@ -52,7 +18,9 @@ export class AgentLoop {
   private readonly maxSteps: number;
   private readonly hooks: HookPipeline | undefined;
   private readonly guardrails: RuleRegistry | undefined;
-  private readonly ruleLoader: RuleLoader | undefined;
+  private readonly rules: Rule[];
+  private readonly ruleLoader: CapabilityLoader<Rule> | undefined;
+  private readonly skillLoader: CapabilityLoader<Skill> | undefined;
   private readonly memory: ConversationMemory | undefined;
 
   constructor(options: AgentLoopOptions) {
@@ -62,13 +30,30 @@ export class AgentLoop {
     this.maxSteps = options.maxSteps ?? 10;
     this.hooks = options.hooks;
     this.guardrails = options.guardrails;
+    this.rules = options.rules ?? [];
     this.ruleLoader =
-      options.rules && options.rules.length > 0 ? new RuleLoader(options.rules) : undefined;
+      this.rules.length > 0 ? new CapabilityLoader<Rule>('rule', this.rules) : undefined;
+    this.skillLoader =
+      options.skills && options.skills.length > 0
+        ? new CapabilityLoader<Skill>('skill', options.skills)
+        : undefined;
     this.memory = options.memory;
   }
 
   async run(userInput: string): Promise<AgentLoopResult> {
-    const systemPrompt = await this.resolveSystemPrompt(userInput);
+    // 检索 rules（always + on-demand）与 skills（on-demand）。
+    const rulesText = this.ruleLoader ? loadRulesText(this.rules, this.ruleLoader, userInput) : '';
+    const skillHits = this.skillLoader?.loadForQuery(userInput) ?? [];
+    for (const hit of skillHits) {
+      for (const tool of hit.record.tools ?? []) {
+        this.registry.register(tool);
+      }
+    }
+    const skillsText = skillHits
+      .map((hit) => `## ${hit.record.id}\n${hit.record.instruction}`)
+      .join('\n\n');
+
+    const systemPrompt = await this.resolveSystemPrompt(userInput, rulesText, skillsText);
     const history = this.memory?.getMessages() ?? [];
     const messages: ChatMessage[] = [
       { role: 'system', content: systemPrompt },
@@ -178,17 +163,18 @@ export class AgentLoop {
   }
 
   /** 解析本次 system prompt：函数式动态生成 / 静态字符串原样返回 / 模板对象自动检索组装。 */
-  private async resolveSystemPrompt(userInput: string): Promise<string> {
+  private async resolveSystemPrompt(
+    userInput: string,
+    rulesText: string,
+    skillsText: string,
+  ): Promise<string> {
     if (typeof this.systemPrompt === 'function') {
       return this.systemPrompt(userInput);
     }
     if (typeof this.systemPrompt === 'string') {
       return this.systemPrompt;
     }
-    // SystemPrompt 模板对象：渲染变量 + 按需检索注入 rules。
-    return buildSystemPrompt(userInput, {
-      systemPrompt: this.systemPrompt,
-      ruleLoader: this.ruleLoader,
-    });
+    // SystemPrompt 模板对象：渲染变量 + 注入 rules / skills 文本。
+    return buildSystemPrompt({ systemPrompt: this.systemPrompt, rulesText, skillsText });
   }
 }
