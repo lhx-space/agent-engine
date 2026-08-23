@@ -42,13 +42,13 @@
 | 语言        | TypeScript 5.x（strict）                      | 全链路类型安全                                                                    |
 | 运行时      | Node.js >= 20 LTS                             | ESM 优先（`"type": "module"`）                                                    |
 | 包管理      | pnpm >= 9 + workspace                         | monorepo                                                                          |
-| 构建        | tsdown                                        | VoidZero 出品、基于 rolldown，tsup 的现代替代，ESM/CJS + d.ts                     |
+| 构建        | tsdown + Turborepo                            | tsdown 出 ESM/CJS + d.ts；Turborepo 编排 + 本地缓存（turbo.json）                 |
 | 代码检查    | Rslint（Go 引擎，兼容 ESLint/TS-ESLint 规则） | 快，内置 TypeScript-ESLint 规则                                                   |
 | 格式化      | Prettier                                      | 统一代码风格                                                                      |
 | 拼写检查    | cspell                                        | 术语一致性                                                                        |
 | 类型检查    | tsc --noEmit                                  | 全仓类型检查                                                                      |
 | Git hooks   | husky + lint-staged + commitlint              | 提交前自动检查 + 提交信息校验                                                     |
-| 测试        | Vitest                                        | 单测 + 集成测试                                                                   |
+| 测试        | Rstest                                        | web-infra-dev 生态，API 兼容 Vitest（`vi`→`rs`）                                  |
 | Schema 校验 | Zod                                           | 配置统一校验，衍生 TS 类型                                                        |
 | 配置加载    | `yaml` + `json5` + `jiti`                     | YAML/JSON(带注释)/TS 三种格式                                                     |
 | LLM SDK     | `openai` + `@anthropic-ai/sdk`                | 统一 `Provider` 接口，**默认 DeepSeek**（OpenAI 兼容），Anthropic/ollama 等可插拔 |
@@ -98,12 +98,13 @@ agent-engine/
 ├── package.json               # 根 scripts + 共享 devDependencies
 ├── pnpm-workspace.yaml        # workspace：packages/* / apps/* / docs
 ├── tsconfig.base.json         # 共享 TS 配置（strict）
+├── turbo.json                 # Turborepo 构建缓存编排
 ├── rslint.config.ts           # 代码检查（Rslint，ESLint flat config 兼容）
 ├── .prettierrc                # 格式化（Prettier）
 ├── cspell.json                # 拼写检查
 ├── commitlint.config.mjs      # 提交信息校验（Conventional Commits）
 ├── lint-staged.config.mjs     # 暂存文件提交前检查
-├── vitest.config.ts           # 测试配置
+├── rstest.config.ts           # 测试配置（Rstest）
 ├── .npmrc / .nvmrc / .editorconfig / .gitignore / .gitattributes
 ├── .husky/                    # git hooks（pre-commit / commit-msg）
 ├── .vscode/                   # IDE 推荐配置与扩展
@@ -172,7 +173,7 @@ docs/（Rspress）为独立站点，无运行时依赖
 
 ### 5.2 扩展层（能力的「打包与分发」单元）
 
-- **plugins**：最大的扩展单元，可打包「多个 tools + skills + hooks + rules + memory 后端 + system-prompt 片段」整体注册/卸载。插件通过 `PluginContext` 注入能力，是实现「开箱即用领域能力」的载体。
+- **plugins**：最大的扩展单元，可打包「多个 tools + skills + hooks + rules + memory 后端 + system-prompt 片段」整体注册/卸载。插件通过 `PluginContext` 注入能力，是实现「开箱即用领域能力」的载体。已落地 `Plugin` 类型 + `PluginContext`（registerTool / registerSkill / registerHook / registerRule / provideSystemPrompt）+ `PluginManager`（install → `PluginAssembly`）+ `assembleAgentLoop`（async 装配工厂，安装 plugins 并合并能力）。
 
 ### 5.3 执行控制层（Agent「如何做」的约束）
 
@@ -504,7 +505,7 @@ interface PluginContext {
 
 ```bash
 pnpm install            # 安装依赖
-pnpm build              # tsdown 构建所有 packages
+pnpm build              # Turborepo 编排 + 缓存构建所有 packages
 pnpm dev                # watch 模式开发（packages）
 pnpm lint               # Rslint 代码检查
 pnpm lint:fix           # Rslint 自动修复
@@ -512,8 +513,8 @@ pnpm format             # Prettier 格式化
 pnpm format:check       # Prettier 格式校验
 pnpm typecheck          # 全仓类型检查（tsc --noEmit）
 pnpm spell              # cspell 拼写检查
-pnpm test               # 运行测试（Vitest）
-pnpm test --watch       # 监听模式
+pnpm test               # 运行测试（Rstest）
+pnpm test:watch         # 监听模式
 pnpm web:dev            # apps/web 开发（React 19 + Rsbuild）
 pnpm docs:dev           # Rspress 文档站开发
 

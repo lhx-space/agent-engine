@@ -4,7 +4,7 @@ schema: spec-driven
 # This is shown to AI when creating artifacts.
 context: |
   Tech stack: TypeScript (strict, 5.x), Node.js >= 20, pnpm workspace monorepo.
-  Build: tsdown; Lint: Rslint; Format: Prettier; Spell: cspell; Test: Vitest.
+  Build: tsdown + Turborepo; Lint: Rslint; Format: Prettier; Spell: cspell; Test: Rstest.
   Docs: Rspress (docs/); Web: React 19 + Rsbuild (apps/web).
 
   Architecture: self-built agent kernel execution engine (harness).

@@ -31,12 +31,12 @@
 
 ```bash
 pnpm install
-pnpm build          # tsdown 构建所有 packages
+pnpm build          # Turborepo 编排 + 缓存构建所有 packages
 pnpm lint           # Rslint 代码检查
 pnpm format         # Prettier 格式化
 pnpm typecheck      # tsc --noEmit 全仓类型检查
 pnpm spell          # cspell 拼写检查
-pnpm test           # Vitest
+pnpm test           # Rstest
 pnpm web:dev        # apps/web 开发
 pnpm docs:dev       # Rspress 文档站
 ```
