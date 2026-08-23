@@ -1,0 +1,35 @@
+{
+  // markdownlint-cli2 配置：markdown 质量检查，与 Prettier（格式化）互补。
+  // Prettier 负责排版，markdownlint 负责规则（标题层级、列表样式、空行、行尾空格等）。
+  "$schema": "https://raw.githubusercontent.com/DavidAnson/markdownlint-cli2/main/schema/markdownlint-cli2-config-schema.json",
+  "config": {
+    "default": true,
+    // 标题样式：ATX（# 号），与 Prettier 一致
+    "MD003": { "style": "atx" },
+    // 无序列表：短横线 -，与 Prettier 一致
+    "MD004": { "style": "dash" },
+    // 列表缩进 2 空格
+    "MD007": { "indent": 2 },
+    // 行长度由 Prettier 处理，避免冲突
+    "MD013": false,
+    // 允许重复标题（跨章节可能有相同标题）
+    "MD024": false,
+    // 允许行内 HTML（README 徽章、表格对齐等）
+    "MD033": false,
+    // 不强求文件首行是 H1
+    "MD041": false,
+    // 代码块风格：围栏 ```，与 Prettier 一致
+    "MD046": { "style": "fenced" },
+    // 行内代码反引号
+    "MD048": { "style": "backtick" },
+  },
+  "globs": ["**/*.md"],
+  "ignores": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/coverage/**",
+    "**/.rspress/**",
+    "**/doc_build/**",
+    ".codebuddy/**",
+  ],
+}

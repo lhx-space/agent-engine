@@ -1,10 +1,46 @@
 {
   "editor.formatOnSave": true,
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.defaultFormatter": "rstack.rstack",
   "editor.codeActionsOnSave": {
     "source.fixAll": "explicit"
   },
+  "[typescript]": {
+    "editor.defaultFormatter": "rstack.rstack"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "rstack.rstack"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "rstack.rstack"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "rstack.rstack"
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.markdownlint": "explicit"
+    }
+  },
   "typescript.tsdk": "node_modules/typescript/lib",
   "files.eol": "\n",
-  "cSpell.enableFiletypes": ["markdown", "yaml"]
+  "cSpell.enableFiletypes": ["markdown", "yaml"],
+  "mdk.defaultEditor": "Text Editor",
+  "workbench.editorAssociations": {
+    "*.app": "default",
+    "*.global": "default",
+    "*.action": "default",
+    "*.extension": "default",
+    "*.page": "default",
+    "*.service": "default",
+    "*.cim": "default",
+    "*.rule": "default",
+    "*.properties": "default",
+    "*.fragment": "default"
+  },
+  "mdk.showBase": true
 }

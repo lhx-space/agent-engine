@@ -1,7 +1,9 @@
 {
   "recommendations": [
+    "rstack.rstack",
     "esbenp.prettier-vscode",
     "streetsidesoftware.code-spell-checker",
-    "editorconfig.editorconfig"
+    "editorconfig.editorconfig",
+    "DavidAnson.vscode-markdownlint"
   ]
 }
