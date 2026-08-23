@@ -1,0 +1,23 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+context: |
+  Tech stack: TypeScript (strict, 5.x), Node.js >= 20, pnpm workspace monorepo.
+  Build: tsdown; Lint: Rslint; Format: Prettier; Spell: cspell; Test: Vitest.
+  Docs: Rspress (docs/); Web: React 19 + Rsbuild (apps/web).
+
+  Architecture: self-built agent kernel execution engine (harness).
+  Core idea: "Configuration as Agent" —— 配置即 Agent，垂直领域差异收敛到配置层，内核零改动。
+  Configurable axes: plugins / mcp / skills / tools / system-prompt / memory / rules / hooks.
+
+  LLM: default DeepSeek (OpenAI-compatible API); Anthropic / ollama 可插拔，不引入 LangChain/LangGraph。
+  Memory: session context + long-term（生产 pgvector，开发 in-memory）。
+  Dependency direction: config ← core ← cli / server ←(HTTP API) apps/web。
+
+  Conventions:
+  - Conventional Commits（feat/fix/docs/refactor/test/chore）。
+  - 配置 Schema 一律用 Zod 定义，z.infer 衍生类型（单一事实来源）。
+  - 优先复用成熟三方库/生态库，禁止重复造轮子。
+  - 能配置解决的不改内核；内核自研、框架不引入。
+  - 类型严格：strict、禁止 any、显式导出类型。

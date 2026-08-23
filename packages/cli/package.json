@@ -1,0 +1,36 @@
+{
+  "name": "@agent-engine/cli",
+  "version": "0.1.0",
+  "description": "Agent Engine 命令行入口",
+  "type": "module",
+  "sideEffects": false,
+  "bin": {
+    "agent-engine": "./dist/index.mjs"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch"
+  },
+  "dependencies": {
+    "@agent-engine/core": "workspace:*",
+    "commander": "^15.0.0"
+  }
+}

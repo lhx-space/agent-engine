@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+pnpm-lock.yaml
+**/.rspress
+**/doc_build
+**/.rslib
+CHANGELOG.md
+.codebuddy

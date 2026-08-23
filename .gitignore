@@ -1,0 +1,32 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build outputs
+dist/
+*.tsbuildinfo
+coverage/
+.turbo/
+
+# Rspress / Rsbuild
+**/.rspress/
+**/doc_build/
+**/.rslib/
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# env
+.env
+.env.local
+.env.*.local
+
+# misc
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.swp

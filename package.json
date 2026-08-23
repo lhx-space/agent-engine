@@ -1,0 +1,42 @@
+{
+  "name": "agent-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "通用、可配置化的 Agent 内核执行引擎（harness）—— 配置即 Agent",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "pnpm -r --filter './packages/**' run build",
+    "dev": "pnpm -r --parallel --filter './packages/**' run dev",
+    "web:dev": "pnpm --filter @agent-engine/web dev",
+    "web:build": "pnpm --filter @agent-engine/web build",
+    "docs:dev": "pnpm --filter @agent-engine/docs dev",
+    "docs:build": "pnpm --filter @agent-engine/docs build",
+    "lint": "rslint .",
+    "lint:fix": "rslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "pnpm -r exec tsc --noEmit",
+    "spell": "cspell \"**/*.{ts,tsx,mts,cts,js,mjs,cjs,json,yaml,yml,md}\"",
+    "spell:fix": "cspell --write \"**/*.{ts,tsx,mts,cts,js,mjs,cjs,json,yaml,yml,md}\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
+    "@rslint/core": "^0.8.1",
+    "cspell": "^10.1.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.3.0",
+    "prettier": "^3.9.6",
+    "tsdown": "^0.22.14",
+    "tsx": "^4.23.12",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11"
+  }
+}
