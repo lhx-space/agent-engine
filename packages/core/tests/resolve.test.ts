@@ -1,0 +1,108 @@
+import { describe, expect, it } from '@rstest/core';
+import { z } from 'zod';
+import { AgentConfigSchema, type AgentConfig } from '@agent-engine/config';
+import { mergeBundles } from '../src/capability/bundle';
+import type { CapabilityBundle } from '../src/capability/types';
+import type { ChatMessage, LLMProvider } from '../src/llm/types';
+import { resolveAgentConfig } from '../src/resolve/resolve';
+
+function makeProvider(capturedTools?: string[][]): LLMProvider {
+  return {
+    name: 'mock',
+    async chatCompletion(params) {
+      capturedTools?.push((params.tools ?? []).map((tool) => tool.function.name));
+      return { message: { role: 'assistant', content: 'ok' } };
+    },
+  };
+}
+
+function baseConfig(): AgentConfig {
+  return AgentConfigSchema.parse({
+    name: 'test-agent',
+    model: { provider: 'custom', baseURL: 'http://localhost', model: 'mock' },
+    systemPrompt: { template: '你是助手', variables: {} },
+  });
+}
+
+describe('mergeBundles', () => {
+  it('合并 tools/hooks/rules/skills + dispose 聚合', async () => {
+    const disposed: string[] = [];
+    const b1: CapabilityBundle = {
+      tools: [
+        { name: 't1', description: 'd', inputSchema: z.object({}), execute: async () => ({}) },
+      ],
+      skills: [],
+      hooks: [],
+      rules: [],
+      promptFragments: ['p1'],
+      dispose: async () => {
+        disposed.push('a');
+      },
+    };
+    const b2: CapabilityBundle = {
+      tools: [],
+      skills: [],
+      hooks: [],
+      rules: [],
+      promptFragments: [],
+      dispose: async () => {
+        disposed.push('b');
+      },
+    };
+
+    const merged = mergeBundles([b1, b2]);
+    expect(merged.tools.map((tool) => tool.name)).toEqual(['t1']);
+    expect(merged.promptFragments).toEqual(['p1']);
+
+    await merged.dispose();
+    expect(disposed.sort()).toEqual(['a', 'b']);
+  });
+});
+
+describe('resolveAgentConfig', () => {
+  it('完整配置装配：内置工具 + plugin 工具 + run 可用', async () => {
+    const config = baseConfig();
+    config.plugins = ['test-plugin'];
+
+    const capturedTools: string[][] = [];
+    const resolved = await resolveAgentConfig(config, {
+      providerFactory: () => makeProvider(capturedTools),
+      pluginFactories: {
+        'test-plugin': () => ({
+          name: 'test-plugin',
+          description: '测试插件',
+          version: '1.0.0',
+          install(ctx) {
+            ctx.registerTool({
+              name: 'plugin_tool',
+              description: '插件工具',
+              inputSchema: z.object({}),
+              execute: async () => 'from-plugin',
+            });
+          },
+        }),
+      },
+    });
+
+    const result = await resolved.agent.run('hi');
+    expect(result.finalMessage.content).toBe('ok');
+
+    // 内置 todo（恒注册）+ 插件工具都进入了 LLM 的工具列表。
+    const tools = capturedTools[0] ?? [];
+    expect(tools).toContain('builtin.todo');
+    expect(tools).toContain('plugin_tool');
+
+    // dispose 幂等（无 mcp 时为无副作用）。
+    await resolved.dispose();
+    await resolved.dispose();
+  });
+
+  it('plugin 名缺失报错', async () => {
+    const config = baseConfig();
+    config.plugins = ['missing-plugin'];
+
+    await expect(
+      resolveAgentConfig(config, { providerFactory: () => makeProvider() }),
+    ).rejects.toThrow(/missing-plugin/);
+  });
+});

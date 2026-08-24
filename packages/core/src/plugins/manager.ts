@@ -1,8 +1,9 @@
-import type { Plugin, PluginAssembly, PluginContext } from './types';
+import type { CapabilityBundle } from '../capability/types';
+import type { Plugin, PluginContext } from './types';
 
-/** 插件管理器：安装 plugins，把注入的能力收集进 PluginAssembly。 */
+/** 插件管理器：安装 plugins，把注入的能力收集进 CapabilityBundle。 */
 export class PluginManager {
-  private readonly assembly: PluginAssembly = {
+  private readonly assembly: CapabilityBundle = {
     tools: [],
     skills: [],
     hooks: [],
@@ -23,7 +24,7 @@ export class PluginManager {
   }
 
   /** 返回收集的能力集合（只读引用，装配层合并用）。 */
-  getAssembly(): PluginAssembly {
+  getAssembly(): CapabilityBundle {
     return this.assembly;
   }
 

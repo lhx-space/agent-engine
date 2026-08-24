@@ -127,7 +127,7 @@ describe('端到端 demo（可观测）', () => {
 
       // 4. 装配：plugin + 声明式 rules + skills + memory + security(内置工具)
       const memory = new ConversationMemory({ maxMessages: 10 });
-      const loop = await assembleAgentLoop({
+      const { agent: loop } = await assembleAgentLoop({
         provider,
         registry,
         systemPrompt: {

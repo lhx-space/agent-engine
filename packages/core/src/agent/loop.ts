@@ -2,7 +2,6 @@ import type { Rule } from '@agent-engine/config';
 import { buildSystemPrompt } from '../context/build-system-prompt';
 import type { HookPipeline } from '../hooks/pipeline';
 import type { ChatCompletionResult, ChatMessage, LLMProvider } from '../llm/types';
-import type { McpConnection } from '../mcp/types';
 import type { ConversationMemory } from '../memory/conversation-memory';
 import { loadRulesText } from '../rules/load';
 import type { RuleRegistry } from '../rules/registry';
@@ -24,7 +23,6 @@ export class AgentLoop {
   private readonly ruleLoader: CapabilityLoader<Rule> | undefined;
   private readonly skillLoader: CapabilityLoader<Skill> | undefined;
   private readonly memory: ConversationMemory | undefined;
-  private readonly mcpConnections: McpConnection[];
 
   constructor(options: AgentLoopOptions) {
     this.provider = options.provider;
@@ -41,12 +39,6 @@ export class AgentLoop {
         ? new CapabilityLoader<Skill>('skill', options.skills)
         : undefined;
     this.memory = options.memory;
-    this.mcpConnections = options.mcpConnections ?? [];
-  }
-
-  /** 关闭所有 MCP 连接（幂等）。 */
-  async dispose(): Promise<void> {
-    await Promise.all(this.mcpConnections.map((connection) => connection.close()));
   }
 
   async run(userInput: string): Promise<AgentLoopResult> {

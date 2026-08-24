@@ -27,12 +27,3 @@ export interface PluginContext {
   registerRule(rule: Rule): void;
   provideSystemPrompt(fragment: string): void;
 }
-
-/** 插件安装后收集的能力集合，供装配层合并。 */
-export interface PluginAssembly {
-  tools: Tool[];
-  skills: Skill[];
-  hooks: Hook[];
-  rules: Rule[];
-  promptFragments: string[];
-}

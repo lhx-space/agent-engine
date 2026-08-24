@@ -1,7 +1,6 @@
 import type { Rule, SystemPrompt } from '@agent-engine/config';
 import type { HookPipeline } from '../hooks/pipeline';
 import type { ChatMessage, LLMProvider } from '../llm/types';
-import type { McpConnection } from '../mcp/types';
 import type { ConversationMemory } from '../memory/conversation-memory';
 import type { RuleRegistry } from '../rules/registry';
 import type { Skill } from '../skills/types';
@@ -35,8 +34,6 @@ export interface AgentLoopOptions {
   memory?: ConversationMemory;
   /** 可复用能力包（可选），按 query 检索命中后注入指令 + 注册捆绑工具。 */
   skills?: Skill[];
-  /** MCP 连接（可选），`AgentLoop.dispose()` 时统一关闭。 */
-  mcpConnections?: McpConnection[];
 }
 
 export interface AgentLoopResult {

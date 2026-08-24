@@ -1,6 +1,7 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import type { McpServer } from '@agent-engine/config';
+import type { CapabilityBundle } from '../capability/types';
 import { toTool } from './normalize';
 import type { McpConnection } from './types';
 
@@ -54,9 +55,10 @@ export async function connectMcpServer(server: McpServer): Promise<McpConnection
   };
 }
 
-/** `connectMcpServers` 的返回：成功连接 + 失败项（错误隔离，单个失败不阻断整体）。 */
+/** `connectMcpServers` 的返回：统一能力束 + 失败项（错误隔离，单个失败不阻断整体）。 */
 export interface ConnectMcpServersResult {
-  connections: McpConnection[];
+  /** 归一化工具 + `dispose` 关闭所有已连接 server。 */
+  bundle: CapabilityBundle;
   errors: { name: string; error: Error }[];
 }
 
@@ -80,5 +82,16 @@ export async function connectMcpServers(servers: McpServer[]): Promise<ConnectMc
     }
   });
 
-  return { connections, errors };
+  const bundle: CapabilityBundle = {
+    tools: connections.flatMap((connection) => connection.tools),
+    skills: [],
+    hooks: [],
+    rules: [],
+    promptFragments: [],
+    dispose: async () => {
+      await Promise.all(connections.map((connection) => connection.close()));
+    },
+  };
+
+  return { bundle, errors };
 }

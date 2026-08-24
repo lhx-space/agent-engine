@@ -51,10 +51,15 @@ export type { CapabilityHit, CapabilityMeta, CapabilityType } from './retrieval/
 export type { CapabilityRecord, CapabilityRecordHit } from './retrieval/loader';
 // skills
 export type { Skill } from './skills/types';
+// capability
+export type { CapabilityBundle } from './capability/types';
+export type { MergedBundles } from './capability/bundle';
 // plugins
-export type { Plugin, PluginAssembly, PluginContext } from './plugins/types';
+export type { Plugin, PluginContext } from './plugins/types';
 // mcp
 export type { McpConnection, McpToolMeta, ConnectMcpServersResult } from './mcp';
+// resolve
+export type { ResolvedAgent, ResolveDeps, PluginFactory } from './resolve/types';
 // memory
 export type { ConversationMemoryOptions } from './memory/types';
 // context

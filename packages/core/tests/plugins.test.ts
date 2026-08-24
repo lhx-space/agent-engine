@@ -80,7 +80,7 @@ describe('assembleAgentLoop', () => {
       },
     };
 
-    const loop = await assembleAgentLoop({
+    const { agent: loop } = await assembleAgentLoop({
       provider,
       registry,
       systemPrompt: '基础提示词',

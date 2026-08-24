@@ -1,11 +1,13 @@
 import type { McpServer, Rule, SecurityConfig, ToolRef } from '@agent-engine/config';
+import { mergeBundles } from '../capability/bundle';
+import type { CapabilityBundle } from '../capability/types';
 import type { HookPipeline } from '../hooks/pipeline';
 import type { LLMProvider } from '../llm/types';
 import { connectMcpServers } from '../mcp/client';
-import type { McpConnection } from '../mcp/types';
 import type { ConversationMemory } from '../memory/conversation-memory';
 import { PluginManager } from '../plugins/manager';
 import type { Plugin } from '../plugins/types';
+import type { ResolvedAgent } from '../resolve/types';
 import type { RuleRegistry } from '../rules/registry';
 import type { SandboxBackend } from '../sandbox/types';
 import type { Skill } from '../skills/types';
@@ -45,55 +47,53 @@ function injectPromptText(systemPrompt: SystemPromptInput, promptText: string): 
 }
 
 /**
- * 装配 AgentLoop（「装配层」雏形）：
- * 安装 plugins → 装配内置工具（传 security 时）→ 合并能力（tools 注册 / skills·rules 合并 / hooks 注册 / prompt 片段注入）→ 构造 AgentLoop。
+ * 装配 AgentLoop（「装配层」）：
+ * 安装 plugins → 装配内置工具（传 security 时）→ 连接 mcp → `mergeBundles` 合并 →
+ * 注册 tools / hooks、合并 skills·rules、注入 prompt 片段 → 构造 AgentLoop + 聚合 dispose。
  */
-export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Promise<AgentLoop> {
+export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Promise<ResolvedAgent> {
+  // 1. plugin 能力束
   const manager = new PluginManager();
   await manager.installAll(options.plugins ?? []);
-  const assembly = manager.getAssembly();
+  const bundles: CapabilityBundle[] = [manager.getAssembly()];
 
-  const promptFragments = [...assembly.promptFragments];
-
+  // 2. 内置工具直接写 registry（无 dispose），并收集 todo 规划引导片段。
+  const derivedFragments: string[] = [];
   if (options.security) {
     const registered = registerBuiltinTools(options.registry, options.security, {
       tools: options.tools,
       sandbox: options.sandbox,
     });
-    // 注册了 todo（规划原语）时，注入「复杂任务先列计划」引导（AGENTS.md 6.2）。
     if (registered.includes('builtin.todo')) {
-      promptFragments.push(TODO_PLANNING_GUIDANCE);
+      derivedFragments.push(TODO_PLANNING_GUIDANCE);
     }
   }
 
-  for (const tool of assembly.tools) {
-    options.registry.register(tool);
-  }
-  for (const hook of assembly.hooks) {
-    options.hooks?.register(hook);
-  }
-
-  // 连接 MCP servers，归一化工具注册进 registry；单个失败不阻断整体（错误隔离，warn 报告）。
-  const mcpConnections: McpConnection[] = [];
+  // 3. MCP 能力束（tools + dispose 关闭连接）；单个失败不阻断整体（错误隔离，warn 报告）。
   if (options.mcp && options.mcp.length > 0) {
-    const { connections, errors } = await connectMcpServers(options.mcp);
-    mcpConnections.push(...connections);
-    for (const connection of connections) {
-      for (const tool of connection.tools) {
-        options.registry.register(tool);
-      }
-    }
+    const { bundle, errors } = await connectMcpServers(options.mcp);
+    bundles.push(bundle);
     for (const { name, error } of errors) {
       console.warn(`[assembleAgentLoop] MCP server "${name}" 连接失败，已跳过：${error.message}`);
     }
   }
 
-  const skills = [...(options.skills ?? []), ...assembly.skills];
-  const rules = [...(options.rules ?? []), ...assembly.rules];
-  const promptText = promptFragments.join('\n\n');
+  // 4. 单一汇聚点：把 bundles 合并成扁平能力列表 + 聚合 dispose。
+  const merged = mergeBundles(bundles);
+
+  for (const tool of merged.tools) {
+    options.registry.register(tool);
+  }
+  for (const hook of merged.hooks) {
+    options.hooks?.register(hook);
+  }
+
+  const skills = [...(options.skills ?? []), ...merged.skills];
+  const rules = [...(options.rules ?? []), ...merged.rules];
+  const promptText = [...merged.promptFragments, ...derivedFragments].join('\n\n');
   const systemPrompt = injectPromptText(options.systemPrompt, promptText);
 
-  return new AgentLoop({
+  const agent = new AgentLoop({
     provider: options.provider,
     registry: options.registry,
     systemPrompt,
@@ -103,6 +103,14 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     guardrails: options.guardrails,
     memory: options.memory,
     maxSteps: options.maxSteps,
-    mcpConnections,
   });
+
+  let disposed = false;
+  const dispose = async (): Promise<void> => {
+    if (disposed) return;
+    disposed = true;
+    await merged.dispose();
+  };
+
+  return { agent, dispose };
 }
