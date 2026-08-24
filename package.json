@@ -26,6 +26,7 @@
     "spell:fix": "cspell --write \"**/*.{ts,tsx,mts,cts,js,mjs,cjs,json,yaml,yml,md}\"",
     "test": "rstest",
     "test:watch": "rstest --watch",
+    "openspec:check": "node scripts/check-openspec.mjs",
     "prepare": "husky"
   },
   "devDependencies": {
