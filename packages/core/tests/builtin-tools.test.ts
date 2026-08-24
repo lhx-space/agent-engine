@@ -10,6 +10,8 @@ import type {
   WebSearchPolicy,
 } from '@agent-engine/config';
 import type { SandboxBackend, SandboxExecResult } from '../src/sandbox/types';
+import { createBashPlugin, createFilesPlugin } from '../src/plugins/builtin';
+import { PluginManager } from '../src/plugins/manager';
 import { ToolRegistry } from '../src/tools/registry';
 import { createBase64Tool } from '../src/tools/builtin/base64';
 import { createBashTool } from '../src/tools/builtin/bash';
@@ -408,58 +410,54 @@ describe('sitesearch', () => {
 });
 
 describe('registerBuiltinTools', () => {
-  it('默认注册全部非 bash 内置工具', () => {
+  it('默认只注册通用原语（todo/datetime/web_search/web_fetch）', () => {
     const registry = new ToolRegistry();
     const names = registerBuiltinTools(registry, makeSecurity(false));
 
     expect(registry.has('builtin.todo')).toBe(true);
-    expect(registry.has('builtin.read_file')).toBe(true);
-    expect(registry.has('builtin.write_file')).toBe(true);
+    expect(registry.has('builtin.datetime')).toBe(true);
     expect(registry.has('builtin.web_search')).toBe(true);
     expect(registry.has('builtin.web_fetch')).toBe(true);
-    expect(registry.has('builtin.sitesearch')).toBe(true);
-    expect(registry.has('builtin.calculator')).toBe(true);
-    expect(registry.has('builtin.datetime')).toBe(true);
-    expect(registry.has('builtin.json')).toBe(true);
-    expect(registry.has('builtin.base64')).toBe(true);
+
+    // 垂直 / 鸡肋工具不再内置
+    expect(registry.has('builtin.read_file')).toBe(false);
+    expect(registry.has('builtin.write_file')).toBe(false);
     expect(registry.has('builtin.bash')).toBe(false);
-    expect(names).not.toContain('builtin.bash');
+    expect(registry.has('builtin.sitesearch')).toBe(false);
+    expect(registry.has('builtin.calculator')).toBe(false);
+    expect(registry.has('builtin.json')).toBe(false);
+    expect(registry.has('builtin.base64')).toBe(false);
+
+    expect(names).toEqual([
+      'builtin.todo',
+      'builtin.datetime',
+      'builtin.web_search',
+      'builtin.web_fetch',
+    ]);
+  });
+});
+
+describe('内置 plugin（files / bash）', () => {
+  it('createFilesPlugin 注册 read_file / write_file', async () => {
+    const manager = new PluginManager();
+    await manager.install(createFilesPlugin({ security: makeSecurity(false) }));
+
+    const names = manager.getAssembly().tools.map((tool) => tool.name);
+    expect(names).toEqual(['builtin.read_file', 'builtin.write_file']);
   });
 
-  it('tools 配置不收窄内置工具（恒全注册）', () => {
-    const registry = new ToolRegistry();
-    registerBuiltinTools(registry, makeSecurity(false));
+  it('createBashPlugin 注册 bash（注入沙箱）', async () => {
+    const manager = new PluginManager();
+    await manager.install(createBashPlugin({ security: makeSecurity(true), sandbox: fakeSandbox }));
 
-    // 即使语义上有额外工具引用，内置工具仍全部注册。
-    expect(registry.has('builtin.todo')).toBe(true);
-    expect(registry.has('builtin.read_file')).toBe(true);
-    expect(registry.has('builtin.write_file')).toBe(true);
-    expect(registry.has('builtin.web_search')).toBe(true);
-    expect(registry.has('builtin.web_fetch')).toBe(true);
-    expect(registry.has('builtin.sitesearch')).toBe(true);
-    expect(registry.has('builtin.calculator')).toBe(true);
-    expect(registry.has('builtin.datetime')).toBe(true);
-    expect(registry.has('builtin.json')).toBe(true);
-    expect(registry.has('builtin.base64')).toBe(true);
-  });
-
-  it('enabled + 注入沙箱注册 bash', () => {
-    const registry = new ToolRegistry();
-    const names = registerBuiltinTools(registry, makeSecurity(true), { sandbox: fakeSandbox });
-
-    expect(registry.has('builtin.bash')).toBe(true);
+    const names = manager.getAssembly().tools.map((tool) => tool.name);
     expect(names).toContain('builtin.bash');
   });
 
-  it('enabled 但无沙箱抛错', () => {
-    const registry = new ToolRegistry();
-    expect(() =>
-      registerBuiltinTools(registry, makeSecurity(true), {
-        resolveSandbox: () => ({
-          available: false,
-          reason: 'no sandbox backend available (docker / nsjail)',
-        }),
-      }),
-    ).toThrow(/no sandbox/);
+  it('createBashPlugin 未启用抛错', async () => {
+    const manager = new PluginManager();
+    await expect(
+      manager.install(createBashPlugin({ security: makeSecurity(false) })),
+    ).rejects.toThrow(/security\.bash\.enabled/);
   });
 });

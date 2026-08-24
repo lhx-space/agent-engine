@@ -193,7 +193,7 @@ docs/（Rspress）为独立站点，无运行时依赖
 
 ### 5.1 能力层（Agent 能「做什么」）
 
-- **tools**：原子能力单元，一个函数即一个工具（如 `read_file`、`bash`、`web_search`）。注册进 **Tool Registry**。已落地内置工具 `todo` / `read_file` / `write_file` / `bash` / `web_search` / `web_fetch` / `sitesearch` / `calculator` / `datetime` / `json` / `base64`（`core/tools/builtin/`），其中 `bash` 默认禁用、经 `SandboxBackend` 沙箱执行（见 5.6）；非 tool 的支撑代码（http/搜索后端/路径/domain/html/store/policy）统一在 `core/tools/utils/`。
+- **tools**：原子能力单元，一个函数即一个工具（如 `read_file`、`bash`、`web_search`）。注册进 **Tool Registry**。已落地**内置通用原语** `todo` / `datetime` / `web_search` / `web_fetch`（`core/tools/builtin/`）；垂直能力 `read_file` / `write_file` / `bash` 迁出为内置 plugin `@agent-engine/plugin-files` / `@agent-engine/plugin-bash`（经 `config.plugins` 声明加载，bash 经 `SandboxBackend` 沙箱执行，见 5.6）；`sitesearch` / `calculator` / `json` / `base64` 已移除。非 tool 的支撑代码（http/搜索后端/路径/domain/html/store/policy）统一在 `core/tools/utils/`。
 - **skills**：可复用能力包 = 一份指令（`SKILL.md`）+ 可选捆绑的 tools/资源。按需动态加载，加载后将其指令注入上下文、工具并入注册表。已落地 `Skill` 类型 + 统一 `CapabilityLoader`（BM25 检索，复用 `CapabilityRegistry`）+ `loadSkillFromPath`（gray-matter 解析 SKILL.md）；`AgentLoop.skills` 注入后按需注入指令 + 注册捆绑工具。
 - **mcp**：通过 Model Context Protocol 接入的**外部能力来源**。一个外部 MCP server 的 `tools/resources` 会被归一化为标准 Tool，纳入同一注册表，内核无感知差异。已落地 `core/mcp/`（`connectMcpServer` / `connectMcpServers`，stdio transport 复用 `@modelcontextprotocol/sdk`，tools 归一化为标准 Tool + `jsonSchema` 透传 + 错误隔离 + `dispose` 生命周期）；配置 `mcp.servers`（name/command/args/env）由 resolve 层装配。
 
@@ -399,11 +399,7 @@ rules:
       排查顺序：kubectl get events → describe pod → logs → 逐层定位。
     tags: [k8s, kubernetes, 诊断]
 
-tools:
-  - use: builtin.read_file
-  - use: builtin.write_file
-  - use: builtin.bash
-
+# 垂直能力（文件/命令）经 plugins 声明加载，不再内置
 mcp:
   servers:
     - name: github
@@ -427,6 +423,8 @@ hooks:
     on: [beforeLLM, afterToolCall, onError]
 
 plugins:
+  - '@agent-engine/plugin-files' # 本地文件读写（read_file / write_file）
+  - '@agent-engine/plugin-bash' # 命令执行（bash，需 security.bash.enabled + 沙箱）
   - '@agent-engine/plugin-otel'
 
 security:
@@ -475,7 +473,7 @@ orchestration:
 2. 通过 `ToolRegistry.register()` 或配置文件 `tools` 段注册。
 3. 覆盖 `inputSchema`（Zod），保证 LLM 可正确理解参数。
 
-> 内置工具（`todo` / `read_file` / `write_file` / `bash` / `web_search` / `web_fetch` / `sitesearch` / `calculator` / `datetime` / `json` / `base64`）已提供（`core/tools/builtin/`），通过 `registerBuiltinTools` 统一装配；`bash` 默认禁用、经 `security` 段开启（见 5.6 / 7.2）。非 tool 支撑在 `core/tools/utils/`。
+> 内置**通用原语**（`todo` / `datetime` / `web_search` / `web_fetch`）已提供（`core/tools/builtin/`），通过 `registerBuiltinTools` 统一装配。垂直能力 `read_file` / `write_file` / `bash` 是内置 plugin `@agent-engine/plugin-files` / `@agent-engine/plugin-bash`（经 `config.plugins` 声明加载，bash 需 `security.bash.enabled` + 沙箱）。非 tool 支撑在 `core/tools/utils/`。
 
 ### 8.2 新增一个 skill
 

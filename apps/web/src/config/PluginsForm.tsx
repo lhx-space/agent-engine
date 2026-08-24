@@ -1,6 +1,11 @@
 import { Select } from 'antd';
 
-const KNOWN_PLUGINS = ['@agent-engine/plugin-git', '@agent-engine/plugin-otel'];
+const KNOWN_PLUGINS = [
+  '@agent-engine/plugin-files',
+  '@agent-engine/plugin-bash',
+  '@agent-engine/plugin-git',
+  '@agent-engine/plugin-otel',
+];
 
 interface PluginsFormProps {
   plugins: string[];

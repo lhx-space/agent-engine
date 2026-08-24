@@ -7,6 +7,7 @@ import type { SecurityConfig } from '@agent-engine/config';
 import { assembleAgentLoop } from '../src/agent/assemble';
 import type { ChatCompletionResult, ChatMessage, LLMProvider } from '../src/llm/types';
 import { ConversationMemory } from '../src/memory/conversation-memory';
+import { createFilesPlugin } from '../src/plugins/builtin';
 import type { Plugin } from '../src/plugins/types';
 import { ToolRegistry } from '../src/tools/registry';
 
@@ -127,6 +128,7 @@ describe('端到端 demo（可观测）', () => {
 
       // 4. 装配：plugin + 声明式 rules + skills + memory + security(内置工具)
       const memory = new ConversationMemory({ maxMessages: 10 });
+      const security = makeSecurity(dir);
       const { agent: loop } = await assembleAgentLoop({
         provider,
         registry,
@@ -152,10 +154,9 @@ describe('端到端 demo（可观测）', () => {
             tags: ['天气', '穿衣'],
           },
         ],
-        plugins: [weatherPlugin],
+        plugins: [weatherPlugin, createFilesPlugin({ security })],
         memory,
-        security: makeSecurity(dir),
-        tools: [{ use: 'builtin.read_file' }],
+        security,
       });
 
       console.log('\n========== 第一轮 ==========');

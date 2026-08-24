@@ -1,0 +1,7 @@
+- [ ] `plugins/builtin.ts`：`createFilesPlugin` / `createBashPlugin` + 内置 plugin 工厂表
+- [ ] `tools/builtin/index.ts`：收敛为 todo/datetime/web_search/web_fetch（移除 file/bash/json/base64/calculator/sitesearch 注册）
+- [ ] `resolve/resolve.ts`：内置 plugin 工厂表优先，再查 deps.pluginFactories
+- [ ] `core/src/index.ts`：导出新 plugin 工厂
+- [ ] `apps/web/src/config/PluginsForm.tsx`：KNOWN_PLUGINS 加 files/bash
+- [ ] 测试：builtin-tools / demo / streaming 等同步；新增 plugin-files/bash 测试
+- [ ] 全量 test + typecheck + build + lint / spell / format

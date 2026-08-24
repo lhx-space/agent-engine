@@ -61,9 +61,7 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
   // 2. 内置工具直接写 registry（无 dispose），并收集 todo 规划引导片段。
   const derivedFragments: string[] = [];
   if (options.security) {
-    const registered = registerBuiltinTools(options.registry, options.security, {
-      sandbox: options.sandbox,
-    });
+    const registered = registerBuiltinTools(options.registry, options.security);
     if (registered.includes('builtin.todo')) {
       derivedFragments.push(TODO_PLANNING_GUIDANCE);
     }

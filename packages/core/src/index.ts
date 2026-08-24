@@ -12,20 +12,15 @@ export {
   TodoStore,
   registerBuiltinTools,
   createTodoTool,
-  createReadFileTool,
-  createWriteFileTool,
-  createBashTool,
   createWebSearchTool,
   createWebFetchTool,
-  createSiteSearchTool,
-  createCalculatorTool,
   createDatetimeTool,
-  createJsonTool,
-  createBase64Tool,
   createDuckDuckGoSearchProvider,
   defaultFetch,
 } from './tools/builtin';
 export type { RegisterBuiltinToolsDeps } from './tools/builtin';
+export { createFilesPlugin, createBashPlugin, builtinPluginFactories } from './plugins/builtin';
+export type { BuiltinPluginDeps, BuiltinPluginFactory } from './plugins/builtin';
 export {
   createDockerSandbox,
   createNsJailSandbox,
