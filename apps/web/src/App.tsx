@@ -26,6 +26,9 @@ const defaultConfig: AgentConfig = AgentConfigSchema.parse({
       tags: ['安全', '运维'],
     },
   ],
+  security: {
+    files: { roots: ['./'] },
+  },
 });
 
 export function App() {

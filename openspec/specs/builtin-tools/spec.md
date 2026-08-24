@@ -98,17 +98,17 @@ TBD - created by archiving change 2026-08-24-add-builtin-tools. Update Purpose a
 
 ### Requirement: 内置工具统一装配
 
-系统 SHALL 提供 `registerBuiltinTools(registry, security, deps)`：恒注册 `todo`（规划原语），按 `deps.tools`（`ToolRef[]`，缺省 = 全部）注册 `read_file` / `write_file` / `web_search` / `web_fetch` / `sitesearch` / `calculator` / `datetime` / `json` / `base64`，`web_search` 与 `sitesearch` 按 `security.webSearch.provider` 解析 `SearchProvider`，并仅在 `security.bash.enabled` 且被请求时注册 `bash`；返回注册的工具名列表供上层注入规划引导。
+系统 SHALL 提供 `registerBuiltinTools(registry, security, deps)`：恒注册 `todo`（规划原语）与全部内置工具 `read_file` / `write_file` / `web_search` / `web_fetch` / `sitesearch` / `calculator` / `datetime` / `json` / `base64`，`web_search` 与 `sitesearch` 按 `security.webSearch.provider` 解析 `SearchProvider`，并仅在 `security.bash.enabled` 时注册 `bash`；返回注册的工具名列表供上层注入规划引导。内置工具是系统默认能力，不受 `tools` 配置过滤。
 
 #### Scenario: 默认装配
 
-- **WHEN** 以缺省 `security` 且未提供 `deps.tools` 调用 `registerBuiltinTools`
+- **WHEN** 以缺省 `security` 调用 `registerBuiltinTools`
 - **THEN** registry 含 `todo` / `read_file` / `write_file` / `web_search` / `web_fetch` / `sitesearch` / `calculator` / `datetime` / `json` / `base64`，不含 `bash`
 
-#### Scenario: 按 tools 引用过滤
+#### Scenario: 内置工具不收窄
 
-- **WHEN** 提供 `deps.tools = [{ use: 'builtin.read_file' }]`
-- **THEN** registry 含 `todo`（恒注册）与 `read_file`，不含其余内置工具与 `bash`
+- **WHEN** 存在 `tools: [{ use: builtin.read_file }]` 配置
+- **THEN** 除 read_file 外，其余内置工具仍全部注册（`tools` 是额外工具引用，不参与内置过滤）
 
 #### Scenario: 开启 bash 装配
 

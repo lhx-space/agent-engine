@@ -7,6 +7,7 @@ import { loadRulesText } from '../rules/load';
 import type { RuleRegistry } from '../rules/registry';
 import { CapabilityLoader } from '../retrieval/loader';
 import type { Skill } from '../skills/types';
+import { normalizeToolArgs } from '../tools/registry';
 import type { ToolRegistry } from '../tools/registry';
 import type { Tool } from '../tools/types';
 import type {
@@ -116,9 +117,10 @@ export class AgentLoop {
         for (const toolCall of toolCalls) {
           // LLM 回调的是合法名（如 builtin_read_file），反查真实语义名（builtin.read_file）。
           const name = this.registry.resolveName(toolCall.function.name);
-          const args =
-            (await this.hooks?.beforeToolCall(name, toolCall.function.arguments)) ??
-            toolCall.function.arguments;
+          // 空/非法入参兜底为 {}，并写回 toolCall（同一对象引用 → 历史消息同步），避免空参数污染历史导致下一轮 400。
+          const normalizedArgs = normalizeToolArgs(toolCall.function.arguments);
+          toolCall.function.arguments = normalizedArgs;
+          const args = (await this.hooks?.beforeToolCall(name, normalizedArgs)) ?? normalizedArgs;
           emit?.({ type: 'tool_call', name, args });
 
           // guardrail beforeToolCall：校验入参，阻断则不执行工具。

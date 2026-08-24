@@ -413,18 +413,21 @@ describe('registerBuiltinTools', () => {
     expect(names).not.toContain('builtin.bash');
   });
 
-  it('按 tools 引用过滤，todo 恒注册', () => {
+  it('tools 配置不收窄内置工具（恒全注册）', () => {
     const registry = new ToolRegistry();
-    const names = registerBuiltinTools(registry, makeSecurity(false), {
-      tools: [{ use: 'builtin.read_file' }],
-    });
+    registerBuiltinTools(registry, makeSecurity(false));
 
+    // 即使语义上有额外工具引用，内置工具仍全部注册。
     expect(registry.has('builtin.todo')).toBe(true);
     expect(registry.has('builtin.read_file')).toBe(true);
-    expect(registry.has('builtin.write_file')).toBe(false);
-    expect(registry.has('builtin.web_search')).toBe(false);
-    expect(registry.has('builtin.web_fetch')).toBe(false);
-    expect(names).toEqual(['builtin.todo', 'builtin.read_file']);
+    expect(registry.has('builtin.write_file')).toBe(true);
+    expect(registry.has('builtin.web_search')).toBe(true);
+    expect(registry.has('builtin.web_fetch')).toBe(true);
+    expect(registry.has('builtin.sitesearch')).toBe(true);
+    expect(registry.has('builtin.calculator')).toBe(true);
+    expect(registry.has('builtin.datetime')).toBe(true);
+    expect(registry.has('builtin.json')).toBe(true);
+    expect(registry.has('builtin.base64')).toBe(true);
   });
 
   it('enabled + 注入沙箱注册 bash', () => {

@@ -1,4 +1,4 @@
-import type { SandboxBackendKind, SecurityConfig, ToolRef } from '@agent-engine/config';
+import type { SandboxBackendKind, SecurityConfig } from '@agent-engine/config';
 import { resolveSandboxBackend } from '../../sandbox';
 import type { SandboxResolution } from '../../sandbox';
 import type { SandboxBackend, SandboxBackendOptions } from '../../sandbox/types';
@@ -30,8 +30,6 @@ export interface RegisterBuiltinToolsDeps {
   fetchImpl?: FetchLike;
   /** 沙箱解析函数（可注入，便于测试不可用场景）。 */
   resolveSandbox?: (kind: SandboxBackendKind, options: SandboxBackendOptions) => SandboxResolution;
-  /** 配置声明的工具引用（`builtin.<name>`）；缺省/空 = 注册全部。 */
-  tools?: ToolRef[];
 }
 
 // ============ utils re-export ============
@@ -78,68 +76,52 @@ function resolveSearchProvider(
 }
 
 /**
- * 统一装配内置工具：todo 恒注册（规划原语）；其余工具按 `deps.tools`（`ToolRef[]`，缺省 = 全部）
- * 过滤；bash 仅 security.bash.enabled 且被请求时注册（无沙箱则抛错，绝不裸奔）。
+ * 统一装配内置工具：内置工具是系统默认能力，**恒全注册**（todo 规划原语 + read_file /
+ * write_file / web_search / web_fetch / sitesearch / calculator / datetime / json / base64）。
+ * `tools` 配置是「额外工具引用」的横向拓展，不参与内置工具过滤。bash 仍仅当
+ * `security.bash.enabled` 时注册（无沙箱则抛错，绝不裸奔）。
  */
 export function registerBuiltinTools(
   registry: ToolRegistry,
   security: SecurityConfig,
   deps: RegisterBuiltinToolsDeps = {},
 ): string[] {
-  const tools = deps.tools;
-  const want = (name: string): boolean => {
-    if (!tools || tools.length === 0) return true;
-    return tools.some((tool) => tool.use === `builtin.${name}`);
-  };
-
   const registered: string[] = [];
 
-  // todo 是任务规划原语（AGENTS.md 6.2），始终注册，不受 tools 过滤影响。
+  // todo 是任务规划原语（AGENTS.md 6.2），始终注册。
   registry.register(createTodoTool(deps.todoStore ?? new TodoStore()));
   registered.push('builtin.todo');
 
-  if (want('read_file')) {
-    registry.register(createReadFileTool(security.files));
-    registered.push('builtin.read_file');
-  }
-  if (want('write_file')) {
-    registry.register(createWriteFileTool(security.files));
-    registered.push('builtin.write_file');
-  }
-  if (want('web_search')) {
-    registry.register(
-      createWebSearchTool(resolveSearchProvider(security, deps), security.webSearch),
-    );
-    registered.push('builtin.web_search');
-  }
-  if (want('web_fetch')) {
-    registry.register(createWebFetchTool(security.webFetch, deps.fetchImpl));
-    registered.push('builtin.web_fetch');
-  }
-  if (want('sitesearch')) {
-    registry.register(
-      createSiteSearchTool(resolveSearchProvider(security, deps), security.webSearch),
-    );
-    registered.push('builtin.sitesearch');
-  }
-  if (want('calculator')) {
-    registry.register(createCalculatorTool());
-    registered.push('builtin.calculator');
-  }
-  if (want('datetime')) {
-    registry.register(createDatetimeTool());
-    registered.push('builtin.datetime');
-  }
-  if (want('json')) {
-    registry.register(createJsonTool());
-    registered.push('builtin.json');
-  }
-  if (want('base64')) {
-    registry.register(createBase64Tool());
-    registered.push('builtin.base64');
-  }
+  registry.register(createReadFileTool(security.files));
+  registered.push('builtin.read_file');
 
-  if (security.bash.enabled && want('bash')) {
+  registry.register(createWriteFileTool(security.files));
+  registered.push('builtin.write_file');
+
+  registry.register(createWebSearchTool(resolveSearchProvider(security, deps), security.webSearch));
+  registered.push('builtin.web_search');
+
+  registry.register(createWebFetchTool(security.webFetch, deps.fetchImpl));
+  registered.push('builtin.web_fetch');
+
+  registry.register(
+    createSiteSearchTool(resolveSearchProvider(security, deps), security.webSearch),
+  );
+  registered.push('builtin.sitesearch');
+
+  registry.register(createCalculatorTool());
+  registered.push('builtin.calculator');
+
+  registry.register(createDatetimeTool());
+  registered.push('builtin.datetime');
+
+  registry.register(createJsonTool());
+  registered.push('builtin.json');
+
+  registry.register(createBase64Tool());
+  registered.push('builtin.base64');
+
+  if (security.bash.enabled) {
     let sandbox = deps.sandbox;
     if (!sandbox) {
       const resolveSandbox = deps.resolveSandbox ?? resolveSandboxBackend;

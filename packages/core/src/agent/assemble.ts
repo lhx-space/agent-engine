@@ -1,4 +1,4 @@
-import type { Rule, SecurityConfig, ToolRef } from '@agent-engine/config';
+import type { Rule, SecurityConfig } from '@agent-engine/config';
 import { mergeBundles } from '../capability/bundle';
 import type { ResolvedMcpServer } from '../capability-source/types';
 import type { CapabilityBundle } from '../capability/types';
@@ -29,10 +29,8 @@ export interface AssembleAgentLoopOptions {
   guardrails?: RuleRegistry;
   memory?: ConversationMemory;
   maxSteps?: number;
-  /** 安全配置；传入时按 `tools` 引用装配内置工具。 */
+  /** 安全配置；传入时装配全部内置工具。 */
   security?: SecurityConfig;
-  /** 配置声明的工具引用（`builtin.<name>`），决定注册哪些内置工具。 */
-  tools?: ToolRef[];
   /** 预置沙箱后端（bash 启用时使用；缺省按 security.sandbox.backend 解析）。 */
   sandbox?: SandboxBackend;
   /** 归一化后的 MCP servers（command 形态）；装配时连接并把归一化工具注册进 registry。 */
@@ -62,7 +60,6 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
   const derivedFragments: string[] = [];
   if (options.security) {
     const registered = registerBuiltinTools(options.registry, options.security, {
-      tools: options.tools,
       sandbox: options.sandbox,
     });
     if (registered.includes('builtin.todo')) {

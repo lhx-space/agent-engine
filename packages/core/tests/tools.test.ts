@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@rstest/core';
 import { z } from 'zod';
-import { ToolRegistry, toLlmName } from '../src/tools/registry';
+import { ToolRegistry, normalizeToolArgs, toLlmName } from '../src/tools/registry';
 import type { Tool } from '../src/tools/types';
 
 function makeWeatherTool(): Tool<{ city: string }, { temp: number }> {
@@ -65,11 +65,12 @@ describe('ToolRegistry 执行', () => {
     await expect(registry.execute('get_weather', '{"city":123}')).rejects.toThrow(/get_weather/);
   });
 
-  it('非法 JSON 被拒绝', async () => {
+  it('非法 JSON 兜底为 {} 后走 inputSchema 校验', async () => {
     const registry = new ToolRegistry();
     registry.register(makeWeatherTool());
 
-    await expect(registry.execute('get_weather', 'not-json')).rejects.toThrow(/invalid JSON/);
+    // 非法 JSON 不再抛 invalid JSON，而是兜底 {}，交由 inputSchema 校验报缺字段。
+    await expect(registry.execute('get_weather', 'not-json')).rejects.toThrow(/get_weather/);
   });
 
   it('未注册工具报错', async () => {
@@ -149,5 +150,33 @@ describe('Zod → JSON Schema 转换', () => {
     expect(toLlmName('builtin.read_file')).toBe('builtin_read_file');
     expect(toLlmName('a.b-c')).toBe('a_b-c');
     expect(toLlmName('ok_name-1')).toBe('ok_name-1');
+  });
+});
+
+describe('工具入参规范化', () => {
+  it('空/空白入参兜底为 {}', () => {
+    expect(normalizeToolArgs('')).toBe('{}');
+    expect(normalizeToolArgs('   ')).toBe('{}');
+  });
+
+  it('非法 JSON 兜底为 {}', () => {
+    expect(normalizeToolArgs('not-json')).toBe('{}');
+    expect(normalizeToolArgs('{"path":')).toBe('{}');
+  });
+
+  it('合法 JSON 原样返回', () => {
+    expect(normalizeToolArgs('{"path":"a"}')).toBe('{"path":"a"}');
+  });
+
+  it('execute 空入参不再抛 invalid JSON，而是走 inputSchema 校验', async () => {
+    const registry = new ToolRegistry();
+    registry.register({
+      name: 'need_path',
+      description: 'd',
+      inputSchema: z.object({ path: z.string() }),
+      execute: async () => 'ok',
+    });
+
+    await expect(registry.execute('need_path', '')).rejects.toThrow(/path/);
   });
 });

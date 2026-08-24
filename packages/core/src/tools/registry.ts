@@ -14,6 +14,21 @@ export function toLlmName(name: string): string {
 }
 
 /**
+ * 把 LLM 返回的工具入参规范化为合法 JSON 字符串：空 / 空白 / 无法解析 → `'{}'`。
+ * 保证回填历史的消息入参始终合法（否则下一轮服务端 JSON.parse 会崩）。
+ */
+export function normalizeToolArgs(args: string | undefined): string {
+  const trimmed = (args ?? '').trim();
+  if (trimmed === '') return '{}';
+  try {
+    JSON.parse(trimmed);
+    return trimmed;
+  } catch {
+    return '{}';
+  }
+}
+
+/**
  * 工具注册表：管理工具实例，负责工具调用的参数解析、校验与执行。
  * 内部维护「LLM 名 → 语义名」反向映射，LLM 回调时反查真实工具名。
  */
@@ -68,7 +83,7 @@ export class ToolRegistry {
 
     let parsed: unknown;
     try {
-      parsed = JSON.parse(argsJson);
+      parsed = JSON.parse(normalizeToolArgs(argsJson));
     } catch (error) {
       throw new Error(
         `Tool "${name}" received invalid JSON arguments: ${

@@ -59,6 +59,10 @@ export type HookConfig = z.infer<typeof HookConfigSchema>;
 
 // ============ tools / skills / mcp ============
 
+/**
+ * 额外工具引用（横向拓展）。内置工具（builtin.*）由内核恒全注册，不在此过滤；
+ * 此字段用于声明额外的非内置工具（如插件 / 自定义工具名）。
+ */
 export const ToolRefSchema = z.object({
   use: z.string(),
 });

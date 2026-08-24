@@ -143,6 +143,32 @@ describe('ToolRegistry 事件名与工具名（流式场景）', () => {
   });
 });
 
+describe('空参数工具调用兜底', () => {
+  it('空 arguments 兜底为 {}，run 正常结束不崩溃', async () => {
+    const config = makeConfig();
+    const events: AgentRunEvent[] = [];
+    const resolved = await resolveAgentConfig(config, {
+      providerFactory: () =>
+        makeScriptedProvider([
+          {
+            // 空参数调用 todo（list 无需参数，空串也能执行）。
+            message: {
+              content: '',
+              toolCalls: [{ id: 'c1', name: 'builtin_todo', args: undefined }],
+            },
+          },
+          { deltas: ['done'], message: { content: 'done' } },
+        ]),
+    });
+
+    const result = await resolved.agent.run('x', { onEvent: (e) => events.push(e) });
+    await resolved.dispose();
+
+    expect(result.finalMessage.content).toBe('done');
+    expect(events.some((e) => e.type === 'done')).toBe(true);
+  });
+});
+
 describe('mock provider 无流式方法时回退', () => {
   it('非流式 provider 仍可用（无 llm_delta 事件）', async () => {
     const config = makeConfig();
