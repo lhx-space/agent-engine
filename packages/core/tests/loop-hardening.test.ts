@@ -250,7 +250,16 @@ describe('AgentLoop 强化', () => {
       inputSchema: z.object({}),
       execute: async () => 'ok',
     });
-    const provider = makeProvider([{ message: makeToolCall('c1', 't') }]); // 永远 tool_calls
+    // 带 tools 返回 toolCalls；不带 tools（总结）返回纯文本。
+    const provider: LLMProvider = {
+      name: 'mock',
+      async chatCompletion(params) {
+        if (params.tools && params.tools.length > 0) {
+          return { message: makeToolCall('c1', 't') };
+        }
+        return { message: { role: 'assistant', content: 'done' } };
+      },
+    };
     const loop = new AgentLoop({
       provider,
       registry,
@@ -260,7 +269,8 @@ describe('AgentLoop 强化', () => {
 
     const result = await loop.run('x');
 
-    expect(result.steps).toBe(3);
+    expect(result.steps).toBe(4); // 3 步 toolCalls + 1 步总结
+    expect(result.finalMessage.content).toBe('done');
   });
 
   it('execution.maxToolCalls 超限回填占位且不再执行工具', async () => {
@@ -298,5 +308,38 @@ describe('AgentLoop 强化', () => {
       (m) => m.role === 'tool' && m.content.includes('已达上限'),
     );
     expect(placeholders.length).toBeGreaterThan(0);
+  });
+
+  it('maxSteps 兜底时若仍带 toolCalls 则强制总结', async () => {
+    const registry = new ToolRegistry();
+    registry.register({
+      name: 't',
+      description: 't',
+      inputSchema: z.object({}),
+      execute: async () => 'ok',
+    });
+
+    // 带 tools 的调用返回 toolCalls；不带 tools（总结）返回纯文本。
+    const provider: LLMProvider = {
+      name: 'mock',
+      async chatCompletion(params) {
+        if (params.tools && params.tools.length > 0) {
+          return { message: makeToolCall('c1', 't') };
+        }
+        return { message: { role: 'assistant', content: '最终总结' } };
+      },
+    };
+    const loop = new AgentLoop({
+      provider,
+      registry,
+      systemPrompt: 's',
+      execution: { maxSteps: 2 },
+    });
+
+    const result = await loop.run('x');
+
+    expect(result.finalMessage.toolCalls).toBeUndefined();
+    expect(result.finalMessage.content).toBe('最终总结');
+    expect(result.steps).toBe(3); // 2 步正常 + 1 步总结
   });
 });

@@ -1,0 +1,3 @@
+- [x] `loop.ts`：while 循环后追加「不带工具」的总结调用（仅当 finalMessage 仍带 toolCalls）
+- [x] 更新 `agent-loop.test.ts` / `loop-hardening.test.ts`（maxSteps 兜底 → 强制总结）+ 新增总结测试
+- [x] 全量 test（206 passed）+ typecheck + lint + spell + format

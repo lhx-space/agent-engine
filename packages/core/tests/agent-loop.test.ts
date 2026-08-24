@@ -77,17 +77,27 @@ describe('AgentLoop', () => {
     expect(toolMsg?.toolCallId).toBe('call_1');
   });
 
-  it('maxSteps 兜底终止', async () => {
+  it('maxSteps 兜底后强制总结（不带工具）', async () => {
     const registry = new ToolRegistry();
     registry.register(makeWeatherTool());
 
-    // provider 一直返回 toolCalls，永不自然终止
-    const provider = makeProvider([{ message: weatherCall }]);
+    // 带 tools 返回 toolCalls；不带 tools（总结）返回纯文本。
+    const provider: LLMProvider = {
+      name: 'mock',
+      async chatCompletion(params) {
+        if (params.tools && params.tools.length > 0) {
+          return { message: weatherCall };
+        }
+        return { message: { role: 'assistant', content: 'done' } };
+      },
+    };
     const loop = new AgentLoop({ provider, registry, systemPrompt: 's', maxSteps: 3 });
 
     const result = await loop.run('x');
 
-    expect(result.steps).toBe(3);
+    expect(result.steps).toBe(4); // 3 步 toolCalls + 1 步总结
+    expect(result.finalMessage.content).toBe('done');
+    expect(result.finalMessage.toolCalls).toBeUndefined();
   });
 
   it('工具执行错误回填而非终止', async () => {

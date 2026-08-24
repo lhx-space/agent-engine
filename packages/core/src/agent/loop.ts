@@ -198,6 +198,29 @@ export class AgentLoop {
 
         await this.hooks?.onStepEnd(steps);
       }
+
+      // 预算兜底强制收尾：循环因 maxSteps/超时退出、但模型仍在调工具、尚未给出最终答案时，
+      // 追加一轮「不带工具」的总结调用，避免把带 tool_calls 的中间消息误当最终结果。
+      if (finalMessage.toolCalls && finalMessage.toolCalls.length > 0) {
+        if (signal?.aborted) throw new AbortError();
+        steps += 1;
+        emit?.({ type: 'step_start', step: steps });
+        messages.push({ role: 'user', content: '请直接给出最终结论，不要再调用任何工具。' });
+        const summaryParams = { messages, ...(signal ? { signal } : {}) };
+        let summaryResult: ChatCompletionResult;
+        if (this.provider.chatCompletionStream) {
+          summaryResult = await this.provider.chatCompletionStream(summaryParams, (delta, kind) =>
+            emit?.({ type: 'llm_delta', delta, kind }),
+          );
+        } else {
+          summaryResult = await this.provider.chatCompletion(summaryParams);
+        }
+        summaryResult = (await this.hooks?.afterLLM(summaryResult)) ?? summaryResult;
+        finalMessage = summaryResult.message;
+        messages.push(finalMessage);
+        finishReason = summaryResult.finishReason;
+        await this.hooks?.onStepEnd(steps);
+      }
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       // 取消（AbortError）与业务错误分离：不回写 memory、不触发 onError hook。

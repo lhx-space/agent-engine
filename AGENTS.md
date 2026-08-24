@@ -699,3 +699,4 @@ M2 落地及 M3 推进过程中沉淀的坑点与约定，后续开发直接复�
 - **DeepSeek R1 `reasoning_content` 是 OpenAI 兼容端点特性**：非流式 `message.reasoning_content`、流式 `delta.reasoning_content`，与 `content` 分离（`ChatMessage.reasoning` 单独承载，前端「思考/回复」分开）。anthropic 端点（`/anthropic`）不返回该字段；要真思考需 `provider: openai-compatible` + `model: deepseek-reasoner` + `baseURL: https://api.deepseek.com`。
 - **会话复用要求 resolve 始终创建 `ConversationMemory`**：否则「不配 memory 的多轮」是空的；`memory.session.maxMessages` 只调裁剪窗口。
 - **多模型方向（生产级）**：能力分离（chat / reasoning / embedding / vision 顶层分字段）+ 实例级覆盖（subagent 级）+ 模型路由（fallback / 按复杂度），是 M3 后续的地基；`deepseek-reasoner` 单模型已含「think + 执行」，分角色是成本/稳定性优化，非必须。
+- **预算兜底强制收尾**：reasoning 模型会在循环里花很多 step 思考/规划/调研，`maxSteps` 兜底时若最后消息仍带 `toolCalls`（模型还没给最终答案），要追加一轮「不带工具」的总结调用，否则答案被截断成「只有过程没有结论」。
