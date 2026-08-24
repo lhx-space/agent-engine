@@ -1,5 +1,18 @@
 import type { ChatCompletionResult, ChatMessage } from '../llm/types';
 
+/** hook 触发点（有限生命周期锚点，对齐 Hook 接口方法）。 */
+export type HookPoint =
+  'beforeLLM' | 'afterLLM' | 'beforeToolCall' | 'afterToolCall' | 'onStepEnd' | 'onError';
+
+/** hook 单次执行的 trace：谁、在哪个点、耗时、是否改写了值。 */
+export interface HookTrace {
+  hook: string;
+  point: HookPoint;
+  durationMs: number;
+  /** true = 返回了与入参不同的值（改写）；false = 返回 void（仅观察）。 */
+  changed: boolean;
+}
+
 /**
  * 生命周期钩子。可改写类方法返回 `T | void`：返回新值表示改写，返回 void 表示保持原值。
  * hooks 不做阻断——阻断是 rules（guardrail）的职责。

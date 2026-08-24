@@ -45,6 +45,7 @@ export {
 export type { ResolvedMcpServer, SkillSourceDeps, ResolvedSkill } from './capability-source';
 export { resolveAgentConfig } from './resolve';
 export { HookPipeline } from './hooks/pipeline';
+export type { Hook, HookPoint, HookTrace } from './hooks/types';
 export { RuleRegistry } from './rules/registry';
 export { loadRulesText } from './rules/load';
 export { CapabilityRegistry } from './retrieval/registry';
@@ -56,3 +57,4 @@ export { PluginManager } from './plugins';
 export { AgentLoop } from './agent/loop';
 export { assembleAgentLoop } from './agent/assemble';
 export type { AssembleAgentLoopOptions } from './agent/assemble';
+export type { AgentRunEvent, AgentRunOptions, AgentLoopResult } from './agent/types';

@@ -12,6 +12,17 @@ function makeProvider(): LLMProvider {
   };
 }
 
+function makeStreamingProvider(): LLMProvider {
+  return {
+    name: 'mock-stream',
+    async chatCompletionStream(_params, onDelta) {
+      onDelta('你');
+      onDelta('好');
+      return { message: { role: 'assistant', content: '你好' } };
+    },
+  };
+}
+
 function makeConfig(overrides: Record<string, unknown> = {}) {
   return AgentConfigSchema.parse({
     name: 'test-agent',
@@ -66,5 +77,26 @@ describe('server-api', () => {
     expect(res.status).toBe(500);
     const body = (await res.json()) as { error: string };
     expect(body.error).toBe('agent execution failed');
+  });
+
+  it('POST /api/agent/run/stream 返回 NDJSON 事件流', async () => {
+    const app = createApp({ providerFactory: makeStreamingProvider });
+    const res = await app.request('/api/agent/run/stream', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ config: makeConfig(), input: 'hi' }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toContain('application/x-ndjson');
+
+    const text = await res.text();
+    const lines = text
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line) as { type: string });
+    expect(lines[0]?.type).toBe('step_start');
+    expect(lines.some((line) => line.type === 'llm_delta')).toBe(true);
+    expect(lines[lines.length - 1]?.type).toBe('done');
   });
 });

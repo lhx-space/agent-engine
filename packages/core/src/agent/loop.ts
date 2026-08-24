@@ -9,7 +9,12 @@ import { CapabilityLoader } from '../retrieval/loader';
 import type { Skill } from '../skills/types';
 import type { ToolRegistry } from '../tools/registry';
 import type { Tool } from '../tools/types';
-import type { AgentLoopOptions, AgentLoopResult, SystemPromptInput } from './types';
+import type {
+  AgentLoopOptions,
+  AgentLoopResult,
+  AgentRunOptions,
+  SystemPromptInput,
+} from './types';
 
 /** 单 Agent ReAct 执行循环。 */
 export class AgentLoop {
@@ -41,7 +46,11 @@ export class AgentLoop {
     this.memory = options.memory;
   }
 
-  async run(userInput: string): Promise<AgentLoopResult> {
+  async run(userInput: string, options?: AgentRunOptions): Promise<AgentLoopResult> {
+    const emit = options?.onEvent;
+    // 转发 hook trace 到事件流（可观测：哪一步做了什么、是否改写、耗时）。
+    const offTrace = this.hooks?.onTrace((trace) => emit?.({ type: 'hook', trace }));
+
     // 检索 rules（always + on-demand）与 skills（on-demand）。
     const rulesText = this.ruleLoader ? loadRulesText(this.rules, this.ruleLoader, userInput) : '';
     const skillHits = this.skillLoader?.loadForQuery(userInput) ?? [];
@@ -73,15 +82,24 @@ export class AgentLoop {
     try {
       while (steps < this.maxSteps) {
         steps += 1;
+        emit?.({ type: 'step_start', step: steps });
 
         // beforeLLM 改写的是「本次调用入参」，内部 messages 保持真实历史。
         const llmMessages = await this.hooks?.beforeLLM(messages);
 
         const tools = this.registry.toToolDefinitions();
-        let result: ChatCompletionResult = await this.provider.chatCompletion({
+        const completionParams = {
           messages: llmMessages ?? messages,
           ...(tools.length > 0 ? { tools } : {}),
-        });
+        };
+        let result: ChatCompletionResult;
+        if (this.provider.chatCompletionStream) {
+          result = await this.provider.chatCompletionStream(completionParams, (delta) =>
+            emit?.({ type: 'llm_delta', delta }),
+          );
+        } else {
+          result = await this.provider.chatCompletion(completionParams);
+        }
 
         result = (await this.hooks?.afterLLM(result)) ?? result;
 
@@ -101,6 +119,7 @@ export class AgentLoop {
           const args =
             (await this.hooks?.beforeToolCall(name, toolCall.function.arguments)) ??
             toolCall.function.arguments;
+          emit?.({ type: 'tool_call', name, args });
 
           // guardrail beforeToolCall：校验入参，阻断则不执行工具。
           let toolResult: string;
@@ -139,6 +158,7 @@ export class AgentLoop {
 
           // hooks.afterToolCall：观察 / 改写最终结果。
           toolResult = (await this.hooks?.afterToolCall(name, toolResult)) ?? toolResult;
+          emit?.({ type: 'tool_result', name, result: toolResult });
 
           messages.push({
             role: 'tool',
@@ -152,6 +172,7 @@ export class AgentLoop {
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
+      emit?.({ type: 'error', error: err.message });
       try {
         await this.hooks?.onError(err, 'agent-loop');
       } catch {
@@ -159,6 +180,7 @@ export class AgentLoop {
       }
       throw err;
     } finally {
+      offTrace?.();
       // 清理本轮注册的 skill 工具：覆盖过同名工具则还原，否则移除。
       for (const { name, prior } of registeredSkillTools) {
         if (prior) {
@@ -173,6 +195,7 @@ export class AgentLoop {
     // 异常路径（catch 内 throw）不会执行到这里，故不回写，保持历史不变。
     this.memory?.append(messages.slice(sessionStart));
 
+    emit?.({ type: 'done', finalMessage, steps });
     return { finalMessage, messages, steps };
   }
 

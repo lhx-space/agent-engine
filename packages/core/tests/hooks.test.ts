@@ -77,4 +77,32 @@ describe('HookPipeline', () => {
 
     expect(order).toEqual(['a', 'b']);
   });
+
+  it('onTrace 产出 hook 执行 trace（改写/观察 + 耗时 + 点位）', async () => {
+    const pipeline = new HookPipeline();
+    const traces: { hook: string; point: string; changed: boolean; durationMs: number }[] = [];
+    pipeline.onTrace((trace) => traces.push(trace));
+    pipeline.register({
+      name: 'rewrite',
+      beforeLLM: async (messages) => [...messages, { role: 'user', content: 'x' }],
+    });
+    pipeline.register({ name: 'observer', beforeLLM: async () => undefined });
+
+    await pipeline.beforeLLM([{ role: 'system', content: 's' }]);
+
+    expect(traces).toHaveLength(2);
+    expect(traces[0]).toMatchObject({ hook: 'rewrite', point: 'beforeLLM', changed: true });
+    expect(traces[1]).toMatchObject({ hook: 'observer', point: 'beforeLLM', changed: false });
+    expect(typeof traces[0]?.durationMs).toBe('number');
+  });
+
+  it('无 onTrace 时正常执行不报错', async () => {
+    const pipeline = new HookPipeline();
+    pipeline.register({
+      name: 'a',
+      beforeLLM: async (messages) => [...messages, { role: 'user', content: 'x' }],
+    });
+    const result = await pipeline.beforeLLM([{ role: 'system', content: 's' }]);
+    expect(result).toHaveLength(2);
+  });
 });

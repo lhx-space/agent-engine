@@ -5,4 +5,5 @@
 export { createApp } from './app';
 export { serve } from './serve';
 export { envProviderFactory, resolveEnvApiKey } from './provider';
+export { logger } from './logger';
 export type { ServerOptions } from './types';

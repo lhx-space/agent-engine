@@ -1,5 +1,6 @@
 import type { Rule, SystemPrompt } from '@agent-engine/config';
 import type { HookPipeline } from '../hooks/pipeline';
+import type { HookTrace } from '../hooks/types';
 import type { ChatMessage, LLMProvider } from '../llm/types';
 import type { ConversationMemory } from '../memory/conversation-memory';
 import type { RuleRegistry } from '../rules/registry';
@@ -43,4 +44,20 @@ export interface AgentLoopResult {
   messages: ChatMessage[];
   /** 实际执行的 LLM 调用步数。 */
   steps: number;
+}
+
+/** 运行时事件（可观测）：step / 文本增量 / 工具调用 / 工具结果 / hook trace / 结束 / 错误。 */
+export type AgentRunEvent =
+  | { type: 'step_start'; step: number }
+  | { type: 'llm_delta'; delta: string }
+  | { type: 'tool_call'; name: string; args: string }
+  | { type: 'tool_result'; name: string; result: string }
+  | { type: 'hook'; trace: HookTrace }
+  | { type: 'done'; finalMessage: ChatMessage; steps: number }
+  | { type: 'error'; error: string };
+
+/** `run` 的可选参数。 */
+export interface AgentRunOptions {
+  /** 运行时事件回调（流式 / 非流式均触发）。 */
+  onEvent?: (event: AgentRunEvent) => void;
 }

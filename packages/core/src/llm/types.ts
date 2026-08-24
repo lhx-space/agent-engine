@@ -54,4 +54,12 @@ export interface ChatCompletionResult {
 export interface LLMProvider {
   readonly name: string;
   chatCompletion(params: ChatCompletionParams): Promise<ChatCompletionResult>;
+  /**
+   * 流式 chat completion（可选方法）。文本增量经 `onDelta(delta)` 逐段回调，
+   * 最终仍返回完整 `ChatCompletionResult`（含聚合后的 tool_calls / usage）。
+   */
+  chatCompletionStream?(
+    params: ChatCompletionParams,
+    onDelta: (delta: string) => void,
+  ): Promise<ChatCompletionResult>;
 }

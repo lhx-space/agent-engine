@@ -73,24 +73,28 @@ export function createAnthropicProvider(config: ModelConfig): LLMProvider {
     baseURL: config.baseURL,
   });
 
+  const buildRequest = (params: ChatCompletionParams) => {
+    const system = params.messages
+      .filter((m) => m.role === 'system')
+      .map((m) => m.content)
+      .join('\n\n');
+
+    const messages = params.messages.filter((m) => m.role !== 'system').map(toAnthropicMessage);
+
+    return {
+      model: config.model,
+      max_tokens: params.maxTokens ?? 4096,
+      system: system || undefined,
+      messages,
+      tools: params.tools?.map(toAnthropicTool),
+      temperature: params.temperature,
+    };
+  };
+
   return {
     name: 'anthropic',
     async chatCompletion(params: ChatCompletionParams): Promise<ChatCompletionResult> {
-      const system = params.messages
-        .filter((m) => m.role === 'system')
-        .map((m) => m.content)
-        .join('\n\n');
-
-      const messages = params.messages.filter((m) => m.role !== 'system').map(toAnthropicMessage);
-
-      const response = await client.messages.create({
-        model: config.model,
-        max_tokens: params.maxTokens ?? 4096,
-        system: system || undefined,
-        messages,
-        tools: params.tools?.map(toAnthropicTool),
-        temperature: params.temperature,
-      });
+      const response = await client.messages.create(buildRequest(params));
 
       const textParts: string[] = [];
       const toolCalls: ToolCall[] = [];
@@ -121,6 +125,61 @@ export function createAnthropicProvider(config: ModelConfig): LLMProvider {
           completionTokens: response.usage.output_tokens,
         },
         finishReason: response.stop_reason ?? undefined,
+      };
+    },
+
+    async chatCompletionStream(
+      params: ChatCompletionParams,
+      onDelta: (delta: string) => void,
+    ): Promise<ChatCompletionResult> {
+      const stream = await client.messages.create({ ...buildRequest(params), stream: true });
+
+      let text = '';
+      let finishReason: string | undefined;
+      const toolCalls: ToolCall[] = [];
+      // 流式下 tool_use 的 input 是分片 JSON，按 index 累积。
+      const toolInputJson = new Map<number, string>();
+
+      for await (const event of stream) {
+        if (event.type === 'content_block_delta') {
+          if (event.delta.type === 'text_delta') {
+            text += event.delta.text;
+            onDelta(event.delta.text);
+          } else if (event.delta.type === 'input_json_delta') {
+            const index = event.index;
+            toolInputJson.set(index, (toolInputJson.get(index) ?? '') + event.delta.partial_json);
+          }
+        } else if (event.type === 'content_block_start') {
+          if (event.content_block.type === 'tool_use') {
+            toolCalls.push({
+              id: event.content_block.id,
+              type: 'function',
+              function: {
+                name: event.content_block.name,
+                arguments: '',
+              },
+            });
+          }
+        } else if (event.type === 'message_delta') {
+          finishReason = event.delta.stop_reason ?? finishReason;
+        }
+      }
+
+      // 流结束后把累积的分片 JSON 回填到对应 tool_use。
+      for (const [index, json] of toolInputJson) {
+        const call = toolCalls[index];
+        if (call) {
+          call.function.arguments = json;
+        }
+      }
+
+      return {
+        message: {
+          role: 'assistant',
+          content: text,
+          toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+        },
+        finishReason,
       };
     },
   };
