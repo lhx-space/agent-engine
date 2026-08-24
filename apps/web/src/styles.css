@@ -24,7 +24,7 @@ body,
 
 .editor__content {
   display: grid;
-  grid-template-columns: 1fr 1.2fr 1fr;
+  grid-template-columns: 1.4fr 1.2fr 0.9fr;
   gap: 12px;
   padding: 12px;
   height: calc(100vh - 56px);
@@ -34,6 +34,7 @@ body,
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -43,11 +44,80 @@ body,
   overflow: auto;
 }
 
-.run-result {
+/* chat 面板：列表滚动 + 输入区固定在底部 */
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.chat-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 4px;
+}
+
+.chat-input {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.chat-input .ant-input {
+  flex: 1;
+}
+
+/* markdown 渲染样式 */
+.chat-markdown {
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.chat-markdown pre {
+  margin: 8px 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #f6f8fa;
+  overflow: auto;
+}
+
+.chat-markdown code {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  font-size: 0.9em;
+}
+
+.chat-markdown :not(pre) > code {
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  background: #f0f1f2;
+}
+
+.chat-cursor {
+  display: inline-block;
+  margin-left: 2px;
+  animation: chat-blink 1s steps(1) infinite;
+  color: #1677ff;
+}
+
+@keyframes chat-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* 步骤时间线详情 */
+.chat-step-detail {
   margin: 0;
-  padding: 12px;
+  padding: 8px;
   border-radius: 6px;
   background: #f6f8fa;
   white-space: pre-wrap;
-  font: inherit;
+  word-break: break-all;
+  font-size: 12px;
+  max-height: 160px;
+  overflow: auto;
 }
