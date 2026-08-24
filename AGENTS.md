@@ -120,7 +120,9 @@ agent-engine/
 ├── packages/
 │   ├── core/                  # @agent-engine/core   —— 内核执行引擎（最核心）
 │   │   └── src/
-│   │       ├── agent/         #   Agent Loop、单/多 Agent 编排器
+│   │       ├── agent/         #   Agent Loop（单 Agent 原语；多 Agent 编排在独立 orchestration 包，M3）
+│   │       ├── capability/    #   CapabilityBundle 统一能力束 + mergeBundles 汇聚
+│   │       ├── resolve/       #   resolveAgentConfig（AgentConfig→AgentLoop 一键装配）
 │   │       ├── llm/           #   Provider 抽象（OpenAI/Anthropic/自定义）
 │   │       ├── tools/         #   Tool 注册表与执行器
 │   │       │   ├── builtin/   #   内置工具（todo/read/write/bash/web/sitesearch/calculator/...）
@@ -133,14 +135,14 @@ agent-engine/
 │   │       ├── rules/         #   上下文规则加载/检索 + guardrail 拦截
 │   │       ├── context/       #   system-prompt 组装、上下文窗口管理
 │   │       ├── retrieval/     #   统一能力检索（CapabilityRegistry / CapabilityLoader，BM25）
-│   │       ├── mcp/           #   MCP client 接入（M3 规划）
+│   │       ├── mcp/           #   MCP client 接入（stdio transport）
 │   │       ├── events/        #   事件总线、可观测（M3 规划）
 │   │       └── types.ts       #   对外核心类型
 │   ├── config/                # @agent-engine/config —— 配置加载 + Schema
 │   │   └── src/
 │   │       ├── schema/        #   Zod Schema（AgentConfig 等）
 │   │       ├── loader/        #   yaml/json5/jiti 加载器
-│   │       └── resolve/       #   配置归一化、引用解析、校验（M3 规划）
+│   │       └── resolve/       #   配置级归一化（env 插值 / $ref / extends，后续）
 │   ├── cli/                   # @agent-engine/cli   —— 命令行入口
 │   ├── server/                # @agent-engine/server —— HTTP 服务（Docker 部署）
 │   └── plugins/               # 内置插件（otel、git 等）
@@ -174,15 +176,30 @@ docs/（Rspress）为独立站点，无运行时依赖
 
 这是理解本项目最重要的心智模型。八个可配置项分属四个层次：
 
+### 5.0 目录 → 层 映射
+
+依赖方向：**上层依赖下层，反向禁止**（包级已锁 `config ← core ← cli/server`）。
+
+| 层                         | 模块（`core/src/`）                                 | 职责                             |
+| -------------------------- | --------------------------------------------------- | -------------------------------- |
+| 引擎层                     | `agent/`（loop / assemble）、`llm/`                 | 执行循环 + 模型接入              |
+| 能力层（横向拓展）         | `tools/`、`skills/`、`mcp/`                         | 原子能力 / 能力包 / 外部能力来源 |
+| 扩展层                     | `plugins/`                                          | 能力的打包与分发                 |
+| 控制层                     | `hooks/`、`rules/`（guardrail）                     | 生命周期拦截 + 规则约束          |
+| 上下文层                   | `context/`（system-prompt）、`memory/`              | 提示词组装 + 会话/长期记忆       |
+| 基建层（leaf，被上层依赖） | `sandbox/`、`retrieval/`、`capability/`、`resolve/` | 隔离 / 检索 / 能力束 / 装配      |
+
+> 目录是「呈现」不是「约束」：真正的分层靠依赖方向与未来的 import 边界 lint，而非目录嵌套深度。
+
 ### 5.1 能力层（Agent 能「做什么」）
 
 - **tools**：原子能力单元，一个函数即一个工具（如 `read_file`、`bash`、`web_search`）。注册进 **Tool Registry**。已落地内置工具 `todo` / `read_file` / `write_file` / `bash` / `web_search` / `web_fetch` / `sitesearch` / `calculator` / `datetime` / `json` / `base64`（`core/tools/builtin/`），其中 `bash` 默认禁用、经 `SandboxBackend` 沙箱执行（见 5.6）；非 tool 的支撑代码（http/搜索后端/路径/domain/html/store/policy）统一在 `core/tools/utils/`。
 - **skills**：可复用能力包 = 一份指令（`SKILL.md`）+ 可选捆绑的 tools/资源。按需动态加载，加载后将其指令注入上下文、工具并入注册表。已落地 `Skill` 类型 + 统一 `CapabilityLoader`（BM25 检索，复用 `CapabilityRegistry`）+ `loadSkillFromPath`（gray-matter 解析 SKILL.md）；`AgentLoop.skills` 注入后按需注入指令 + 注册捆绑工具。
-- **mcp**：通过 Model Context Protocol 接入的**外部能力来源**。一个外部 MCP server 的 `tools/resources` 会被归一化为标准 Tool，纳入同一注册表，内核无感知差异。**未落地**：MCP client 尚未实现（`core/mcp/` 待建，下一个 change）；SDK 依赖 `@modelcontextprotocol/sdk`（stdio transport）已就位，配置 `mcp.servers`（name/command/args/env）已在 Schema 中声明。
+- **mcp**：通过 Model Context Protocol 接入的**外部能力来源**。一个外部 MCP server 的 `tools/resources` 会被归一化为标准 Tool，纳入同一注册表，内核无感知差异。已落地 `core/mcp/`（`connectMcpServer` / `connectMcpServers`，stdio transport 复用 `@modelcontextprotocol/sdk`，tools 归一化为标准 Tool + `jsonSchema` 透传 + 错误隔离 + `dispose` 生命周期）；配置 `mcp.servers`（name/command/args/env）由 resolve 层装配。
 
 ### 5.2 扩展层（能力的「打包与分发」单元）
 
-- **plugins**：最大的扩展单元，可打包「多个 tools + skills + hooks + rules + memory 后端 + system-prompt 片段」整体注册/卸载。插件通过 `PluginContext` 注入能力，是实现「开箱即用领域能力」的载体。已落地 `Plugin` 类型 + `PluginContext`（registerTool / registerSkill / registerHook / registerRule / provideSystemPrompt）+ `PluginManager`（install → `PluginAssembly`）+ `assembleAgentLoop`（async 装配工厂，安装 plugins 并合并能力）；内置插件 `@agent-engine/plugin-git`（git 工具套件，只读默认、破坏性子命令阻断、经沙箱执行，`packages/plugins/git/`）。
+- **plugins**：最大的扩展单元，可打包「多个 tools + skills + hooks + rules + memory 后端 + system-prompt 片段」整体注册/卸载。插件通过 `PluginContext` 注入能力，是实现「开箱即用领域能力」的载体。已落地 `Plugin` 类型 + `PluginContext`（registerTool / registerSkill / registerHook / registerRule / provideSystemPrompt）+ `PluginManager`（install → `CapabilityBundle`）+ `assembleAgentLoop`（async 装配工厂，安装 plugins 并合并能力）；内置插件 `@agent-engine/plugin-git`（git 工具套件，只读默认、破坏性子命令阻断、经沙箱执行，`packages/plugins/git/`）。
 
 ### 5.3 执行控制层（Agent「如何做」的约束）
 
@@ -660,7 +677,7 @@ services:
 
 1. **M1 内核骨架**（✅ 已完成）：monorepo 搭建（tsdown 构建）+ `config` 包（Schema + 三格式加载）+ `core` 包（LLM Provider 抽象——**默认接 DeepSeek**、Tool 注册表、单 Agent Loop）。
 2. **M2 配置化能力**（✅ 已完成）：hooks、rules、skills、plugins 系统 + system-prompt 组装 + 会话 memory + 内置工具（`todo` / `read_file` / `write_file` / `bash` / `web_search` / `web_fetch` / `sitesearch` / `calculator` / `datetime` / `json` / `base64`）+ 执行沙箱（`SandboxBackend`：docker / nsjail 双后端，bash 默认禁用，rtk 输出压缩）+ `@agent-engine/plugin-git`。
-3. **M3 扩展接入**（**当前进行中，优先顺序**）：① **MCP client**（连接外部世界的核心缺口，复用 `@modelcontextprotocol/sdk`，stdio transport，tools/resources 归一化为标准 Tool）；② 长期记忆后端（pgvector，三层记忆：正确截取 + 滚动摘要 + 语义向量）；③ 多 Agent 编排；④ config resolve 层（AgentConfig→AgentLoop 一键装配）；⑤ FunctionSandbox（WASM/WASI）。此外待补齐：流式输出（`llm-streaming`）、`onInit`/`onSessionStart`/`onSessionEnd` 三个 hook、`events/` 事件总线 + pino 接线。
+3. **M3 扩展接入**（**进行中**）：✅ ① MCP client（`connectMcpServer`/`connectMcpServers`，stdio transport）；✅ ④ config resolve 层（`resolveAgentConfig`：AgentConfig→AgentLoop 一键装配 + `CapabilityBundle` 统一）。剩余：② 长期记忆后端（pgvector，三层记忆）；③ 多 Agent 编排（独立 `@agent-engine/orchestration` 包）；⑤ FunctionSandbox（WASM/WASI）。此外待补齐：流式输出（`llm-streaming`）、`onInit`/`onSessionStart`/`onSessionEnd` 三个 hook、`events/` 事件总线 + pino 接线。
 4. **M4 服务化**：server（HTTP API）+ CLI。
 5. **M5 平台与文档**：apps/web 一体化平台 + docs（Rspress）+ Docker 编排 + 示例垂直领域 Agent。
 
