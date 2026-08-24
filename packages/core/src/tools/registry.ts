@@ -3,19 +3,42 @@ import type { ToolDefinition } from '../llm/types';
 import type { Tool } from './types';
 
 /**
+ * LLM 对工具 function.name 的硬约束：只允许字母/数字/下划线/连字符（不允许点号等）。
+ * 配置语义名（如 `builtin.read_file`）带点号，不能直接发给 LLM，需转成合法名。
+ */
+const LLM_NAME_INVALID = /[^a-zA-Z0-9_-]/g;
+
+/** 把工具语义名转成 LLM 合法的 function.name（非法字符替换为 `_`）。 */
+export function toLlmName(name: string): string {
+  return name.replace(LLM_NAME_INVALID, '_');
+}
+
+/**
  * 工具注册表：管理工具实例，负责工具调用的参数解析、校验与执行。
+ * 内部维护「LLM 名 → 语义名」反向映射，LLM 回调时反查真实工具名。
  */
 export class ToolRegistry {
   private readonly tools = new Map<string, Tool>();
+  private readonly llmNames = new Map<string, string>();
 
   /** 注册工具。同名注册时后者覆盖前者。 */
   register(tool: Tool): void {
     this.tools.set(tool.name, tool);
+    this.llmNames.set(toLlmName(tool.name), tool.name);
   }
 
   /** 按名移除工具。已注册返回 true，未注册返回 false 且无副作用。 */
   unregister(name: string): boolean {
-    return this.tools.delete(name);
+    const removed = this.tools.delete(name);
+    if (removed) {
+      this.llmNames.delete(toLlmName(name));
+    }
+    return removed;
+  }
+
+  /** LLM 回调名 → 真实语义名（未注册时原样返回，保证向后兼容）。 */
+  resolveName(llmName: string): string {
+    return this.llmNames.get(llmName) ?? llmName;
   }
 
   /** 按名查询工具，未注册返回 undefined。 */
@@ -65,12 +88,12 @@ export class ToolRegistry {
     return tool.execute(result.data);
   }
 
-  /** 将单个工具转换为 LLM 可用的 ToolDefinition。 */
+  /** 将单个工具转换为 LLM 可用的 ToolDefinition（function.name 转成 LLM 合法名）。 */
   toToolDefinition(tool: Tool): ToolDefinition {
     return {
       type: 'function',
       function: {
-        name: tool.name,
+        name: toLlmName(tool.name),
         description: tool.description,
         parameters: (tool.jsonSchema ?? toJSONSchema(tool.inputSchema)) as Record<string, unknown>,
       },

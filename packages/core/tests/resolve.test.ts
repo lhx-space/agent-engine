@@ -87,9 +87,9 @@ describe('resolveAgentConfig', () => {
     const result = await resolved.agent.run('hi');
     expect(result.finalMessage.content).toBe('ok');
 
-    // 内置 todo（恒注册）+ 插件工具都进入了 LLM 的工具列表。
+    // 内置 todo（恒注册）+ 插件工具都进入了 LLM 的工具列表（function.name 为 LLM 合法名）。
     const tools = capturedTools[0] ?? [];
-    expect(tools).toContain('builtin.todo');
+    expect(tools).toContain('builtin_todo');
     expect(tools).toContain('plugin_tool');
 
     // dispose 幂等（无 mcp 时为无副作用）。

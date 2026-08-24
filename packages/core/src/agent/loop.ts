@@ -96,7 +96,8 @@ export class AgentLoop {
         }
 
         for (const toolCall of toolCalls) {
-          const name = toolCall.function.name;
+          // LLM 回调的是合法名（如 builtin_read_file），反查真实语义名（builtin.read_file）。
+          const name = this.registry.resolveName(toolCall.function.name);
           const args =
             (await this.hooks?.beforeToolCall(name, toolCall.function.arguments)) ??
             toolCall.function.arguments;

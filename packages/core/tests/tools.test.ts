@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@rstest/core';
 import { z } from 'zod';
-import { ToolRegistry } from '../src/tools/registry';
+import { ToolRegistry, toLlmName } from '../src/tools/registry';
 import type { Tool } from '../src/tools/types';
 
 function makeWeatherTool(): Tool<{ city: string }, { temp: number }> {
@@ -117,5 +117,37 @@ describe('Zod → JSON Schema 转换', () => {
       type: 'object',
       properties: { x: { type: 'string' } },
     });
+  });
+
+  it('function.name 满足 LLM 约束（点号转下划线）', () => {
+    const registry = new ToolRegistry();
+    registry.register({
+      name: 'builtin.read_file',
+      description: 'read file',
+      inputSchema: z.object({ path: z.string() }),
+      execute: async () => 'ok',
+    });
+
+    const def = registry.toToolDefinitions()[0];
+    expect(def?.function.name).toBe('builtin_read_file');
+    expect(def?.function.name).toMatch(/^[a-zA-Z0-9_-]+$/);
+  });
+
+  it('LLM 回调名反查真实语义名', () => {
+    const registry = new ToolRegistry();
+    registry.register({
+      name: 'builtin.read_file',
+      description: 'read file',
+      inputSchema: z.object({ path: z.string() }),
+      execute: async () => 'ok',
+    });
+
+    expect(registry.resolveName('builtin_read_file')).toBe('builtin.read_file');
+  });
+
+  it('toLlmName 将非法字符统一替换为下划线', () => {
+    expect(toLlmName('builtin.read_file')).toBe('builtin_read_file');
+    expect(toLlmName('a.b-c')).toBe('a_b-c');
+    expect(toLlmName('ok_name-1')).toBe('ok_name-1');
   });
 });

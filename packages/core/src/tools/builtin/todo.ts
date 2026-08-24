@@ -21,7 +21,7 @@ export type TodoResult = { item: TodoItem } | { items: TodoItem[] } | { deleted:
 
 /** todo 规划引导片段（注册 todo 时由装配层注入 system prompt，兑现 AGENTS.md 6.2）。 */
 export const TODO_PLANNING_GUIDANCE =
-  '遇到复杂任务时，先用 builtin.todo 列出计划（add），再逐步执行并用 update 更新状态。';
+  '遇到复杂任务时，先用 todo 工具列出计划（add），再逐步执行并用 update 更新状态。';
 
 // ============ schema ============
 
