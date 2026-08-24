@@ -141,6 +141,64 @@ describe('OpenAI 兼容实现', () => {
     expect(result.usage?.totalTokens).toBe(30);
     expect(result.finishReason).toBe('tool_calls');
   });
+
+  it('非流式透传 reasoning_content', async () => {
+    mocks.openaiCreate.mockResolvedValue({
+      choices: [
+        {
+          finish_reason: 'stop',
+          message: {
+            role: 'assistant',
+            content: 'final answer',
+            reasoning_content: 'thinking...',
+          },
+        },
+      ],
+      usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+    });
+
+    const provider = createOpenAIProvider({
+      provider: 'openai-compatible',
+      model: 'deepseek-reasoner',
+      apiKey: 'test-key',
+    });
+    const result = await provider.chatCompletion({
+      messages: [{ role: 'user', content: 'x' }],
+    });
+
+    expect(result.message.reasoning).toBe('thinking...');
+    expect(result.message.content).toBe('final answer');
+  });
+
+  it('流式 reasoning_content 分片累积并按 kind 回调', async () => {
+    async function* mockStream() {
+      yield { choices: [{ delta: { reasoning_content: 'thinking ' }, finish_reason: null }] };
+      yield { choices: [{ delta: { reasoning_content: 'hard' }, finish_reason: null }] };
+      yield { choices: [{ delta: { content: 'answer' }, finish_reason: null }] };
+      yield { choices: [{ delta: {}, finish_reason: 'stop' }] };
+    }
+    mocks.openaiCreate.mockResolvedValue(mockStream());
+
+    const provider = createOpenAIProvider({
+      provider: 'openai-compatible',
+      model: 'deepseek-reasoner',
+      apiKey: 'test-key',
+    });
+    const reasoningDeltas: string[] = [];
+    const contentDeltas: string[] = [];
+    const result = await provider.chatCompletionStream(
+      { messages: [{ role: 'user', content: 'x' }] },
+      (delta, kind) => {
+        if (kind === 'reasoning') reasoningDeltas.push(delta);
+        else contentDeltas.push(delta);
+      },
+    );
+
+    expect(reasoningDeltas).toEqual(['thinking ', 'hard']);
+    expect(contentDeltas).toEqual(['answer']);
+    expect(result.message.reasoning).toBe('thinking hard');
+    expect(result.message.content).toBe('answer');
+  });
 });
 
 describe('Anthropic 实现', () => {
@@ -185,5 +243,94 @@ describe('Anthropic 实现', () => {
       function: { name: 'get_weather', arguments: '{"city":"beijing"}' },
     });
     expect(result.finishReason).toBe('tool_use');
+  });
+
+  it('多个连续 tool 结果合并进单个 user 消息（Anthropic 协议要求）', async () => {
+    mocks.anthropicCreate.mockResolvedValue({
+      content: [{ type: 'text', text: 'done' }],
+      usage: { input_tokens: 10, output_tokens: 20 },
+      stop_reason: 'end_turn',
+    });
+
+    const provider = createAnthropicProvider({
+      provider: 'anthropic',
+      model: 'claude',
+      apiKey: 'test-key',
+    });
+    await provider.chatCompletion({
+      messages: [
+        { role: 'user', content: 'x' },
+        {
+          role: 'assistant',
+          content: '',
+          toolCalls: [
+            { id: 'call_1', type: 'function', function: { name: 't1', arguments: '{}' } },
+            { id: 'call_2', type: 'function', function: { name: 't2', arguments: '{}' } },
+          ],
+        },
+        { role: 'tool', content: 'r1', toolCallId: 'call_1', name: 't1' },
+        { role: 'tool', content: 'r2', toolCallId: 'call_2', name: 't2' },
+      ],
+    });
+
+    const sentMessages = mocks.anthropicCreate.mock.calls[0][0].messages as {
+      role: string;
+      content: { type: string; tool_use_id?: string; content?: string }[];
+    }[];
+    const toolResultMessages = sentMessages.filter(
+      (m) =>
+        m.role === 'user' &&
+        Array.isArray(m.content) &&
+        m.content.some((b) => b.type === 'tool_result'),
+    );
+    expect(toolResultMessages.length).toBe(1);
+    expect(toolResultMessages[0].content).toHaveLength(2);
+    expect(toolResultMessages[0].content[0]).toMatchObject({
+      tool_use_id: 'call_1',
+      content: 'r1',
+    });
+    expect(toolResultMessages[0].content[1]).toMatchObject({
+      tool_use_id: 'call_2',
+      content: 'r2',
+    });
+  });
+
+  it('流式下 text block 在前时 tool_use 参数按 block index 正确回填', async () => {
+    async function* mockStream() {
+      yield { type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } };
+      yield { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'hi' } };
+      yield {
+        type: 'content_block_start',
+        index: 1,
+        content_block: { type: 'tool_use', id: 'toolu_1', name: 'get_weather' },
+      };
+      yield {
+        type: 'content_block_delta',
+        index: 1,
+        delta: { type: 'input_json_delta', partial_json: '{"city":' },
+      };
+      yield {
+        type: 'content_block_delta',
+        index: 1,
+        delta: { type: 'input_json_delta', partial_json: '"beijing"}' },
+      };
+      yield { type: 'message_delta', delta: { stop_reason: 'tool_use' } };
+    }
+    mocks.anthropicCreate.mockResolvedValue(mockStream());
+
+    const provider = createAnthropicProvider({
+      provider: 'anthropic',
+      model: 'claude',
+      apiKey: 'test-key',
+    });
+    const result = await provider.chatCompletionStream(
+      { messages: [{ role: 'user', content: 'x' }] },
+      () => {},
+    );
+
+    expect(result.message.toolCalls?.[0]).toMatchObject({
+      id: 'toolu_1',
+      function: { name: 'get_weather', arguments: '{"city":"beijing"}' },
+    });
   });
 });

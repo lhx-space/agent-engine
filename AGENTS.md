@@ -677,13 +677,13 @@ services:
 
 1. **M1 内核骨架**（✅ 已完成）：monorepo 搭建（tsdown 构建）+ `config` 包（Schema + 三格式加载）+ `core` 包（LLM Provider 抽象——**默认接 DeepSeek**、Tool 注册表、单 Agent Loop）。
 2. **M2 配置化能力**（✅ 已完成）：hooks、rules、skills、plugins 系统 + system-prompt 组装 + 会话 memory + 内置工具（`todo` / `read_file` / `write_file` / `bash` / `web_search` / `web_fetch` / `sitesearch` / `calculator` / `datetime` / `json` / `base64`）+ 执行沙箱（`SandboxBackend`：docker / nsjail 双后端，bash 默认禁用，rtk 输出压缩）+ `@agent-engine/plugin-git`。
-3. **M3 扩展接入**（**进行中**）：✅ ① MCP client（`connectMcpServer`/`connectMcpServers`，stdio transport）；✅ ④ config resolve 层（`resolveAgentConfig`：AgentConfig→AgentLoop 一键装配 + `CapabilityBundle` 统一）。剩余：② 长期记忆后端（pgvector，三层记忆）；③ 多 Agent 编排（独立 `@agent-engine/orchestration` 包）；⑤ FunctionSandbox（WASM/WASI）。此外待补齐：流式输出（`llm-streaming`）、`onInit`/`onSessionStart`/`onSessionEnd` 三个 hook、`events/` 事件总线 + pino 接线。
-4. **M4 服务化**：server（HTTP API）+ CLI。
-5. **M5 平台与文档**：apps/web 一体化平台 + docs（Rspress）+ Docker 编排 + 示例垂直领域 Agent。
+3. **M3 扩展接入**（**进行中**）：✅ ① MCP client（`connectMcpServer`/`connectMcpServers`，stdio transport）；✅ ④ config resolve 层（`resolveAgentConfig`：AgentConfig→AgentLoop 一键装配 + `CapabilityBundle` 统一）；✅ 流式输出（`chatCompletionStream` + NDJSON 端点）；✅ `onInit`/`onSessionStart`/`onSessionEnd` 三个 hook；✅ 会话生命周期（server `SessionStore` + `sessionId` 复用 + `DELETE /sessions/:id`）；✅ ReAct loop 强化（并行 tool_calls、工具重试+退避、`AbortSignal` 取消、`finishReason` 续写、`execution` 预算配置）；✅ 真思考透传（DeepSeek R1 `reasoning_content` → `ChatMessage.reasoning` + 前端「思考/回复」分开）。剩余：② 长期记忆后端（pgvector，三层记忆）；③ 多 Agent 编排（独立 `@agent-engine/orchestration` 包）；⑤ FunctionSandbox（WASM/WASI）；`events/` 事件总线（pino 已接 server 层，events 总线未建）。
+4. **M4 服务化**（**部分完成**）：✅ server HTTP API（`/api/agent/run` 非流式 + `/api/agent/run/stream` NDJSON + `DELETE /api/agent/sessions/:id`，pino 日志、session 复用、`SessionStore`）。剩余：CLI（`packages/cli` 仍是 stub）。
+5. **M5 平台与文档**（**部分完成**）：✅ apps/web 三栏编辑器 + 流式 chat + 模型供应商预设 + security preset + 配置导出（省略默认值减负）。剩余：docs（Rspress）、Docker 编排、示例垂直领域 Agent。
 
-### 复盘纪要（截至 M2 收尾）
+### 复盘纪要（截至 M3 中期）
 
-M2 落地过程中沉淀的坑点与约定，后续开发直接复用：
+M2 落地及 M3 推进过程中沉淀的坑点与约定，后续开发直接复用：
 
 - **Zod 默认值不级联**：`z.object({...}).default({})` 返回字面 `{}`，**不会**应用内层字段默认值——需显式给全量默认（`defaultSecurityConfig = SecurityConfigSchema.parse({})`）或子 schema 各自 `.default(全量)`。
 - **LLM 工具 schema 用扁平结构**：`z.discriminatedUnion` 对 LLM 函数调用不够友好（分支匹配严格），工具入参改「`action` 枚举 + 可选字段」的扁平 schema，必需字段在执行期手动校验报错。
@@ -694,3 +694,8 @@ M2 落地过程中沉淀的坑点与约定，后续开发直接复用：
 - **`__proto__` 是对象字面量的特殊语法**：`{ __proto__: x }` 是「设置原型」而非「自有属性」；测试/构造带危险 key 的对象须用 `JSON.parse('{"__proto__":...}')`，断言用 `Object.prototype.hasOwnProperty.call(obj, '__proto__')` 而非 `'__proto__' in obj`（`in` 会命中 `Object.prototype` 上的访问器）。
 - **`yaml` v2 把 `__proto__` 解析为自有属性（安全）**，但 `sanitizeConfigValue` 仍「重建为全新普通对象」兜底，即便源对象原型被污染也能隔离；`deepFreeze` 是浅冻结，须递归 + WeakSet 防环 + 跳过非 plain 值（Date/Map/类实例）。
 - **配置加载即信任边界**：TS 配置会被当作代码执行（jiti），默认拒绝、显式 `allowTsConfig` 才开，仅限本地受信任输入；生产/热挂载只走 YAML/JSON。
+- **Anthropic 多 tool_result 必须合并进「同一个 user 消息」**：一个 assistant 的多个 `tool_use`，其 `tool_result` 必须出现在紧接的下一个 user 消息（多个 block），否则 400 `tool_use ids were found without tool_result blocks`。`buildAnthropicMessages` 合并连续 tool 消息。
+- **Anthropic 流式 tool_use input 按 content_block `index` 聚合（不是数组下标）**：`index` 是整个消息内所有 block（含 text block）的索引，text block 在前时 `toolCalls[1]` 会错位丢参数 → 工具收到 `{}`。用 `Map<blockIndex, ToolCall>` 对齐。
+- **DeepSeek R1 `reasoning_content` 是 OpenAI 兼容端点特性**：非流式 `message.reasoning_content`、流式 `delta.reasoning_content`，与 `content` 分离（`ChatMessage.reasoning` 单独承载，前端「思考/回复」分开）。anthropic 端点（`/anthropic`）不返回该字段；要真思考需 `provider: openai-compatible` + `model: deepseek-reasoner` + `baseURL: https://api.deepseek.com`。
+- **会话复用要求 resolve 始终创建 `ConversationMemory`**：否则「不配 memory 的多轮」是空的；`memory.session.maxMessages` 只调裁剪窗口。
+- **多模型方向（生产级）**：能力分离（chat / reasoning / embedding / vision 顶层分字段）+ 实例级覆盖（subagent 级）+ 模型路由（fallback / 按复杂度），是 M3 后续的地基；`deepseek-reasoner` 单模型已含「think + 执行」，分角色是成本/稳定性优化，非必须。

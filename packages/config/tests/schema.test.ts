@@ -96,4 +96,39 @@ describe('AgentConfigSchema', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('execution 缺省对齐现状', () => {
+    const result = AgentConfigSchema.safeParse({
+      name: 'test-agent',
+      model: { model: 'deepseek-chat' },
+      systemPrompt: { template: 'hello' },
+      execution: {},
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.execution).toMatchObject({
+        maxSteps: 10,
+        toolRetry: { maxRetries: 0, baseDelayMs: 500 },
+        maxContinuations: 1,
+      });
+    }
+  });
+
+  it('execution 显式覆盖预算与重试', () => {
+    const result = AgentConfigSchema.safeParse({
+      name: 'test-agent',
+      model: { model: 'deepseek-chat' },
+      systemPrompt: { template: 'hello' },
+      execution: { maxSteps: 20, maxToolCalls: 8, timeoutMs: 60000, toolRetry: { maxRetries: 3 } },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.execution).toMatchObject({
+        maxSteps: 20,
+        maxToolCalls: 8,
+        timeoutMs: 60000,
+        toolRetry: { maxRetries: 3, baseDelayMs: 500 },
+      });
+    }
+  });
 });

@@ -52,9 +52,12 @@ export function createDatetimeTool(): Tool<DatetimeInput, DatetimeResult> {
           if (!input.value) throw new Error('datetime format requires "value"');
           const date = new Date(input.value);
           if (Number.isNaN(date.getTime())) throw new Error(`Invalid date: "${input.value}"`);
+          // 完整输出（星期 + 日期 + 时分秒），避免模型反复追问「星期几 / 几点」。
           const formatted = new Intl.DateTimeFormat(
             input.locale,
-            input.timeZone ? { timeZone: input.timeZone } : undefined,
+            input.timeZone
+              ? { timeZone: input.timeZone, dateStyle: 'full', timeStyle: 'long' }
+              : { dateStyle: 'full', timeStyle: 'long' },
           ).format(date);
           return { iso: date.toISOString(), epochMs: date.getTime(), formatted };
         }

@@ -38,10 +38,10 @@ export async function resolveAgentConfig(
   // skills：按来源（path / npm / git）解析加载，并聚合临时资源清理。
   const { skills, dispose: disposeSkills } = await resolveSkills(config.skills);
 
-  // memory：会话窗口（长期记忆 M3 后续）。
-  const memory = config.memory?.session
-    ? new ConversationMemory({ maxMessages: config.memory.session.maxMessages })
-    : undefined;
+  // memory：会话窗口始终创建（多轮会话复用依赖它）；`memory.session.maxMessages` 仅调窗口裁剪。
+  const memory = new ConversationMemory(
+    config.memory?.session?.maxMessages ? { maxMessages: config.memory.session.maxMessages } : {},
+  );
 
   const resolved = await assembleAgentLoop({
     provider,
@@ -53,11 +53,22 @@ export async function resolveAgentConfig(
     plugins,
     memory,
     security: config.security,
+    execution: config.execution,
     mcp: resolveMcpServers(config.mcp?.servers ?? []),
     sandbox: deps.sandbox,
   });
 
   const { dispose: disposeAgent } = resolved;
+
+  // onInit：装配完成后触发一次；失败则释放已装配资源后向上抛。
+  try {
+    await hooks.onInit();
+  } catch (error) {
+    await disposeAgent();
+    await disposeSkills();
+    throw error;
+  }
+
   return {
     agent: resolved.agent,
     dispose: async () => {

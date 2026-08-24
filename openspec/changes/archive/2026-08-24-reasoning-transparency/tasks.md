@@ -1,0 +1,6 @@
+- [x] `llm/types.ts`：`ChatMessage.reasoning` + `DeltaKind` + `onDelta(delta, kind?)`
+- [x] `llm/openai.ts`：非流式读 `message.reasoning_content`；流式累积 `delta.reasoning_content` 并按 kind 回调
+- [x] `agent/types.ts` + `loop.ts`：`llm_delta` 事件加 `kind`，透传 provider 的 onDelta kind
+- [x] 前端：`stream-agent.ts`（StreamEvent 加 kind）、`use-stream-chat.ts`（reasoning/content 分桶）、`ChatPanel.tsx`（思考折叠灰显）+ styles.css
+- [x] 测试：`llm.test.ts` 透传 reasoning_content（非流式 + 流式分片 + kind 回调）
+- [x] 全量 test（205 passed）+ typecheck（8/8 + web）+ build + lint / spell / format

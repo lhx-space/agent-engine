@@ -1,4 +1,5 @@
 import type { PluginFactory, ProviderFactory } from '@agent-engine/core';
+import type { SessionStore } from './session-store';
 
 /** `createApp` / `serve` 的可注入选项。 */
 export interface ServerOptions {
@@ -6,4 +7,6 @@ export interface ServerOptions {
   pluginFactories?: Record<string, PluginFactory>;
   /** LLM provider 工厂；缺省用 core 的 `createProvider`。 */
   providerFactory?: ProviderFactory;
+  /** 会话存储；缺省新建 in-memory SessionStore。 */
+  sessionStore?: SessionStore;
 }

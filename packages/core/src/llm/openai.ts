@@ -4,6 +4,7 @@ import type {
   ChatCompletionParams,
   ChatCompletionResult,
   ChatMessage,
+  DeltaKind,
   LLMProvider,
   ToolCall,
   ToolDefinition,
@@ -139,6 +140,8 @@ export function createOpenAIProvider(config: ModelConfig): LLMProvider {
         message: {
           role: 'assistant',
           content: message?.content ?? '',
+          reasoning: (message as unknown as { reasoning_content?: string } | undefined)
+            ?.reasoning_content,
           toolCalls: message?.tool_calls
             ?.map(fromOpenAIToolCall)
             .filter((toolCall): toolCall is ToolCall => toolCall !== null),
@@ -156,7 +159,7 @@ export function createOpenAIProvider(config: ModelConfig): LLMProvider {
 
     async chatCompletionStream(
       params: ChatCompletionParams,
-      onDelta: (delta: string) => void,
+      onDelta: (delta: string, kind?: DeltaKind) => void,
     ): Promise<ChatCompletionResult> {
       const stream = await client.chat.completions.create({
         ...baseRequest(params),
@@ -164,17 +167,28 @@ export function createOpenAIProvider(config: ModelConfig): LLMProvider {
       });
 
       let content = '';
+      let reasoning = '';
       let finishReason: string | undefined;
       const toolCalls = new StreamToolCallAccumulator();
 
       for await (const chunk of stream) {
         const choice = chunk.choices[0];
-        const delta = choice?.delta;
+        const delta = choice?.delta as
+          | { content?: string | null; reasoning_content?: string | null; tool_calls?: unknown[] }
+          | undefined;
+        if (delta?.reasoning_content) {
+          reasoning += delta.reasoning_content;
+          onDelta(delta.reasoning_content, 'reasoning');
+        }
         if (delta?.content) {
           content += delta.content;
-          onDelta(delta.content);
+          onDelta(delta.content, 'content');
         }
-        for (const part of delta?.tool_calls ?? []) {
+        for (const part of (delta?.tool_calls ?? []) as {
+          index: number;
+          id?: string;
+          function?: { name?: string; arguments?: string };
+        }[]) {
           toolCalls.add(part.index, part);
         }
         if (choice?.finish_reason) {
@@ -186,6 +200,7 @@ export function createOpenAIProvider(config: ModelConfig): LLMProvider {
         message: {
           role: 'assistant',
           content,
+          reasoning: reasoning || undefined,
           toolCalls: toolCalls.finalize().length > 0 ? toolCalls.finalize() : undefined,
         },
         finishReason,

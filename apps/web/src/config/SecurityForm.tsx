@@ -1,8 +1,62 @@
 import { Collapse, Form, Input, InputNumber, Select, Switch } from 'antd';
-import type { SecurityConfig, SandboxBackendKind } from '@agent-engine/config/schema';
+import {
+  defaultSecurityConfig,
+  type SecurityConfig,
+  type SandboxBackendKind,
+} from '@agent-engine/config/schema';
 
 const SANDBOX_BACKENDS: SandboxBackendKind[] = ['docker', 'nsjail', 'auto'];
 const SEARCH_PROVIDERS = ['duckduckgo', 'tavily', 'serpapi', 'searxng'];
+
+/** 深比较（纯数据对象）。 */
+function deepEqual(a: unknown, b: unknown): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+interface SecurityPreset {
+  key: string;
+  label: string;
+  description: string;
+  value: SecurityConfig;
+}
+
+const SECURITY_PRESETS: SecurityPreset[] = [
+  {
+    key: 'strict',
+    label: 'strict',
+    description: '默认安全：bash 关闭、无网络、文件只读',
+    value: defaultSecurityConfig,
+  },
+  {
+    key: 'balanced',
+    label: 'balanced',
+    description: 'bash 只读命令白名单 + 文件读写当前目录',
+    value: {
+      ...defaultSecurityConfig,
+      bash: {
+        ...defaultSecurityConfig.bash,
+        enabled: true,
+        allowCommands: ['ls', 'cat', 'pwd', 'git'],
+      },
+      files: { ...defaultSecurityConfig.files, roots: ['./'] },
+    },
+  },
+  {
+    key: 'permissive',
+    label: 'permissive',
+    description: 'bash 开启 + 允许网络 + 破坏性命令黑名单',
+    value: {
+      ...defaultSecurityConfig,
+      bash: {
+        ...defaultSecurityConfig.bash,
+        enabled: true,
+        allowNetwork: true,
+        denyPatterns: ['rm -rf', 'DROP TABLE', 'DROP DATABASE'],
+      },
+      files: { ...defaultSecurityConfig.files, roots: ['./'] },
+    },
+  },
+];
 
 interface SecurityFormProps {
   security: SecurityConfig;
@@ -253,5 +307,28 @@ export function SecurityForm({ security, onChange }: SecurityFormProps) {
     },
   ];
 
-  return <Collapse size="small" items={items} />;
+  const currentPreset = SECURITY_PRESETS.find((p) => deepEqual(p.value, security))?.key;
+
+  return (
+    <div>
+      <Form layout="vertical" size="small">
+        <Form.Item label="安全预设" tooltip="一键套用安全档位，套用后可再展开细调">
+          <Select
+            value={currentPreset}
+            placeholder="选择预设（strict / balanced / permissive）"
+            options={SECURITY_PRESETS.map((p) => ({
+              value: p.key,
+              label: `${p.label} — ${p.description}`,
+            }))}
+            onChange={(key) => {
+              const preset = SECURITY_PRESETS.find((p) => p.key === key);
+              if (preset) onChange(preset.value);
+            }}
+            allowClear
+          />
+        </Form.Item>
+      </Form>
+      <Collapse size="small" items={items} />
+    </div>
+  );
 }

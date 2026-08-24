@@ -339,6 +339,19 @@ describe('calculator / datetime / json / base64', () => {
     expect(res.epochMs).toBe(new Date('2024-01-01T00:00:00Z').getTime());
   });
 
+  it('datetime format 含星期与时分（完整输出）', async () => {
+    const tool = createDatetimeTool();
+    const res = (await tool.execute({
+      action: 'format',
+      value: '2024-01-01T00:00:00Z',
+      timeZone: 'Asia/Shanghai',
+      locale: 'zh-CN',
+    })) as { formatted: string };
+    // 2024-01-01 00:00 UTC = 北京时间周一 08:00
+    expect(res.formatted).toContain('星期一');
+    expect(res.formatted).toContain('08');
+  });
+
   it('json parse', async () => {
     const tool = createJsonTool();
     const res = (await tool.execute({ action: 'parse', input: '{"a":1}' })) as {

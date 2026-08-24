@@ -146,6 +146,30 @@ export const OrchestrationSchema = z.object({
 });
 export type Orchestration = z.infer<typeof OrchestrationSchema>;
 
+// ============ execution ============
+
+export const ToolRetrySchema = z.object({
+  /** 工具执行失败后的最大重试次数；0 = 不重试（默认，向后兼容）。 */
+  maxRetries: z.number().int().nonnegative().default(0),
+  /** 指数退避基数（毫秒）：baseDelayMs * 2^attempt。 */
+  baseDelayMs: z.number().int().nonnegative().default(500),
+});
+export type ToolRetry = z.infer<typeof ToolRetrySchema>;
+
+export const ExecutionConfigSchema = z.object({
+  /** 最大 LLM 调用步数（默认 10，防死循环）。 */
+  maxSteps: z.number().int().positive().default(10),
+  /** 单次 run 内工具调用总数上限；缺省无限制。 */
+  maxToolCalls: z.number().int().positive().optional(),
+  /** 单次 run 整体耗时上限（毫秒）；缺省无限制。 */
+  timeoutMs: z.number().int().positive().optional(),
+  /** 工具执行失败重试策略。 */
+  toolRetry: ToolRetrySchema.default(ToolRetrySchema.parse({})),
+  /** `finishReason='length'`（max_tokens 截断）时的自动续写次数上限；0 = 不续写。 */
+  maxContinuations: z.number().int().nonnegative().default(1),
+});
+export type ExecutionConfig = z.infer<typeof ExecutionConfigSchema>;
+
 // ============ security / sandbox ============
 
 export const SandboxBackendKindSchema = z.enum(['docker', 'nsjail', 'auto']);
@@ -225,6 +249,7 @@ export const AgentConfigSchema = z.object({
   hooks: z.array(HookConfigSchema).default([]),
   plugins: z.array(z.string()).default([]),
   orchestration: OrchestrationSchema.optional(),
+  execution: ExecutionConfigSchema.optional(),
   security: SecurityConfigSchema.default(defaultSecurityConfig),
 });
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;

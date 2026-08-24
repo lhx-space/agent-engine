@@ -35,12 +35,17 @@ WebApp SHALL 复用 `@agent-engine/config` 的 `AgentConfigSchema` 与 `AgentCon
 
 ### Requirement: model 配置（中栏）
 
-中栏 SHALL 编辑 `model` 的 `provider` / `baseURL` / `model` / `temperature` / `maxTokens`。
+中栏 SHALL 编辑 `model` 的 `provider` / `baseURL` / `model` / `temperature` / `maxTokens`，并 SHALL 提供供应商预设（DeepSeek chat / DeepSeek reasoner / Anthropic / Ollama 本地），点选后一键填充 `provider` / `baseURL` / `model`（apiKey 不自动填充，提示经环境变量注入）。
 
 #### Scenario: 编辑 model 字段
 
 - **WHEN** 在中栏修改 model 各字段
 - **THEN** 对应更新配置状态的 `model` 字段
+
+#### Scenario: 供应商预设一键填充
+
+- **WHEN** 用户点选「DeepSeek reasoner」预设
+- **THEN** `model.provider` / `baseURL` / `model` 被填充为对应值，`apiKey` 保持空
 
 ### Requirement: 测试 agent（右栏）
 
@@ -134,3 +139,50 @@ Rsbuild dev server SHALL 将 `/api` 请求代理到 `http://localhost:8080`。
 
 - **WHEN** 导出的 YAML 交给 `loadAgentConfig` 加载
 - **THEN** 解析出的 `AgentConfig` 与前端配置等价
+
+### Requirement: security 折叠与 preset
+
+security 配置 SHALL 默认折叠展示，并提供 preset（strict / balanced / permissive）快捷填充；展开后仍可细调各字段。
+
+#### Scenario: 默认折叠
+
+- **WHEN** 打开配置面板
+- **THEN** security 卡片折叠，不展开显示全部默认字段
+
+#### Scenario: preset 填充
+
+- **WHEN** 点选 permissive preset
+- **THEN** 对应安全字段（如 `bash.enabled`）被填充为宽松值
+
+### Requirement: 导出只导非默认值
+
+导出 YAML / JSON SHALL 省略等于默认值的字段（与默认 `AgentConfig` diff），使导出更精简，且回读后语义等价。
+
+#### Scenario: 省略默认字段
+
+- **WHEN** 当前配置的 `security` 等于默认安全配置
+- **THEN** 导出内容不含 `security` 字段（或仅含与默认不同的字段）
+
+#### Scenario: 保留非默认值
+
+- **WHEN** 用户修改了某字段（如 `temperature: 0.2`）
+- **THEN** 该字段仍出现在导出内容中
+
+### Requirement: 思考与回复分开展示
+
+前端 chat 面板 SHALL 区分「思考」与「回复」：`llm_delta` 事件 `kind='reasoning'` 的内容累积为「思考」块（灰显、可折叠），`kind='content'` 的内容累积为回复正文。
+
+#### Scenario: 思考块灰显折叠
+
+- **WHEN** 流式事件含 `kind='reasoning'` 的 `llm_delta`
+- **THEN** 该内容展示在折叠的「思考」块中（灰显），不混入回复正文
+
+#### Scenario: 回复正文正常渲染
+
+- **WHEN** 流式事件含 `kind='content'`（或缺省）的 `llm_delta`
+- **THEN** 该内容累积为回复正文并 markdown 渲染
+
+#### Scenario: 无思考时行为不变
+
+- **WHEN** 流式事件不含 `kind='reasoning'`
+- **THEN** 不显示思考块，行为与以往一致

@@ -3,29 +3,37 @@ import type { AgentConfig } from '@agent-engine/config/schema';
 /** 与后端 `AgentRunEvent` 对齐的最小事件契约（web 不能 import core）。 */
 export type StreamEvent =
   | { type: 'step_start'; step: number }
-  | { type: 'llm_delta'; delta: string }
+  | { type: 'llm_delta'; delta: string; kind?: 'reasoning' | 'content' }
   | { type: 'tool_call'; name: string; args: string }
   | { type: 'tool_result'; name: string; result: string }
   | { type: 'hook'; trace: { hook: string; point: string; durationMs: number; changed: boolean } }
   | { type: 'done'; finalMessage: { content: string }; steps: number }
   | { type: 'error'; error: string };
 
+export interface StreamAgentResult {
+  /** 最终完整内容（若流正常结束且有 done 事件），否则空串。 */
+  content: string;
+  /** 服务端返回的会话 id（经 `x-session-id` 头），供后续多轮复用。 */
+  sessionId: string | null;
+}
+
 /**
  * 流式调用 `/api/agent/run/stream`，按行解析 NDJSON 事件流。
  * - `onEvent` 每个事件触发一次；
- * - `signal` 用于中断（AbortController）。
- * 返回最终完整内容（若流正常结束且有 done 事件），否则返回空串。
+ * - `signal` 用于中断（AbortController）；
+ * - `sessionId` 传入已存在的会话 id，实现多轮复用。
  */
 export async function streamAgent(
   config: AgentConfig,
   input: string,
   onEvent: (event: StreamEvent) => void,
   signal?: AbortSignal,
-): Promise<string> {
+  sessionId?: string,
+): Promise<StreamAgentResult> {
   const res = await fetch('/api/agent/run/stream', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ config, input }),
+    body: JSON.stringify({ config, input, sessionId }),
     signal,
   });
 
@@ -40,6 +48,8 @@ export async function streamAgent(
     }
     throw new Error(details);
   }
+
+  const newSessionId = res.headers.get('x-session-id');
 
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
@@ -69,5 +79,5 @@ export async function streamAgent(
     }
   }
 
-  return finalContent;
+  return { content: finalContent, sessionId: newSessionId };
 }

@@ -159,8 +159,8 @@ TBD - created by archiving change 2026-08-24-add-builtin-tools. Update Purpose a
 
 #### Scenario: format
 
-- **WHEN** 调用 `action: format` 传入时间戳
-- **THEN** 返回格式化后的本地/ISO 字符串
+- **WHEN** 调用 `action: format` 传入时间戳（可含 `timeZone` / `locale`）
+- **THEN** 返回格式化后的本地化字符串，且 SHALL 包含星期、日期与时分秒（完整输出，避免模型反复追问）
 
 ### Requirement: json 工具
 

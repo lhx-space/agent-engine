@@ -121,3 +121,19 @@ body,
   max-height: 160px;
   overflow: auto;
 }
+
+/* 模型思考过程（灰显、折叠） */
+.chat-reasoning-label {
+  color: #8c8c8c;
+  font-size: 12px;
+}
+
+.chat-reasoning {
+  color: #8c8c8c;
+  font-size: 12px;
+  border-left: 2px solid #e0e0e0;
+  padding-left: 8px;
+  margin: 4px 0;
+  max-height: 240px;
+  overflow: auto;
+}

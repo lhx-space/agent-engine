@@ -21,6 +21,28 @@ function AssistantContent({ message }: { message: ChatMessage }) {
   );
 }
 
+/** 模型思考过程（灰显、默认折叠，与回复正文分开）。 */
+function ReasoningBlock({ reasoning }: { reasoning?: string }) {
+  if (!reasoning) return null;
+  return (
+    <Collapse
+      size="small"
+      ghost
+      items={[
+        {
+          key: 'reasoning',
+          label: <span className="chat-reasoning-label">思考过程</span>,
+          children: (
+            <div className="chat-reasoning">
+              <Markdown remarkPlugins={[remarkGfm]}>{reasoning}</Markdown>
+            </div>
+          ),
+        },
+      ]}
+    />
+  );
+}
+
 /** 步骤时间线（折叠展示 tool/hook 每一步）。 */
 function StepsTimeline({ steps }: { steps: ChatStep[] }) {
   if (steps.length === 0) return null;
@@ -73,6 +95,7 @@ export function ChatPanel({ config }: ChatPanelProps) {
           message.role === 'assistant'
             ? () => (
                 <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                  <ReasoningBlock reasoning={message.reasoning} />
                   <AssistantContent message={message} />
                   {message.error && <Tag color="red">错误：{message.error}</Tag>}
                   <StepsTimeline steps={message.steps} />

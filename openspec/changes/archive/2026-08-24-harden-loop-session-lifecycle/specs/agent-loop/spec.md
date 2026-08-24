@@ -1,0 +1,112 @@
+## MODIFIED Requirements
+
+### Requirement: 工具派发与结果回填
+
+系统 SHALL 将模型的 `tool_calls` 派发给 ToolRegistry 执行，并把结果作为 `role=tool` 消息回填上下文。当模型一次返回多个 `tool_calls` 时，guardrail `beforeToolCall` SHALL 按序逐个校验（可逐个阻断），校验通过的工具 SHALL 并发执行（`Promise.allSettled`），结果按原 tool_call 顺序回填；单个工具失败不阻塞其他工具，失败工具的 `Error:` 作为其 tool 结果回填。
+
+#### Scenario: 工具结果回填
+
+- **WHEN** 模型返回一个 `tool_call`（如 `get_weather`）
+- **THEN** 对应工具被 ToolRegistry 执行，结果作为 tool 消息（含 `toolCallId`）追加到 messages
+
+#### Scenario: 多个工具调用并发执行
+
+- **WHEN** 模型一次返回多个 tool_calls
+- **THEN** 各工具并发执行，结果按原顺序回填；单个失败不影响其余
+
+#### Scenario: 单个工具失败不阻塞其他
+
+- **WHEN** 并发执行中某个工具抛错
+- **THEN** 该工具结果回填 `Error:`，其余工具结果正常回填，循环继续
+
+## ADDED Requirements
+
+### Requirement: 工具执行重试
+
+系统 SHALL 支持可配置的工具执行重试：当工具执行抛错时，按 `execution.toolRetry`（`maxRetries` / `baseDelayMs`）进行指数退避重试，`maxRetries` 默认 0（不重试，向后兼容）；重试耗尽仍失败 SHALL 回填 `Error:`；guardrail 阻断不参与重试。
+
+#### Scenario: 默认不重试
+
+- **WHEN** 未配置 `execution.toolRetry.maxRetries`（或为 0）
+- **THEN** 工具抛错直接回填 `Error:`，不重试
+
+#### Scenario: 配置后重试成功
+
+- **WHEN** `maxRetries=2` 且工具前两次抛错、第三次成功
+- **THEN** 最终结果为成功输出，回填正常
+
+#### Scenario: 重试耗尽回填错误
+
+- **WHEN** `maxRetries=2` 且工具三次都抛错
+- **THEN** 回填 `Error:`，循环继续
+
+### Requirement: 流式取消（AbortSignal）
+
+`AgentLoop.run(userInput, options?)` SHALL 支持 `options.signal`（`AbortSignal`）：每轮 LLM 调用前检查 `signal.aborted`，已中止则抛出 `AbortError`；中止 SHALL 不回写 memory、不按普通错误触发 `onError(phase='agent-loop')`，向上抛 `AbortError`。
+
+#### Scenario: 中止抛出 AbortError
+
+- **WHEN** 传入已 `aborted` 的 `signal` 并运行
+- **THEN** 抛出 `AbortError`，memory 保持原历史不变
+
+#### Scenario: 中止不回写 memory
+
+- **WHEN** run 过程中 signal 被中止
+- **THEN** 本轮消息不回写 memory，历史保持不变
+
+### Requirement: finishReason 区分与续写
+
+`AgentLoop` SHALL 区分 `finishReason`：`stop` 自然终止、`tool_calls` 继续循环、`length`（max_tokens 截断）在 `continuations < execution.maxContinuations`（默认 1）且未达 `maxSteps` 时，追加一条 user「继续」消息进入下一轮；最终结果 SHALL 携带 `finishReason`。
+
+#### Scenario: length 截断自动续写
+
+- **WHEN** 模型返回 `finishReason='length'` 且未超 `maxContinuations` / `maxSteps`
+- **THEN** 追加 user 继续消息，循环继续，续写计数 +1
+
+#### Scenario: 续写次数耗尽终止
+
+- **WHEN** `finishReason='length'` 但续写已达 `maxContinuations`
+- **THEN** 终止并返回当前消息，结果 `finishReason` 为 `length`
+
+#### Scenario: 结果携带 finishReason
+
+- **WHEN** 循环终止
+- **THEN** `AgentLoopResult` 含 `finishReason`（`stop` / `length` / 其他）
+
+### Requirement: execution 预算
+
+`AgentLoop` SHALL 按 `execution` 配置约束运行预算：`maxSteps`（默认 10）限制循环步数、`maxToolCalls`（默认无限制）限制工具调用总数、`timeoutMs`（默认无限制）限制整体耗时；超限 SHALL 终止循环并返回当前状态。
+
+#### Scenario: maxSteps 可配置
+
+- **WHEN** 配置 `execution.maxSteps=3` 且循环未自然终止
+- **THEN** 第 3 步后强制终止，返回当前状态
+
+#### Scenario: maxToolCalls 超限
+
+- **WHEN** 配置 `execution.maxToolCalls=2` 且模型持续发起工具调用
+- **THEN** 工具调用总数达 2 后终止循环
+
+#### Scenario: 缺省对齐现状
+
+- **WHEN** 未配置 `execution`
+- **THEN** 行为与现状一致（`maxSteps=10`、无工具调用/耗时上限）
+
+### Requirement: 会话边界
+
+`AgentLoop` SHALL 维护会话边界：首次 `run` 前触发 `onSessionStart`（幂等，仅一次）；`endSession()` 或 `dispose` 时触发 `onSessionEnd`（幂等）并清空会话记忆；未注入 hooks 时跳过。
+
+#### Scenario: 首次 run 触发 onSessionStart
+
+- **WHEN** 注入含 `onSessionStart` 的 hook 并首次 `run`
+- **THEN** `onSessionStart` 触发一次，后续 `run` 不再触发
+
+#### Scenario: endSession 触发 onSessionEnd
+
+- **WHEN** 调用 `endSession()`
+- **THEN** `onSessionEnd` 触发一次，memory 清空
+
+#### Scenario: 幂等
+
+- **WHEN** 多次调用 `endSession()`
+- **THEN** `onSessionEnd` 仅触发一次，无副作用

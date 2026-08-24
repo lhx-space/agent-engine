@@ -1,7 +1,7 @@
 import type { Rule, SystemPrompt } from '@agent-engine/config';
 import type { HookPipeline } from '../hooks/pipeline';
 import type { HookTrace } from '../hooks/types';
-import type { ChatMessage, LLMProvider } from '../llm/types';
+import type { ChatMessage, DeltaKind, LLMProvider } from '../llm/types';
 import type { ConversationMemory } from '../memory/conversation-memory';
 import type { RuleRegistry } from '../rules/registry';
 import type { Skill } from '../skills/types';
@@ -16,12 +16,26 @@ import type { ToolRegistry } from '../tools/registry';
 export type SystemPromptInput =
   string | SystemPrompt | ((userInput: string) => string | Promise<string>);
 
+/**
+ * AgentLoop 接受的执行参数（可省略任意字段，缺省对齐现状）。
+ * 配置层的 `ExecutionConfig`（已套默认值）可直接赋给该类型。
+ */
+export interface AgentExecutionOptions {
+  maxSteps?: number;
+  maxToolCalls?: number;
+  timeoutMs?: number;
+  toolRetry?: { maxRetries?: number; baseDelayMs?: number };
+  maxContinuations?: number;
+}
+
 export interface AgentLoopOptions {
   provider: LLMProvider;
   registry: ToolRegistry;
   systemPrompt: SystemPromptInput;
   /** 最大 LLM 调用步数，默认 10，用于防死循环。 */
   maxSteps?: number;
+  /** 执行预算 / 重试 / 续写策略（可选，缺省对齐现状）。 */
+  execution?: AgentExecutionOptions;
   /** 生命周期钩子管线，可省略。 */
   hooks?: HookPipeline;
   /**
@@ -44,12 +58,14 @@ export interface AgentLoopResult {
   messages: ChatMessage[];
   /** 实际执行的 LLM 调用步数。 */
   steps: number;
+  /** 最终模型返回的 finishReason（stop / length / 其他）。 */
+  finishReason?: string;
 }
 
 /** 运行时事件（可观测）：step / 文本增量 / 工具调用 / 工具结果 / hook trace / 结束 / 错误。 */
 export type AgentRunEvent =
   | { type: 'step_start'; step: number }
-  | { type: 'llm_delta'; delta: string }
+  | { type: 'llm_delta'; delta: string; kind?: DeltaKind }
   | { type: 'tool_call'; name: string; args: string }
   | { type: 'tool_result'; name: string; result: string }
   | { type: 'hook'; trace: HookTrace }
@@ -60,4 +76,6 @@ export type AgentRunEvent =
 export interface AgentRunOptions {
   /** 运行时事件回调（流式 / 非流式均触发）。 */
   onEvent?: (event: AgentRunEvent) => void;
+  /** 取消信号；中止时抛出 `AbortError`，不回写会话记忆。 */
+  signal?: AbortSignal;
 }

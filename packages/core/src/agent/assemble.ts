@@ -1,4 +1,4 @@
-import type { Rule, SecurityConfig } from '@agent-engine/config';
+import type { ExecutionConfig, Rule, SecurityConfig } from '@agent-engine/config';
 import { mergeBundles } from '../capability/bundle';
 import type { ResolvedMcpServer } from '../capability-source/types';
 import type { CapabilityBundle } from '../capability/types';
@@ -29,6 +29,8 @@ export interface AssembleAgentLoopOptions {
   guardrails?: RuleRegistry;
   memory?: ConversationMemory;
   maxSteps?: number;
+  /** 执行预算 / 重试 / 续写策略（可选，缺省对齐现状）。 */
+  execution?: ExecutionConfig;
   /** 安全配置；传入时装配全部内置工具。 */
   security?: SecurityConfig;
   /** 预置沙箱后端（bash 启用时使用；缺省按 security.sandbox.backend 解析）。 */
@@ -101,6 +103,7 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     guardrails: options.guardrails,
     memory: options.memory,
     maxSteps: options.maxSteps,
+    execution: options.execution,
   });
 
   let disposed = false;

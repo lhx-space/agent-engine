@@ -1,23 +1,32 @@
+import { randomUUID } from 'node:crypto';
 import { AgentConfigSchema, deepFreeze, sanitizeConfigValue } from '@agent-engine/config';
 import { resolveAgentConfig } from '@agent-engine/core';
 import type { AgentConfig } from '@agent-engine/config';
+import type { AgentLoop } from '@agent-engine/core';
 import { Hono } from 'hono';
 import { logger } from './logger';
 import { envProviderFactory } from './provider';
+import { SessionStore } from './session-store';
 import type { ServerOptions } from './types';
 
 interface ParsedRequest {
   config: AgentConfig;
   input: string;
+  sessionId?: string;
 }
 
 /** 解析请求体 + 安全防线（sanitize → Zod 校验 → deepFreeze）。失败返回 null + 错误响应。 */
 function parseRunRequest(
   body: unknown,
 ): { ok: true; value: ParsedRequest } | { ok: false; error: string } {
-  const { config: rawConfig, input } = (body ?? {}) as {
+  const {
+    config: rawConfig,
+    input,
+    sessionId,
+  } = (body ?? {}) as {
     config?: unknown;
     input?: unknown;
+    sessionId?: unknown;
   };
 
   const parsed = AgentConfigSchema.safeParse(sanitizeConfigValue(rawConfig));
@@ -29,13 +38,36 @@ function parseRunRequest(
     value: {
       config: deepFreeze(parsed.data),
       input: typeof input === 'string' ? input : '',
+      sessionId: typeof sessionId === 'string' && sessionId.length > 0 ? sessionId : undefined,
     },
   };
 }
 
-/** 创建 HTTP 应用：`GET /health` + `POST /api/agent/run`（非流式）+ `POST /api/agent/run/stream`（NDJSON）。 */
+/** 按 sessionId 复用已装配 Agent，否则新建会话写入 store。 */
+async function getOrCreateSession(
+  config: AgentConfig,
+  sessionId: string | undefined,
+  store: SessionStore,
+  options: ServerOptions,
+): Promise<{ id: string; agent: AgentLoop }> {
+  if (sessionId) {
+    const existing = store.get(sessionId);
+    if (existing) return { id: sessionId, agent: existing.agent };
+  }
+
+  const id = randomUUID();
+  const resolved = await resolveAgentConfig(config, {
+    pluginFactories: options.pluginFactories,
+    providerFactory: options.providerFactory ?? envProviderFactory,
+  });
+  store.set(id, { agent: resolved.agent, dispose: resolved.dispose, lastActive: Date.now() });
+  return { id, agent: resolved.agent };
+}
+
+/** 创建 HTTP 应用：`GET /health` + `POST /api/agent/run`（非流式）+ `POST /api/agent/run/stream`（NDJSON）+ `DELETE /api/agent/sessions/:id`。 */
 export function createApp(options: ServerOptions = {}): Hono {
   const app = new Hono();
+  const store = options.sessionStore ?? new SessionStore();
 
   app.get('/health', (c) => c.json({ ok: true }));
 
@@ -53,16 +85,14 @@ export function createApp(options: ServerOptions = {}): Hono {
     }
 
     try {
-      const resolved = await resolveAgentConfig(req.value.config, {
-        pluginFactories: options.pluginFactories,
-        providerFactory: options.providerFactory ?? envProviderFactory,
-      });
-      try {
-        const result = await resolved.agent.run(req.value.input);
-        return c.json(result);
-      } finally {
-        await resolved.dispose();
-      }
+      const session = await getOrCreateSession(
+        req.value.config,
+        req.value.sessionId,
+        store,
+        options,
+      );
+      const result = await session.agent.run(req.value.input);
+      return c.json({ sessionId: session.id, ...result });
     } catch (error) {
       logger.error({ err: error }, 'agent run failed');
       return c.json(
@@ -88,13 +118,11 @@ export function createApp(options: ServerOptions = {}): Hono {
       return c.json({ error: 'invalid config', details: req.error }, 400);
     }
 
-    let resolved;
+    let session;
     try {
-      resolved = await resolveAgentConfig(req.value.config, {
-        pluginFactories: options.pluginFactories,
-        providerFactory: options.providerFactory ?? envProviderFactory,
-      });
+      session = await getOrCreateSession(req.value.config, req.value.sessionId, store, options);
     } catch (error) {
+      logger.error({ err: error }, 'agent session resolve failed');
       return c.json(
         {
           error: 'agent execution failed',
@@ -111,18 +139,15 @@ export function createApp(options: ServerOptions = {}): Hono {
           controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
         };
         try {
-          await resolved.agent.run(req.value.input, {
+          await session.agent.run(req.value.input, {
             onEvent: (event) => {
               write(event);
               logger.info({ event: event.type }, 'agent stream event');
             },
           });
-          // run 内部已发 done / error 事件。
         } catch (error) {
-          // run 内部已 emit error 事件；这里只记日志，不重复写 error。
           logger.error({ err: error }, 'agent stream failed');
         } finally {
-          await resolved.dispose();
           controller.close();
         }
       },
@@ -131,7 +156,14 @@ export function createApp(options: ServerOptions = {}): Hono {
     return c.body(stream, 200, {
       'content-type': 'application/x-ndjson',
       'cache-control': 'no-cache',
+      'x-session-id': session.id,
     });
+  });
+
+  app.delete('/api/agent/sessions/:id', async (c) => {
+    const id = c.req.param('id');
+    await store.delete(id);
+    return c.json({ ok: true });
   });
 
   return app;

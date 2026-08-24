@@ -1,0 +1,4 @@
+- [x] 导出 diff：`export-config.ts` 递归省略默认字段（security 全默认整体省略、空数组省略、model 省略 undefined 可选字段）
+- [x] security preset：`SecurityForm.tsx` 加 strict / balanced / permissive 三档快捷填充 + 当前档位反显
+- [x] 模型预设：已存在于 `ModelForm.tsx`（PRESETS + Modal），本次不重复实现
+- [x] web typecheck + build + lint / spell / format

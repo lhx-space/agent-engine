@@ -120,4 +120,40 @@ export class HookPipeline {
       );
     }
   }
+
+  async onInit(): Promise<void> {
+    for (const hook of this.hooks) {
+      await this.invoke(
+        'onInit',
+        hook,
+        (h) => h.onInit?.(),
+        undefined,
+        () => true,
+      );
+    }
+  }
+
+  async onSessionStart(): Promise<void> {
+    for (const hook of this.hooks) {
+      await this.invoke(
+        'onSessionStart',
+        hook,
+        (h) => h.onSessionStart?.(),
+        undefined,
+        () => true,
+      );
+    }
+  }
+
+  async onSessionEnd(): Promise<void> {
+    for (const hook of this.hooks) {
+      await this.invoke(
+        'onSessionEnd',
+        hook,
+        (h) => h.onSessionEnd?.(),
+        undefined,
+        () => true,
+      );
+    }
+  }
 }

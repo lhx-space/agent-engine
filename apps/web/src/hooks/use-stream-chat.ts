@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AgentConfig } from '@agent-engine/config/schema';
 import { streamAgent, type StreamEvent } from '../lib/stream-agent';
 
@@ -14,6 +14,8 @@ export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  /** 模型思考内容（与回复分开，灰显折叠展示）。 */
+  reasoning?: string;
   /** assistant 消息的运行状态。 */
   status: 'streaming' | 'done' | 'error';
   steps: ChatStep[];
@@ -38,6 +40,15 @@ export function useStreamChat(config: AgentConfig): UseStreamChatReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [running, setRunning] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  // 会话 id：首次请求由服务端返回，后续请求带回实现多轮复用。
+  const sessionIdRef = useRef<string | undefined>(undefined);
+  const lastConfigRef = useRef<AgentConfig>(config);
+
+  // 配置变化 → 新 agent → 重置会话 id（下一轮新建会话）。
+  useEffect(() => {
+    lastConfigRef.current = config;
+    sessionIdRef.current = undefined;
+  }, [config]);
 
   const send = useCallback(
     (input: string) => {
@@ -65,6 +76,7 @@ export function useStreamChat(config: AgentConfig): UseStreamChatReturn {
 
       // 累积完整文本（供最终态），与「节流后的渲染状态」分离（双状态模型）。
       let pendingContent = '';
+      let pendingReasoning = '';
       let pendingSteps: ChatStep[] = [];
       let rafId = 0;
       let lastError: string | undefined;
@@ -73,9 +85,12 @@ export function useStreamChat(config: AgentConfig): UseStreamChatReturn {
       const flush = () => {
         rafId = 0;
         const content = pendingContent;
+        const reasoning = pendingReasoning;
         const steps = pendingSteps;
         setMessages((prev) =>
-          prev.map((m) => (m.id === assistantId ? { ...m, content, steps, error: lastError } : m)),
+          prev.map((m) =>
+            m.id === assistantId ? { ...m, content, reasoning, steps, error: lastError } : m,
+          ),
         );
       };
 
@@ -93,7 +108,11 @@ export function useStreamChat(config: AgentConfig): UseStreamChatReturn {
             ];
             break;
           case 'llm_delta':
-            pendingContent += event.delta;
+            if (event.kind === 'reasoning') {
+              pendingReasoning += event.delta;
+            } else {
+              pendingContent += event.delta;
+            }
             scheduleFlush();
             break;
           case 'tool_call':
@@ -144,7 +163,14 @@ export function useStreamChat(config: AgentConfig): UseStreamChatReturn {
 
       void (async () => {
         try {
-          const content = await streamAgent(config, trimmed, onEvent, controller.signal);
+          const { content, sessionId } = await streamAgent(
+            config,
+            trimmed,
+            onEvent,
+            controller.signal,
+            sessionIdRef.current,
+          );
+          if (sessionId) sessionIdRef.current = sessionId;
           // done 事件已设置 pendingContent；若异常中断没有 done，用 streamAgent 返回值兜底。
           if (!finished && content) pendingContent = content;
         } catch (error) {
@@ -165,6 +191,7 @@ export function useStreamChat(config: AgentConfig): UseStreamChatReturn {
                 ? {
                     ...m,
                     content: pendingContent,
+                    reasoning: pendingReasoning,
                     steps: pendingSteps,
                     status: lastError ? 'error' : 'done',
                     error: lastError,

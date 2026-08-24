@@ -1,7 +1,13 @@
 import type { Rule } from '@agent-engine/config';
 import { buildSystemPrompt } from '../context/build-system-prompt';
 import type { HookPipeline } from '../hooks/pipeline';
-import type { ChatCompletionResult, ChatMessage, LLMProvider } from '../llm/types';
+import {
+  AbortError,
+  type ChatCompletionResult,
+  type ChatMessage,
+  type LLMProvider,
+  type ToolCall,
+} from '../llm/types';
 import type { ConversationMemory } from '../memory/conversation-memory';
 import { loadRulesText } from '../rules/load';
 import type { RuleRegistry } from '../rules/registry';
@@ -13,9 +19,15 @@ import type { Tool } from '../tools/types';
 import type {
   AgentLoopOptions,
   AgentLoopResult,
+  AgentRunEvent,
   AgentRunOptions,
   SystemPromptInput,
 } from './types';
+
+/** 指数退避睡眠（毫秒）。 */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 /** 单 Agent ReAct 执行循环。 */
 export class AgentLoop {
@@ -23,18 +35,31 @@ export class AgentLoop {
   private readonly registry: ToolRegistry;
   private readonly systemPrompt: SystemPromptInput;
   private readonly maxSteps: number;
+  private readonly maxToolCalls: number | undefined;
+  private readonly timeoutMs: number | undefined;
+  private readonly toolRetry: { maxRetries: number; baseDelayMs: number };
+  private readonly maxContinuations: number;
   private readonly hooks: HookPipeline | undefined;
   private readonly guardrails: RuleRegistry | undefined;
   private readonly rules: Rule[];
   private readonly ruleLoader: CapabilityLoader<Rule> | undefined;
   private readonly skillLoader: CapabilityLoader<Skill> | undefined;
   private readonly memory: ConversationMemory | undefined;
+  private sessionStarted = false;
+  private sessionEnded = false;
 
   constructor(options: AgentLoopOptions) {
     this.provider = options.provider;
     this.registry = options.registry;
     this.systemPrompt = options.systemPrompt;
-    this.maxSteps = options.maxSteps ?? 10;
+    this.maxSteps = options.execution?.maxSteps ?? options.maxSteps ?? 10;
+    this.maxToolCalls = options.execution?.maxToolCalls;
+    this.timeoutMs = options.execution?.timeoutMs;
+    this.toolRetry = {
+      maxRetries: options.execution?.toolRetry?.maxRetries ?? 0,
+      baseDelayMs: options.execution?.toolRetry?.baseDelayMs ?? 500,
+    };
+    this.maxContinuations = options.execution?.maxContinuations ?? 1;
     this.hooks = options.hooks;
     this.guardrails = options.guardrails;
     this.rules = options.rules ?? [];
@@ -49,8 +74,14 @@ export class AgentLoop {
 
   async run(userInput: string, options?: AgentRunOptions): Promise<AgentLoopResult> {
     const emit = options?.onEvent;
+    const signal = options?.signal;
     // 转发 hook trace 到事件流（可观测：哪一步做了什么、是否改写、耗时）。
     const offTrace = this.hooks?.onTrace((trace) => emit?.({ type: 'hook', trace }));
+    // 入口即检查取消信号。
+    if (signal?.aborted) {
+      offTrace?.();
+      throw new AbortError();
+    }
 
     // 检索 rules（always + on-demand）与 skills（on-demand）。
     const rulesText = this.ruleLoader ? loadRulesText(this.rules, this.ruleLoader, userInput) : '';
@@ -79,9 +110,24 @@ export class AgentLoop {
 
     let finalMessage: ChatMessage = { role: 'assistant', content: '' };
     let steps = 0;
+    let toolCallsCount = 0;
+    let continuations = 0;
+    let finishReason: string | undefined;
+    const deadline = this.timeoutMs !== undefined ? Date.now() + this.timeoutMs : undefined;
 
     try {
+      // 会话首次开始：触发 onSessionStart（幂等，仅一次）。
+      if (!this.sessionStarted) {
+        this.sessionStarted = true;
+        await this.hooks?.onSessionStart();
+      }
+
       while (steps < this.maxSteps) {
+        // 协作式取消：入口检查，中止抛出 AbortError。
+        if (signal?.aborted) throw new AbortError();
+        // 超时预算：整体耗时超限则优雅终止。
+        if (deadline !== undefined && Date.now() > deadline) break;
+
         steps += 1;
         emit?.({ type: 'step_start', step: steps });
 
@@ -92,11 +138,12 @@ export class AgentLoop {
         const completionParams = {
           messages: llmMessages ?? messages,
           ...(tools.length > 0 ? { tools } : {}),
+          ...(signal ? { signal } : {}),
         };
         let result: ChatCompletionResult;
         if (this.provider.chatCompletionStream) {
-          result = await this.provider.chatCompletionStream(completionParams, (delta) =>
-            emit?.({ type: 'llm_delta', delta }),
+          result = await this.provider.chatCompletionStream(completionParams, (delta, kind) =>
+            emit?.({ type: 'llm_delta', delta, kind }),
           );
         } else {
           result = await this.provider.chatCompletion(completionParams);
@@ -107,66 +154,45 @@ export class AgentLoop {
         const assistantMessage = result.message;
         messages.push(assistantMessage);
         finalMessage = assistantMessage;
+        finishReason = result.finishReason;
 
         const toolCalls = assistantMessage.toolCalls ?? [];
         if (toolCalls.length === 0) {
+          // finishReason 区分：`length`（max_tokens 截断）在预算内自动续写。
+          if (finishReason === 'length' && continuations < this.maxContinuations) {
+            continuations += 1;
+            messages.push({ role: 'user', content: '你上一条回复被截断，请继续未完成的部分。' });
+            await this.hooks?.onStepEnd(steps);
+            continue;
+          }
           await this.hooks?.onStepEnd(steps);
           break;
         }
 
-        for (const toolCall of toolCalls) {
-          // LLM 回调的是合法名（如 builtin_read_file），反查真实语义名（builtin.read_file）。
-          const name = this.registry.resolveName(toolCall.function.name);
-          // 空/非法入参兜底为 {}，并写回 toolCall（同一对象引用 → 历史消息同步），避免空参数污染历史导致下一轮 400。
-          const normalizedArgs = normalizeToolArgs(toolCall.function.arguments);
-          toolCall.function.arguments = normalizedArgs;
-          const args = (await this.hooks?.beforeToolCall(name, normalizedArgs)) ?? normalizedArgs;
-          emit?.({ type: 'tool_call', name, args });
-
-          // guardrail beforeToolCall：校验入参，阻断则不执行工具。
-          let toolResult: string;
-          const beforeRules = this.guardrails?.forPoint('beforeToolCall') ?? [];
-          let blocked = false;
-          let blockedReason: string | undefined;
-          for (const rule of beforeRules) {
-            const verdict = await rule.validate({ toolName: name, args });
-            if (!verdict.allowed) {
-              blocked = true;
-              blockedReason = verdict.reason;
-              break;
-            }
+        // maxToolCalls 预算：截断本批超出预算的工具，超出部分回填占位消息（保持 tool_call 配对合法）。
+        let executable = toolCalls;
+        const skipped: ToolCall[] = [];
+        if (this.maxToolCalls !== undefined) {
+          const remaining = this.maxToolCalls - toolCallsCount;
+          if (remaining <= 0) {
+            skipped.push(...toolCalls);
+            executable = [];
+          } else if (toolCalls.length > remaining) {
+            executable = toolCalls.slice(0, remaining);
+            skipped.push(...toolCalls.slice(remaining));
           }
+        }
 
-          if (blocked) {
-            toolResult = `Blocked: ${blockedReason ?? 'guardrail denied'}`;
-          } else {
-            try {
-              const output = await this.registry.execute(name, args);
-              toolResult = JSON.stringify(output);
-            } catch (error) {
-              toolResult = `Error: ${error instanceof Error ? error.message : String(error)}`;
-            }
-          }
-
-          // guardrail afterToolCall：校验结果，阻断则替换结果。
-          const afterRules = this.guardrails?.forPoint('afterToolCall') ?? [];
-          for (const rule of afterRules) {
-            const verdict = await rule.validate({ toolName: name, result: toolResult });
-            if (!verdict.allowed) {
-              toolResult = `Blocked: ${verdict.reason ?? 'guardrail denied'}`;
-              break;
-            }
-          }
-
-          // hooks.afterToolCall：观察 / 改写最终结果。
-          toolResult = (await this.hooks?.afterToolCall(name, toolResult)) ?? toolResult;
-          emit?.({ type: 'tool_result', name, result: toolResult });
-
+        if (executable.length > 0) {
+          messages.push(...(await this.executeToolCalls(executable, emit)));
+          toolCallsCount += executable.length;
+        }
+        for (const toolCall of skipped) {
           messages.push({
             role: 'tool',
-            content: toolResult,
+            content: 'Error: 工具调用次数已达上限，未执行',
             toolCallId: toolCall.id,
-            name,
+            name: this.registry.resolveName(toolCall.function.name),
           });
         }
 
@@ -174,6 +200,11 @@ export class AgentLoop {
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
+      // 取消（AbortError）与业务错误分离：不回写 memory、不触发 onError hook。
+      if (err instanceof AbortError) {
+        emit?.({ type: 'error', error: 'aborted' });
+        throw err;
+      }
       emit?.({ type: 'error', error: err.message });
       try {
         await this.hooks?.onError(err, 'agent-loop');
@@ -193,12 +224,119 @@ export class AgentLoop {
       }
     }
 
-    // 正常结束（自然终止 / maxSteps 兜底）时，把本轮消息（system 之外）写回会话记忆。
+    // 正常结束（自然终止 / maxSteps 兜底 / 超时）时，把本轮消息（system 之外）写回会话记忆。
     // 异常路径（catch 内 throw）不会执行到这里，故不回写，保持历史不变。
     this.memory?.append(messages.slice(sessionStart));
 
     emit?.({ type: 'done', finalMessage, steps });
-    return { finalMessage, messages, steps };
+    return { finalMessage, messages, steps, finishReason };
+  }
+
+  /** 结束会话：触发 `onSessionEnd`（幂等）并清空会话记忆。 */
+  async endSession(): Promise<void> {
+    if (this.sessionEnded) return;
+    this.sessionEnded = true;
+    await this.hooks?.onSessionEnd();
+    this.memory?.clear();
+  }
+
+  /**
+   * 执行一批 tool_calls：guardrail / hooks 按序（可观测、可阻断），
+   * 工具执行并发（`Promise.allSettled`，单个失败不阻塞其他），结果按原序回填。
+   */
+  private async executeToolCalls(
+    toolCalls: ToolCall[],
+    emit: ((event: AgentRunEvent) => void) | undefined,
+  ): Promise<ChatMessage[]> {
+    // Phase 1：顺序做名字反查 / 入参规范化 / beforeToolCall / guardrail 校验，收集执行计划。
+    const plans: {
+      toolCall: ToolCall;
+      name: string;
+      args: string;
+      blocked: boolean;
+      blockedReason: string | undefined;
+    }[] = [];
+    for (const toolCall of toolCalls) {
+      // LLM 回调的是合法名（如 builtin_read_file），反查真实语义名（builtin.read_file）。
+      const name = this.registry.resolveName(toolCall.function.name);
+      // 空/非法入参兜底为 {}，并写回 toolCall（同一对象引用 → 历史消息同步）。
+      const normalizedArgs = normalizeToolArgs(toolCall.function.arguments);
+      toolCall.function.arguments = normalizedArgs;
+      const args = (await this.hooks?.beforeToolCall(name, normalizedArgs)) ?? normalizedArgs;
+      emit?.({ type: 'tool_call', name, args });
+
+      const beforeRules = this.guardrails?.forPoint('beforeToolCall') ?? [];
+      let blocked = false;
+      let blockedReason: string | undefined;
+      for (const rule of beforeRules) {
+        const verdict = await rule.validate({ toolName: name, args });
+        if (!verdict.allowed) {
+          blocked = true;
+          blockedReason = verdict.reason;
+          break;
+        }
+      }
+      plans.push({ toolCall, name, args, blocked, blockedReason });
+    }
+
+    // Phase 2：并发执行（含重试）；被 guardrail 阻断的直接产出 Blocked 结果。
+    const executed = await Promise.all(
+      plans.map(async (plan): Promise<string> => {
+        if (plan.blocked) {
+          return `Blocked: ${plan.blockedReason ?? 'guardrail denied'}`;
+        }
+        try {
+          const output = await this.executeWithRetry(plan.name, plan.args);
+          return JSON.stringify(output);
+        } catch (error) {
+          return `Error: ${error instanceof Error ? error.message : String(error)}`;
+        }
+      }),
+    );
+
+    // Phase 3：顺序做 guardrail afterToolCall / afterToolCall / 事件 / 回填。
+    const toolMessages: ChatMessage[] = [];
+    for (let i = 0; i < plans.length; i += 1) {
+      const plan = plans[i];
+      const raw = executed[i];
+      if (!plan || raw === undefined) continue;
+      let toolResult = raw;
+
+      const afterRules = this.guardrails?.forPoint('afterToolCall') ?? [];
+      for (const rule of afterRules) {
+        const verdict = await rule.validate({ toolName: plan.name, result: toolResult });
+        if (!verdict.allowed) {
+          toolResult = `Blocked: ${verdict.reason ?? 'guardrail denied'}`;
+          break;
+        }
+      }
+
+      toolResult = (await this.hooks?.afterToolCall(plan.name, toolResult)) ?? toolResult;
+      emit?.({ type: 'tool_result', name: plan.name, result: toolResult });
+
+      toolMessages.push({
+        role: 'tool',
+        content: toolResult,
+        toolCallId: plan.toolCall.id,
+        name: plan.name,
+      });
+    }
+    return toolMessages;
+  }
+
+  /** 带指数退避重试的工具执行；`maxRetries` 为 0 时不重试。 */
+  private async executeWithRetry(name: string, args: string): Promise<unknown> {
+    const maxRetries = this.toolRetry.maxRetries;
+    let attempt = 0;
+    for (;;) {
+      try {
+        return await this.registry.execute(name, args);
+      } catch (error) {
+        if (attempt >= maxRetries) throw error;
+        attempt += 1;
+        await sleep(this.toolRetry.baseDelayMs * 2 ** (attempt - 1));
+      }
+    }
   }
 
   /** 解析本次 system prompt：函数式动态生成 / 静态字符串原样返回 / 模板对象自动检索组装。 */

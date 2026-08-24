@@ -1,0 +1,5 @@
+- [x] `anthropic.ts`：`buildAnthropicMessages` 合并连续 tool 消息为单个 user 消息
+- [x] `anthropic.ts`：流式 tool_use 改 `Map<blockIndex, ToolCall>` 对齐聚合
+- [x] `datetime.ts`：`format` 输出 `dateStyle: 'full' + timeStyle: 'long'`
+- [x] 测试：`llm.test.ts` 加 tool_result 合并 + 流式 index 对齐；`builtin-tools.test.ts` 加 format 完整输出
+- [x] 全量 test（203 passed）+ typecheck + lint + spell + format

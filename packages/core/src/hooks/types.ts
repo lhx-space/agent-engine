@@ -1,8 +1,16 @@
 import type { ChatCompletionResult, ChatMessage } from '../llm/types';
 
-/** hook 触发点（有限生命周期锚点，对齐 Hook 接口方法）。 */
+/** hook 触发点（有限生命周期锚点，对齐 Hook 接口方法与 config 的 HookPointSchema）。 */
 export type HookPoint =
-  'beforeLLM' | 'afterLLM' | 'beforeToolCall' | 'afterToolCall' | 'onStepEnd' | 'onError';
+  | 'onInit'
+  | 'onSessionStart'
+  | 'beforeLLM'
+  | 'afterLLM'
+  | 'beforeToolCall'
+  | 'afterToolCall'
+  | 'onStepEnd'
+  | 'onSessionEnd'
+  | 'onError';
 
 /** hook 单次执行的 trace：谁、在哪个点、耗时、是否改写了值。 */
 export interface HookTrace {
@@ -20,6 +28,12 @@ export interface HookTrace {
 export interface Hook {
   /** 钩子唯一标识。 */
   name: string;
+  /** 装配完成后触发一次（观察类）。 */
+  onInit?(): Promise<void>;
+  /** 会话首次开始前触发一次（观察类）。 */
+  onSessionStart?(): Promise<void>;
+  /** 会话结束时触发一次（观察类）。 */
+  onSessionEnd?(): Promise<void>;
   /** 调用模型前，可改写传给 LLM 的消息（如注入上下文）。 */
   beforeLLM?(messages: ChatMessage[]): Promise<ChatMessage[] | void>;
   /** 模型返回后，可改写结果或记录。 */
