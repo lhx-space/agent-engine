@@ -556,6 +556,7 @@ interface PluginContext {
 - **目录**：`openspec/specs/`（当前行为真相源）、`openspec/changes/`（变更提案）、`openspec/config.yaml`（项目上下文）。
 - **工作流**：`/opsx:propose <change>`（先写提案与 spec delta）→ `/opsx:apply`（实现）→ `/opsx:archive`（归档，把 spec delta 合并进 specs/）。
 - **Delta spec**：用 `## ADDED / MODIFIED / REMOVED Requirements` 描述变更，`archive` 后自动合并进主 spec。
+- **design.md（必写）**：每个 change 写 `Context` / `Goals / Non-Goals` / `Decisions` / `Risks / Trade-offs` / `Migration Plan`，记录关键取舍（架构分歧、复用 vs 自研、安全默认）。
 - **原则**：功能开发**先写 proposal/spec，再写代码**；禁止跳过规格直接改代码。
 - OpenSpec 的 slash commands（`/opsx:*`）与 skills 已内置于 `.codebuddy/`。
 
