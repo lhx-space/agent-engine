@@ -13,6 +13,7 @@
     "dev": "pnpm -r --parallel --filter './packages/**' run dev",
     "web:dev": "pnpm --filter @agent-engine/web dev",
     "web:build": "pnpm --filter @agent-engine/web build",
+    "server:start": "pnpm --filter @agent-engine/server start",
     "docs:dev": "pnpm --filter @agent-engine/docs dev",
     "docs:build": "pnpm --filter @agent-engine/docs build",
     "lint": "rslint .",

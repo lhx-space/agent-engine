@@ -165,9 +165,16 @@ importers:
       '@agent-engine/core':
         specifier: workspace:*
         version: link:../core
+      '@hono/node-server':
+        specifier: ^2.1.1
+        version: 2.1.1(hono@4.13.3)
       hono:
         specifier: ^4.13.3
         version: 4.13.3
+    devDependencies:
+      tsx:
+        specifier: ^4.23.12
+        version: 4.23.12
 
 packages:
 
