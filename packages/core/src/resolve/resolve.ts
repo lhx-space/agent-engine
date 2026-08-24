@@ -5,7 +5,6 @@ import { resolveSkills } from '../capability-source/skill';
 import { HookPipeline } from '../hooks/pipeline';
 import { createProvider } from '../llm/provider';
 import { ConversationMemory } from '../memory/conversation-memory';
-import { builtinPluginFactories } from '../plugins/builtin';
 import type { Plugin } from '../plugins/types';
 import { ToolRegistry } from '../tools/registry';
 import type { ResolveDeps, ResolvedAgent } from './types';
@@ -24,14 +23,9 @@ export async function resolveAgentConfig(
   const registry = new ToolRegistry();
   const hooks = new HookPipeline();
 
-  // plugins：先命中 core 内置 plugin 工厂（带 security/sandbox 上下文），否则查 deps.pluginFactories。
+  // plugins：字符串名 → 工厂实例化（core 不反向依赖各 plugin 包；内置 files/bash/git 由 server 层注入工厂）。
   const plugins: Plugin[] = [];
   for (const name of config.plugins) {
-    const builtin = builtinPluginFactories[name];
-    if (builtin) {
-      plugins.push(builtin({ security: config.security, sandbox: deps.sandbox }));
-      continue;
-    }
     const factory = deps.pluginFactories?.[name];
     if (!factory) {
       throw new Error(

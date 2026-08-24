@@ -19,8 +19,8 @@ export {
   defaultFetch,
 } from './tools/builtin';
 export type { RegisterBuiltinToolsDeps } from './tools/builtin';
-export { createFilesPlugin, createBashPlugin, builtinPluginFactories } from './plugins/builtin';
-export type { BuiltinPluginDeps, BuiltinPluginFactory } from './plugins/builtin';
+export { createReadFileTool, createWriteFileTool } from './tools/builtin/file';
+export { createBashTool } from './tools/builtin/bash';
 export {
   createDockerSandbox,
   createNsJailSandbox,

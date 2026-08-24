@@ -99,4 +99,30 @@ describe('server-api', () => {
     expect(lines.some((line) => line.type === 'llm_delta')).toBe(true);
     expect(lines[lines.length - 1]?.type).toBe('done');
   });
+
+  it('config.plugins 声明 @agent-engine/plugin-files 后 server 注入 factory', async () => {
+    let capturedTools: string[] = [];
+    const app = createApp({
+      providerFactory: () => ({
+        name: 'mock',
+        async chatCompletion(params) {
+          capturedTools = (params.tools ?? []).map((tool) => tool.function.name);
+          return { message: { role: 'assistant', content: 'ok' } };
+        },
+      }),
+    });
+
+    const res = await app.request('/api/agent/run', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        config: makeConfig({ plugins: ['@agent-engine/plugin-files'] }),
+        input: 'hi',
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(capturedTools).toContain('builtin_read_file');
+    expect(capturedTools).toContain('builtin_write_file');
+  });
 });

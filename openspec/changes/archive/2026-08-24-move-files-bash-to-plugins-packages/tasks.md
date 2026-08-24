@@ -1,0 +1,6 @@
+- [x] 新建 `packages/plugins/files/`、`packages/plugins/bash/` 独立包（package.json / tsconfig / tsdown / src）
+- [x] core 重新导出 `createReadFileTool` / `createWriteFileTool` / `createBashTool`
+- [x] 删除 `core/src/plugins/builtin.ts`，resolve 统一走 `deps.pluginFactories`
+- [x] server `createBuiltinPluginFactories` + `app.ts` 注入 + `package.json` 依赖
+- [x] 测试：plugin 包各自 tests + core 测试改造 + server 注入测试
+- [x] 全量 test（207 passed）+ typecheck（13/13）+ lint / spell / format

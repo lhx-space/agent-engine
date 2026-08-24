@@ -7,8 +7,8 @@ import type { SecurityConfig } from '@agent-engine/config';
 import { assembleAgentLoop } from '../src/agent/assemble';
 import type { ChatCompletionResult, ChatMessage, LLMProvider } from '../src/llm/types';
 import { ConversationMemory } from '../src/memory/conversation-memory';
-import { createFilesPlugin } from '../src/plugins/builtin';
 import type { Plugin } from '../src/plugins/types';
+import { createReadFileTool, createWriteFileTool } from '../src/tools/builtin/file';
 import { ToolRegistry } from '../src/tools/registry';
 
 function makeSecurity(workspaceRoot: string): SecurityConfig {
@@ -154,7 +154,18 @@ describe('端到端 demo（可观测）', () => {
             tags: ['天气', '穿衣'],
           },
         ],
-        plugins: [weatherPlugin, createFilesPlugin({ security })],
+        plugins: [
+          weatherPlugin,
+          {
+            name: 'files-plugin',
+            description: '本地文件读写',
+            version: '1.0.0',
+            install(ctx) {
+              ctx.registerTool(createReadFileTool(security.files));
+              ctx.registerTool(createWriteFileTool(security.files));
+            },
+          },
+        ],
         memory,
         security,
       });

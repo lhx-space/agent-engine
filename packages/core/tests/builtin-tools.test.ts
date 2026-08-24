@@ -10,8 +10,6 @@ import type {
   WebSearchPolicy,
 } from '@agent-engine/config';
 import type { SandboxBackend, SandboxExecResult } from '../src/sandbox/types';
-import { createBashPlugin, createFilesPlugin } from '../src/plugins/builtin';
-import { PluginManager } from '../src/plugins/manager';
 import { ToolRegistry } from '../src/tools/registry';
 import { createBase64Tool } from '../src/tools/builtin/base64';
 import { createBashTool } from '../src/tools/builtin/bash';
@@ -434,30 +432,5 @@ describe('registerBuiltinTools', () => {
       'builtin.web_search',
       'builtin.web_fetch',
     ]);
-  });
-});
-
-describe('内置 plugin（files / bash）', () => {
-  it('createFilesPlugin 注册 read_file / write_file', async () => {
-    const manager = new PluginManager();
-    await manager.install(createFilesPlugin({ security: makeSecurity(false) }));
-
-    const names = manager.getAssembly().tools.map((tool) => tool.name);
-    expect(names).toEqual(['builtin.read_file', 'builtin.write_file']);
-  });
-
-  it('createBashPlugin 注册 bash（注入沙箱）', async () => {
-    const manager = new PluginManager();
-    await manager.install(createBashPlugin({ security: makeSecurity(true), sandbox: fakeSandbox }));
-
-    const names = manager.getAssembly().tools.map((tool) => tool.name);
-    expect(names).toContain('builtin.bash');
-  });
-
-  it('createBashPlugin 未启用抛错', async () => {
-    const manager = new PluginManager();
-    await expect(
-      manager.install(createBashPlugin({ security: makeSecurity(false) })),
-    ).rejects.toThrow(/security\.bash\.enabled/);
   });
 });

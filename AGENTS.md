@@ -199,7 +199,7 @@ docs/（Rspress）为独立站点，无运行时依赖
 
 ### 5.2 扩展层（能力的「打包与分发」单元）
 
-- **plugins**：最大的扩展单元，可打包「多个 tools + skills + hooks + rules + memory 后端 + system-prompt 片段」整体注册/卸载。插件通过 `PluginContext` 注入能力，是实现「开箱即用领域能力」的载体。已落地 `Plugin` 类型 + `PluginContext`（registerTool / registerSkill / registerHook / registerRule / provideSystemPrompt）+ `PluginManager`（install → `CapabilityBundle`）+ `assembleAgentLoop`（async 装配工厂，安装 plugins 并合并能力）；内置插件 `@agent-engine/plugin-git`（git 工具套件，只读默认、破坏性子命令阻断、经沙箱执行，`packages/plugins/git/`）。
+- **plugins**：最大的扩展单元，可打包「多个 tools + skills + hooks + rules + memory 后端 + system-prompt 片段」整体注册/卸载。插件通过 `PluginContext` 注入能力，是实现「开箱即用领域能力」的载体。已落地 `Plugin` 类型 + `PluginContext`（registerTool / registerSkill / registerHook / registerRule / provideSystemPrompt）+ `PluginManager`（install → `CapabilityBundle`）+ `assembleAgentLoop`（async 装配工厂，安装 plugins 并合并能力）；内置插件包 `@agent-engine/plugin-files`（read_file / write_file）、`@agent-engine/plugin-bash`（bash，经沙箱）、`@agent-engine/plugin-git`（git 工具套件，只读默认、破坏性子命令阻断、经沙箱）均在 `packages/plugins/` 下，经 `config.plugins` 声明、由 server 层注入工厂加载。
 
 ### 5.3 执行控制层（Agent「如何做」的约束）
 

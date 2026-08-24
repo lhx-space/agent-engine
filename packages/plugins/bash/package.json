@@ -1,7 +1,7 @@
 {
-  "name": "@agent-engine/server",
+  "name": "@agent-engine/plugin-bash",
   "version": "0.1.0",
-  "description": "Agent Engine HTTP 服务（Docker 部署）",
+  "description": "沙箱命令执行工具插件（bash，白/黑名单约束 + 网络开关）",
   "type": "module",
   "sideEffects": false,
   "main": "./dist/index.cjs",
@@ -25,20 +25,10 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "start": "tsx src/bin.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@agent-engine/config": "workspace:*",
-    "@agent-engine/core": "workspace:*",
-    "@agent-engine/plugin-bash": "workspace:*",
-    "@agent-engine/plugin-files": "workspace:*",
-    "@agent-engine/plugin-git": "workspace:*",
-    "@hono/node-server": "^2.1.1",
-    "hono": "^4.13.3",
-    "pino": "^10.3.1"
-  },
-  "devDependencies": {
-    "tsx": "^4.23.12"
+    "@agent-engine/core": "workspace:*"
   }
 }

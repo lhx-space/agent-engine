@@ -105,20 +105,4 @@ describe('resolveAgentConfig', () => {
       resolveAgentConfig(config, { providerFactory: () => makeProvider() }),
     ).rejects.toThrow(/missing-plugin/);
   });
-
-  it('config.plugins 命中内置 plugin files（无需 deps.pluginFactories）', async () => {
-    const config = baseConfig();
-    config.plugins = ['@agent-engine/plugin-files'];
-
-    const capturedTools: string[][] = [];
-    const resolved = await resolveAgentConfig(config, {
-      providerFactory: () => makeProvider(capturedTools),
-    });
-
-    await resolved.agent.run('hi');
-    const tools = capturedTools[0] ?? [];
-    expect(tools).toContain('builtin_read_file');
-    expect(tools).toContain('builtin_write_file');
-    await resolved.dispose();
-  });
 });

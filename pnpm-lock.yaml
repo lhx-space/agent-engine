@@ -160,6 +160,24 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
 
+  packages/plugins/bash:
+    dependencies:
+      '@agent-engine/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@agent-engine/core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/plugins/files:
+    dependencies:
+      '@agent-engine/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@agent-engine/core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/plugins/git:
     dependencies:
       '@agent-engine/core':
@@ -186,6 +204,15 @@ importers:
       '@agent-engine/core':
         specifier: workspace:*
         version: link:../core
+      '@agent-engine/plugin-bash':
+        specifier: workspace:*
+        version: link:../plugins/bash
+      '@agent-engine/plugin-files':
+        specifier: workspace:*
+        version: link:../plugins/files
+      '@agent-engine/plugin-git':
+        specifier: workspace:*
+        version: link:../plugins/git
       '@hono/node-server':
         specifier: ^2.1.1
         version: 2.1.1(hono@4.13.3)
