@@ -5,7 +5,7 @@
 ## 核心能力
 
 - **`AgentConfigSchema`**：八大配置项的 Zod Schema（model / systemPrompt / rules / tools / mcp / skills / memory / hooks / plugins / orchestration），`z.infer` 衍生 TS 类型。
-- **`loadAgentConfig(path)`**：按扩展名选择解析器，解析后经 Zod 校验，失败抛含路径与原因的错误。
+- **`loadAgentConfig(path, options?)`**：按扩展名选择解析器，解析后经 Zod 校验，失败抛含路径与原因的错误。
 
 ## API
 
@@ -13,8 +13,18 @@
 import { AgentConfigSchema, loadAgentConfig } from '@agent-engine/config';
 
 const config = await loadAgentConfig('./agents/devops-agent.yaml');
-// config: AgentConfig（z.infer 衍生类型）
+// config: AgentConfig（z.infer 衍生类型，深度冻结不可变）
+
+// TypeScript 配置默认拒绝，需显式开启：
+const tsConfig = await loadAgentConfig('./agents/local.ts', { allowTsConfig: true });
 ```
+
+## 安全默认
+
+- **TS 配置默认拒绝**：`.ts`/`.mts`/`.cts` 会被当作代码执行，仅在 `allowTsConfig: true` 时加载，仅用于受信任的本地开发输入。
+- **入口 sanitize**：校验前递归剔除 `__proto__`/`constructor`/`prototype` 危险 key，防原型污染。
+- **出口 deepFreeze**：校验后深度冻结产物，防运行时篡改。
+- **资源限制**：解析前限制文件大小（默认 1 MiB）；YAML 显式 `maxAliasCount` + `uniqueKeys` 防别名炸弹与重复 key。
 
 ## 设计要点
 

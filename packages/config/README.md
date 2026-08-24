@@ -5,7 +5,7 @@ Config loading and schema. Normalizes YAML / JSON5 / TypeScript into a single `A
 ## Capabilities
 
 - **`AgentConfigSchema`**: Zod schemas for the eight configurable axes (model / systemPrompt / rules / tools / mcp / skills / memory / hooks / plugins / orchestration), with TS types derived via `z.infer`.
-- **`loadAgentConfig(path)`**: selects a parser by extension, validates via Zod, and throws readable errors on failure.
+- **`loadAgentConfig(path, options?)`**: selects a parser by extension, validates via Zod, and throws readable errors on failure.
 
 ## API
 
@@ -13,8 +13,18 @@ Config loading and schema. Normalizes YAML / JSON5 / TypeScript into a single `A
 import { AgentConfigSchema, loadAgentConfig } from '@agent-engine/config';
 
 const config = await loadAgentConfig('./agents/devops-agent.yaml');
-// config: AgentConfig (type derived from z.infer)
+// config: AgentConfig (type derived from z.infer, deep-frozen / immutable)
+
+// TypeScript config is denied by default; opt in explicitly:
+const tsConfig = await loadAgentConfig('./agents/local.ts', { allowTsConfig: true });
 ```
+
+## Security defaults
+
+- **TypeScript denied by default**: `.ts`/`.mts`/`.cts` files are executed as code; load only with `allowTsConfig: true` for trusted local inputs.
+- **Sanitize on entry**: dangerous keys (`__proto__`/`constructor`/`prototype`) are stripped recursively before validation to prevent prototype pollution.
+- **`deepFreeze` on exit**: the validated config is deeply frozen against runtime tampering.
+- **Resource limits**: file size capped before parsing (default 1 MiB); YAML uses explicit `maxAliasCount` + `uniqueKeys` to block alias bombs and duplicate keys.
 
 ## Design notes
 
