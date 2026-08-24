@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Card, ConfigProvider, Layout, Typography } from 'antd';
+import { Button, Card, ConfigProvider, Dropdown, Layout, Typography } from 'antd';
+import { DownloadOutlined } from '@ant-design/icons';
 import zhCN from 'antd/locale/zh_CN';
 import { AgentConfigSchema, type AgentConfig } from '@agent-engine/config/schema';
+import { exportConfig, type ExportFormat } from './lib/export-config';
 import { ChatPanel } from './panels/ChatPanel';
 import { ConfigPanel } from './panels/ConfigPanel';
 import { SystemPromptPanel } from './panels/SystemPromptPanel';
@@ -44,6 +46,19 @@ export function App() {
           <Typography.Text type="secondary" style={{ color: 'rgba(255,255,255,0.65)' }}>
             plugins · mcp · skills · tools · system-prompt · memory · rules · hooks 全部可配置
           </Typography.Text>
+          <Dropdown
+            menu={{
+              items: [
+                { key: 'yaml', label: '导出 YAML' },
+                { key: 'json', label: '导出 JSON' },
+              ],
+              onClick: ({ key }) => exportConfig(config, key as ExportFormat),
+            }}
+          >
+            <Button type="primary" ghost icon={<DownloadOutlined />} style={{ marginLeft: 'auto' }}>
+              导出配置
+            </Button>
+          </Dropdown>
         </Header>
         <Content className="editor__content">
           <Card className="editor__col editor__col--chat" title="对话" size="small">
