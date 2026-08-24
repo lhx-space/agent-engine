@@ -557,6 +557,7 @@ interface PluginContext {
 - **工作流**：`/opsx:propose <change>`（先写提案与 spec delta）→ `/opsx:apply`（实现）→ `/opsx:archive`（归档，把 spec delta 合并进 specs/）。
 - **Delta spec**：用 `## ADDED / MODIFIED / REMOVED Requirements` 描述变更，`archive` 后自动合并进主 spec。
 - **design.md（必写）**：每个 change 写 `Context` / `Goals / Non-Goals` / `Decisions` / `Risks / Trade-offs` / `Migration Plan`，记录关键取舍（架构分歧、复用 vs 自研、安全默认）。
+- **一个 change 对应一个 commit**：active change（`openspec/changes/` 下、非 archive）在提交前必须处理——完成未归档、未完成未归档都视为失败；`scripts/check-openspec.mjs` 在 pre-commit 校验。
 - **原则**：功能开发**先写 proposal/spec，再写代码**；禁止跳过规格直接改代码。
 - OpenSpec 的 slash commands（`/opsx:*`）与 skills 已内置于 `.codebuddy/`。
 

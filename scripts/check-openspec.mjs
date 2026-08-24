@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 /**
- * OpenSpec change 完整性校验。
+ * OpenSpec change 完整性校验（一个 change 对应一个 commit）。
  *
- * 校验每个 active change（openspec/changes/ 下、非 archive）：
- *   1. proposal.md / tasks.md / design.md 齐全且非空；
- *   2. specs/ 下至少一份 delta spec（*.md）；
- *   3. tasks.md 所有任务项均已勾选（无 `- [ ]`）。
+ * 规则：任何 active change（openspec/changes/ 下、非 archive）都视为失败——
+ *   - 未完成：缺 proposal/tasks/design、缺 specs delta、tasks 有未勾选项；
+ *   - 已完成但未归档：应先 `openspec archive` 归档（一个 change 一个 commit）。
  *
  * 用法：
  *   node scripts/check-openspec.mjs            # 校验全部 active change
@@ -81,6 +80,11 @@ function checkChange(name) {
     }
   }
 
+  // 文件齐全且 tasks 全勾选，但仍未归档 → 同样失败（一个 change 对应一个 commit）。
+  if (problems.length === 0) {
+    problems.push('已完成但未归档（请先 openspec archive 归档后再提交）');
+  }
+
   return problems;
 }
 
@@ -109,11 +113,11 @@ function main() {
       console.error(`  ${name}:`);
       for (const problem of problems) console.error(`    - ${problem}`);
     }
-    console.error('\n修复后再提交（proposal/design/tasks 齐全 + tasks 全部勾选 + specs delta）。');
+    console.error('\n一个 change 对应一个 commit：完成请先 archive，未完成请补全。');
     return 1;
   }
 
-  console.log(`✅ OpenSpec 校验通过（${changes.length} 个 change 文件齐全、tasks 全部完成）。`);
+  console.log('✅ OpenSpec 校验通过（无未归档的 active change）。');
   return 0;
 }
 
