@@ -1,0 +1,10 @@
+- [x] `config/src/schema/index.ts`：`WebSearchProviderSchema` 枚举 + `endpoint`/`apiKey`/`fallback` 字段，默认 searxng + fallback duckduckgo
+- [x] `core/src/tools/utils/http.ts`：`FetchInit` 扩展 method/headers/body + `HttpResponse.headers` + defaultFetch UA
+- [x] `core/src/tools/utils/search.ts`：`createFallbackSearchProvider` 组合器；移除 `SearchOptions.site`
+- [x] `core/src/tools/utils/searxng.ts` / `tavily.ts` / `serper.ts`：三 provider 实现
+- [x] `core/src/tools/utils/duckduckgo.ts`：移除 site 过滤
+- [x] `core/src/tools/builtin/index.ts`：`resolveSearchProvider` 候选链 + 导出新 provider
+- [x] `core/src/tools/builtin/web-fetch.ts`：内容类型放宽 + content-length 预检
+- [x] `apps/web/src/config/SecurityForm.tsx`：provider 枚举 + endpoint/apiKey/fallback 字段
+- [x] 测试：builtin-tools / schema / security 同步；新增 searxng / fallback / web_fetch 文本类型用例
+- [x] 全量 test + typecheck + build + lint / spell / format + openspec validate

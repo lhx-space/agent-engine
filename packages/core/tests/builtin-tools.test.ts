@@ -11,19 +11,17 @@ import type {
 } from '@agent-engine/config';
 import type { SandboxBackend, SandboxExecResult } from '../src/sandbox/types';
 import { ToolRegistry } from '../src/tools/registry';
-import { createBase64Tool } from '../src/tools/builtin/base64';
 import { createBashTool } from '../src/tools/builtin/bash';
-import { createCalculatorTool } from '../src/tools/builtin/calculator';
 import { createDatetimeTool } from '../src/tools/builtin/datetime';
 import { createReadFileTool, createWriteFileTool } from '../src/tools/builtin/file';
-import { createJsonTool } from '../src/tools/builtin/json';
-import { createSiteSearchTool } from '../src/tools/builtin/sitesearch';
 import { createTodoTool, TodoStore } from '../src/tools/builtin/todo';
 import type { TodoItem } from '../src/tools/builtin/todo';
 import { createWebFetchTool } from '../src/tools/builtin/web-fetch';
 import { createWebSearchTool } from '../src/tools/builtin/web-search';
 import { createDuckDuckGoSearchProvider } from '../src/tools/utils/duckduckgo';
+import { createSearXNGSearchProvider } from '../src/tools/utils/searxng';
 import type { FetchLike, HttpResponse } from '../src/tools/utils/http';
+import { createFallbackSearchProvider } from '../src/tools/utils/search';
 import type { SearchProvider } from '../src/tools/utils/search';
 import { registerBuiltinTools } from '../src/tools/builtin';
 
@@ -81,7 +79,7 @@ function makeSecurity(bashEnabled = false): SecurityConfig {
       maxOutputBytes: 1024,
     },
     files: { roots: [], maxFileBytes: 1024 },
-    webSearch: { provider: 'duckduckgo', maxResults: 8, timeoutMs: 1000 },
+    webSearch: { provider: 'searxng', fallback: 'duckduckgo', maxResults: 8, timeoutMs: 1000 },
     webFetch: { allowDomains: [], denyDomains: [], timeoutMs: 1000, maxOutputBytes: 1024 },
   };
 }
@@ -210,7 +208,12 @@ describe('web_search（SearchProvider）', () => {
         return [{ title: `t-${query}`, url: `https://e.com/${query}`, snippet: `s-${query}` }];
       },
     };
-    const policy: WebSearchPolicy = { provider: 'fake', maxResults: 8, timeoutMs: 1000 };
+    const policy: WebSearchPolicy = {
+      provider: 'duckduckgo',
+      fallback: 'duckduckgo',
+      maxResults: 8,
+      timeoutMs: 1000,
+    };
     const tool = createWebSearchTool(provider, policy);
     const res = (await tool.execute({ query: 'hello' })) as {
       query: string;
@@ -232,7 +235,12 @@ describe('web_search（SearchProvider）', () => {
         }));
       },
     };
-    const policy: WebSearchPolicy = { provider: 'many', maxResults: 3, timeoutMs: 1000 };
+    const policy: WebSearchPolicy = {
+      provider: 'duckduckgo',
+      fallback: 'duckduckgo',
+      maxResults: 3,
+      timeoutMs: 1000,
+    };
     const tool = createWebSearchTool(provider, policy);
     const res = (await tool.execute({ query: 'x' })) as { results: unknown[] };
     expect(res.results).toHaveLength(3);
@@ -260,6 +268,111 @@ describe('DuckDuckGo provider', () => {
     expect(results[0]?.title).toBe('Heading');
     expect(results[1]?.title).toBe('topic1');
     expect(results[2]?.title).toBe('topic2');
+  });
+});
+
+describe('SearXNG provider', () => {
+  it('flatten results（content → snippet）', async () => {
+    const fakeFetch: FetchLike = async () =>
+      fakeResponse({
+        contentType: 'application/json',
+        json: async () => ({
+          results: [
+            { title: 'r1', url: 'https://e.com/1', content: 'snippet1', engine: 'google' },
+            { title: 'r2', url: 'https://e.com/2', content: 'snippet2' },
+          ],
+        }),
+      });
+    const provider = createSearXNGSearchProvider('http://localhost:8080', fakeFetch);
+    const results = await provider.search('hello');
+    expect(results).toHaveLength(2);
+    expect(results[0]?.snippet).toBe('snippet1');
+    expect(results[1]?.url).toBe('https://e.com/2');
+  });
+});
+
+describe('fallback search provider', () => {
+  it('主 provider 失败回退', async () => {
+    const primary: SearchProvider = {
+      name: 'primary',
+      async search() {
+        throw new Error('primary down');
+      },
+    };
+    const fallback: SearchProvider = {
+      name: 'fallback',
+      async search(query) {
+        return [{ title: `fb-${query}`, url: 'https://e.com/fb', snippet: 's' }];
+      },
+    };
+    const provider = createFallbackSearchProvider([primary, fallback]);
+    const results = await provider.search('q');
+    expect(results).toHaveLength(1);
+    expect(results[0]?.title).toBe('fb-q');
+  });
+
+  it('主 provider 空结果回退', async () => {
+    const primary: SearchProvider = {
+      name: 'primary',
+      async search() {
+        return [];
+      },
+    };
+    const fallback: SearchProvider = {
+      name: 'fallback',
+      async search() {
+        return [{ title: 'fb', url: 'https://e.com/fb', snippet: 's' }];
+      },
+    };
+    const provider = createFallbackSearchProvider([primary, fallback]);
+    const results = await provider.search('q');
+    expect(results).toHaveLength(1);
+  });
+
+  it('全部失败抛最后一个错误', async () => {
+    const primary: SearchProvider = {
+      name: 'primary',
+      async search() {
+        throw new Error('boom');
+      },
+    };
+    const provider = createFallbackSearchProvider([primary]);
+    await expect(provider.search('q')).rejects.toThrow(/boom/);
+  });
+});
+
+describe('registerBuiltinTools 搜索回退', () => {
+  it('searxng 缺 endpoint 回退 duckduckgo（不抛错）', async () => {
+    const registry = new ToolRegistry();
+    const fakeFetch: FetchLike = async () =>
+      fakeResponse({
+        contentType: 'application/json',
+        json: async () => ({
+          AbstractText: 'ddg answer',
+          Heading: 'H',
+          AbstractURL: 'https://e.com/a',
+        }),
+      });
+    const names = registerBuiltinTools(registry, makeSecurity(false), { fetchImpl: fakeFetch });
+    expect(names).toContain('builtin.web_search');
+    const tool = registry.get('builtin.web_search');
+    const res = (await tool!.execute({ query: 'x' })) as { results: { title: string }[] };
+    expect(res.results).toHaveLength(1);
+    expect(res.results[0]?.title).toBe('H');
+  });
+
+  it('tavily 无 apiKey 且无可用回退时报错', () => {
+    const registry = new ToolRegistry();
+    const security: SecurityConfig = {
+      ...makeSecurity(false),
+      webSearch: {
+        provider: 'tavily',
+        fallback: 'tavily',
+        maxResults: 8,
+        timeoutMs: 1000,
+      },
+    };
+    expect(() => registerBuiltinTools(registry, security)).toThrow(/No search provider available/);
   });
 });
 
@@ -310,20 +423,55 @@ describe('web_fetch 正文提取', () => {
     await expect(tool.execute({ url: 'https://evil.com/x' })).rejects.toThrow(/not allowed/);
     expect(called).toBe(false);
   });
+
+  it('text/plain 直接返回正文（不报 unsupported）', async () => {
+    const fakeFetch: FetchLike = async () =>
+      fakeResponse({
+        contentType: 'text/plain; charset=utf-8',
+        text: async () => '  raw text body  ',
+      });
+    const policy: WebPolicy = {
+      allowDomains: [],
+      denyDomains: [],
+      timeoutMs: 1000,
+      maxOutputBytes: 10_000,
+    };
+    const tool = createWebFetchTool(policy, fakeFetch);
+    const res = (await tool.execute({ url: 'https://raw.githubusercontent.com/x/y' })) as {
+      content: string;
+      title: string;
+    };
+    expect(res.content).toBe('raw text body');
+    expect(res.title).toBe('https://raw.githubusercontent.com/x/y');
+  });
+
+  it('content-length 超限预检拒绝且不读正文', async () => {
+    let read = false;
+    const fakeFetch: FetchLike = async () => {
+      return fakeResponse({
+        contentType: 'text/html',
+        headers: { 'content-length': '9999999' },
+        text: async () => {
+          read = true;
+          return 'x';
+        },
+      });
+    };
+    const policy: WebPolicy = {
+      allowDomains: [],
+      denyDomains: [],
+      timeoutMs: 1000,
+      maxOutputBytes: 100,
+    };
+    const tool = createWebFetchTool(policy, fakeFetch);
+    await expect(tool.execute({ url: 'https://example.com/big' })).rejects.toThrow(
+      /content too large/,
+    );
+    expect(read).toBe(false);
+  });
 });
 
-describe('calculator / datetime / json / base64', () => {
-  it('calculator 求值', async () => {
-    const tool = createCalculatorTool();
-    const res = (await tool.execute({ expression: '2 + 3 * 4' })) as { result: number };
-    expect(res.result).toBe(14);
-  });
-
-  it('calculator 非法表达式报错', async () => {
-    const tool = createCalculatorTool();
-    await expect(tool.execute({ expression: '2 +' })).rejects.toThrow(/Invalid expression/);
-  });
-
+describe('datetime', () => {
   it('datetime now', async () => {
     const tool = createDatetimeTool();
     const res = (await tool.execute({ action: 'now' })) as { iso: string; epochMs: number };
@@ -350,60 +498,6 @@ describe('calculator / datetime / json / base64', () => {
     // 2024-01-01 00:00 UTC = 北京时间周一 08:00
     expect(res.formatted).toContain('星期一');
     expect(res.formatted).toContain('08');
-  });
-
-  it('json parse', async () => {
-    const tool = createJsonTool();
-    const res = (await tool.execute({ action: 'parse', input: '{"a":1}' })) as {
-      value: { a: number };
-    };
-    expect(res.value).toEqual({ a: 1 });
-  });
-
-  it('json parse 非法报错', async () => {
-    const tool = createJsonTool();
-    await expect(tool.execute({ action: 'parse', input: '{bad' })).rejects.toThrow(/Invalid JSON/);
-  });
-
-  it('json stringify', async () => {
-    const tool = createJsonTool();
-    const res = (await tool.execute({ action: 'stringify', value: { a: 1 } })) as {
-      json: string;
-    };
-    expect(JSON.parse(res.json)).toEqual({ a: 1 });
-  });
-
-  it('base64 encode/decode 往返', async () => {
-    const tool = createBase64Tool();
-    const encoded = (await tool.execute({ action: 'encode', input: '你好' })) as {
-      encoded: string;
-    };
-    const decoded = (await tool.execute({ action: 'decode', input: encoded.encoded })) as {
-      decoded: string;
-    };
-    expect(decoded.decoded).toBe('你好');
-  });
-});
-
-describe('sitesearch', () => {
-  it('携带 site 过滤调用 provider', async () => {
-    let lastSite: string | undefined;
-    const provider: SearchProvider = {
-      name: 'fake',
-      async search(query, opts) {
-        lastSite = opts?.site;
-        return [{ title: `t-${query}`, url: 'https://e.com/x', snippet: 's' }];
-      },
-    };
-    const policy = { provider: 'fake', maxResults: 8, timeoutMs: 1000 };
-    const tool = createSiteSearchTool(provider, policy);
-    const res = (await tool.execute({ query: 'hello', site: 'example.com' })) as {
-      site: string;
-      results: unknown[];
-    };
-    expect(lastSite).toBe('example.com');
-    expect(res.site).toBe('example.com');
-    expect(res.results).toHaveLength(1);
   });
 });
 

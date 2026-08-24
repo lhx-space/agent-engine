@@ -3,10 +3,11 @@ import {
   defaultSecurityConfig,
   type SecurityConfig,
   type SandboxBackendKind,
+  type WebSearchProvider,
 } from '@agent-engine/config/schema';
 
 const SANDBOX_BACKENDS: SandboxBackendKind[] = ['docker', 'nsjail', 'auto'];
-const SEARCH_PROVIDERS = ['duckduckgo', 'tavily', 'serpapi', 'searxng'];
+const SEARCH_PROVIDERS: WebSearchProvider[] = ['searxng', 'duckduckgo', 'tavily', 'serper'];
 
 /** 深比较（纯数据对象）。 */
 function deepEqual(a: unknown, b: unknown): boolean {
@@ -229,12 +230,54 @@ export function SecurityForm({ security, onChange }: SecurityFormProps) {
       label: 'webSearch（搜索）',
       children: (
         <Form layout="vertical" size="small">
-          <Form.Item label="provider" tooltip="搜索后端（可插拔）">
+          <Form.Item
+            label="provider"
+            tooltip="搜索后端（可插拔）：searxng 自建聚合（默认）/ duckduckgo keyless / tavily / serper"
+          >
             <Select
               value={webSearch.provider}
               options={SEARCH_PROVIDERS.map((provider) => ({ value: provider, label: provider }))}
               onChange={(provider) =>
                 onChange({ ...security, webSearch: { ...webSearch, provider } })
+              }
+            />
+          </Form.Item>
+          <Form.Item
+            label="endpoint"
+            tooltip="SearXNG 实例 baseURL（如 http://localhost:8080），provider=searxng 时使用"
+          >
+            <Input
+              value={webSearch.endpoint ?? ''}
+              placeholder="http://localhost:8080"
+              onChange={(e) =>
+                onChange({
+                  ...security,
+                  webSearch: { ...webSearch, endpoint: e.target.value || undefined },
+                })
+              }
+            />
+          </Form.Item>
+          <Form.Item label="apiKey" tooltip="tavily / serper 的 API key（可经 ${VAR} 插值）">
+            <Input
+              value={webSearch.apiKey ?? ''}
+              placeholder="tvly-... / serper key"
+              onChange={(e) =>
+                onChange({
+                  ...security,
+                  webSearch: { ...webSearch, apiKey: e.target.value || undefined },
+                })
+              }
+            />
+          </Form.Item>
+          <Form.Item
+            label="fallback"
+            tooltip="主 provider 失败/空结果时回退的 provider（默认 duckduckgo）"
+          >
+            <Select
+              value={webSearch.fallback}
+              options={SEARCH_PROVIDERS.map((provider) => ({ value: provider, label: provider }))}
+              onChange={(fallback) =>
+                onChange({ ...security, webSearch: { ...webSearch, fallback } })
               }
             />
           </Form.Item>

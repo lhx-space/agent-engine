@@ -84,7 +84,6 @@
 | `zod` / `yaml` / `json5` / `jiti`（配置）            | Plugin 系统、Hook 管线、Rule 引擎 |
 | `pgvector` / `ioredis` / `minio`（后端）             | system-prompt 组装、memory 薄层   |
 | `@mozilla/readability` + `linkedom`（HTML 正文提取） | ——                                |
-| `expr-eval`（表达式求值，calculator）                | ——                                |
 | `pino` / OTel（可观测）                              | 配置归一化 resolve                |
 | `rtk`（命令输出压缩，沙箱镜像内二进制）              | ——                                |
 | React 生态 / Monaco / React Flow（Web）              | ——                                |
@@ -125,7 +124,7 @@ agent-engine/
 │   │       ├── resolve/       #   resolveAgentConfig（AgentConfig→AgentLoop 一键装配）
 │   │       ├── llm/           #   Provider 抽象（OpenAI/Anthropic/自定义）
 │   │       ├── tools/         #   Tool 注册表与执行器
-│   │       │   ├── builtin/   #   内置工具（todo/read/write/bash/web/sitesearch/calculator/...）
+│   │       │   ├── builtin/   #   内置通用原语（todo/datetime/web_search/web_fetch）
 │   │       │   └── utils/     #   非 tool 支撑（http/搜索/路径/domain/html/store/policy）
 │   │       ├── sandbox/       #   SandboxBackend（docker / nsjail 执行沙箱）
 │   │       ├── memory/        #   会话上下文 + 长期记忆抽象
@@ -193,7 +192,7 @@ docs/（Rspress）为独立站点，无运行时依赖
 
 ### 5.1 能力层（Agent 能「做什么」）
 
-- **tools**：原子能力单元，一个函数即一个工具（如 `read_file`、`bash`、`web_search`）。注册进 **Tool Registry**。已落地**内置通用原语** `todo` / `datetime` / `web_search` / `web_fetch`（`core/tools/builtin/`）；垂直能力 `read_file` / `write_file` / `bash` 迁出为内置 plugin `@agent-engine/plugin-files` / `@agent-engine/plugin-bash`（经 `config.plugins` 声明加载，bash 经 `SandboxBackend` 沙箱执行，见 5.6）；`sitesearch` / `calculator` / `json` / `base64` 已移除。非 tool 的支撑代码（http/搜索后端/路径/domain/html/store/policy）统一在 `core/tools/utils/`。
+- **tools**：原子能力单元，一个函数即一个工具（如 `read_file`、`bash`、`web_search`）。注册进 **Tool Registry**。已落地**内置通用原语** `todo` / `datetime` / `web_search` / `web_fetch`（`core/tools/builtin/`）；`web_search` 支持多 provider（`searxng` 默认 / `duckduckgo` 兜底 / `tavily` / `serper`，经 `webSearch.endpoint` / `apiKey` / `fallback` 配置，缺失必需配置或运行期失败按序回退）；垂直能力 `read_file` / `write_file` / `bash` 迁出为内置 plugin `@agent-engine/plugin-files` / `@agent-engine/plugin-bash`（经 `config.plugins` 声明加载，bash 经 `SandboxBackend` 沙箱执行，见 5.6）；`sitesearch` / `calculator` / `json` / `base64` 已彻底移除（源码亦删除）。非 tool 的支撑代码（http/搜索后端/路径/domain/html/store/policy）统一在 `core/tools/utils/`。
 - **skills**：可复用能力包 = 一份指令（`SKILL.md`）+ 可选捆绑的 tools/资源。按需动态加载，加载后将其指令注入上下文、工具并入注册表。已落地 `Skill` 类型 + 统一 `CapabilityLoader`（BM25 检索，复用 `CapabilityRegistry`）+ `loadSkillFromPath`（gray-matter 解析 SKILL.md）；`AgentLoop.skills` 注入后按需注入指令 + 注册捆绑工具。
 - **mcp**：通过 Model Context Protocol 接入的**外部能力来源**。一个外部 MCP server 的 `tools/resources` 会被归一化为标准 Tool，纳入同一注册表，内核无感知差异。已落地 `core/mcp/`（`connectMcpServer` / `connectMcpServers`，stdio transport 复用 `@modelcontextprotocol/sdk`，tools 归一化为标准 Tool + `jsonSchema` 透传 + 错误隔离 + `dispose` 生命周期）；配置 `mcp.servers`（name/command/args/env）由 resolve 层装配。
 
@@ -338,7 +337,7 @@ Task Planner 不是内核的一等公民，而是「工具 + 编排」的自然�
 | `onSessionEnd`   | 会话结束                                 |
 | `onError`        | 任何错误                                 |
 
-> 落地状态：已实现 6 个循环级/错误级 hook（`beforeLLM` / `afterLLM` / `beforeToolCall` / `afterToolCall` / `onStepEnd` / `onError`）；`onInit` / `onSessionStart` / `onSessionEnd` 三个装配级/会话级 hook **待补齐**（在 `Hook` 接口与 assemble/loop 中触发）。
+> 落地状态：9 个 hook 已全部实现——装配级 `onInit`、会话级 `onSessionStart` / `onSessionEnd`、循环级 `beforeLLM` / `afterLLM` / `beforeToolCall` / `afterToolCall` / `onStepEnd`、错误级 `onError`。
 
 hooks 是内核执行流程的**有限生命周期锚点**，不会随模块膨胀：
 
@@ -444,7 +443,10 @@ security:
     roots: [/workspace]
     maxFileBytes: 1048576
   webSearch:
-    provider: duckduckgo # 搜索后端（可插拔：tavily / serpapi / searxng）
+    provider: searxng # 默认 searxng（自建聚合）；可插拔：duckduckgo（keyless 兜底）/ tavily / serper
+    endpoint: http://localhost:8080 # SearXNG 实例 baseURL（provider=searxng 时必填）
+    # apiKey: ${TAVILY_API_KEY} # tavily / serper 的 key（可选）
+    fallback: duckduckgo # 主 provider 失败/空结果时回退（默认 duckduckgo）
     maxResults: 8
   webFetch:
     allowDomains: []
@@ -674,7 +676,7 @@ services:
 ## 14. 下一步里程碑（建议）
 
 1. **M1 内核骨架**（✅ 已完成）：monorepo 搭建（tsdown 构建）+ `config` 包（Schema + 三格式加载）+ `core` 包（LLM Provider 抽象——**默认接 DeepSeek**、Tool 注册表、单 Agent Loop）。
-2. **M2 配置化能力**（✅ 已完成）：hooks、rules、skills、plugins 系统 + system-prompt 组装 + 会话 memory + 内置工具（`todo` / `read_file` / `write_file` / `bash` / `web_search` / `web_fetch` / `sitesearch` / `calculator` / `datetime` / `json` / `base64`）+ 执行沙箱（`SandboxBackend`：docker / nsjail 双后端，bash 默认禁用，rtk 输出压缩）+ `@agent-engine/plugin-git`。
+2. **M2 配置化能力**（✅ 已完成）：hooks、rules、skills、plugins 系统 + system-prompt 组装 + 会话 memory + 内置通用原语工具（`todo` / `datetime` / `web_search` / `web_fetch`）+ 执行沙箱（`SandboxBackend`：docker / nsjail 双后端，bash 默认禁用，rtk 输出压缩）+ 内置 plugin（`@agent-engine/plugin-files` / `@agent-engine/plugin-bash` / `@agent-engine/plugin-git`）。
 3. **M3 扩展接入**（**进行中**）：✅ ① MCP client（`connectMcpServer`/`connectMcpServers`，stdio transport）；✅ ④ config resolve 层（`resolveAgentConfig`：AgentConfig→AgentLoop 一键装配 + `CapabilityBundle` 统一）；✅ 流式输出（`chatCompletionStream` + NDJSON 端点）；✅ `onInit`/`onSessionStart`/`onSessionEnd` 三个 hook；✅ 会话生命周期（server `SessionStore` + `sessionId` 复用 + `DELETE /sessions/:id`）；✅ ReAct loop 强化（并行 tool_calls、工具重试+退避、`AbortSignal` 取消、`finishReason` 续写、`execution` 预算配置）；✅ 真思考透传（DeepSeek R1 `reasoning_content` → `ChatMessage.reasoning` + 前端「思考/回复」分开）。剩余：② 长期记忆后端（pgvector，三层记忆）；③ 多 Agent 编排（独立 `@agent-engine/orchestration` 包）；⑤ FunctionSandbox（WASM/WASI）；`events/` 事件总线（pino 已接 server 层，events 总线未建）。
 4. **M4 服务化**（**部分完成**）：✅ server HTTP API（`/api/agent/run` 非流式 + `/api/agent/run/stream` NDJSON + `DELETE /api/agent/sessions/:id`，pino 日志、session 复用、`SessionStore`）。剩余：CLI（`packages/cli` 仍是 stub）。
 5. **M5 平台与文档**（**部分完成**）：✅ apps/web 三栏编辑器 + 流式 chat + 模型供应商预设 + security preset + 配置导出（省略默认值减负）。剩余：docs（Rspress）、Docker 编排、示例垂直领域 Agent。
@@ -688,7 +690,7 @@ M2 落地及 M3 推进过程中沉淀的坑点与约定，后续开发直接复�
 - **类型集中、职责分离**：类型定义集中文件顶部（`// ============ 类型 ============` 区），非 tool 的支撑代码（http/搜索/路径/domain/html/store/policy）下沉 `tools/utils/`，`builtin/` 只留工具工厂 + 装配。
 - **路径约束两侧 realpath**：macOS 上 `/var → /private/var` 是符号链接，越界校验时 `roots` 与目标路径**都要** `realpath`，否则根内路径会被误判越界。
 - **readability 需 DOM lib**：`@mozilla/readability` 依赖 DOM 类型，`core` 的 tsconfig 需 `lib: ["ES2023", "DOM"]`。
-- **复用优先持续生效**：HTML 正文提取（readability+linkedom）、表达式求值（expr-eval）、命令输出压缩（rtk）均为成熟三方方案，未自研。
+- **复用优先持续生效**：HTML 正文提取（readability+linkedom）、命令输出压缩（rtk）均为成熟三方方案，未自研。
 - **`__proto__` 是对象字面量的特殊语法**：`{ __proto__: x }` 是「设置原型」而非「自有属性」；测试/构造带危险 key 的对象须用 `JSON.parse('{"__proto__":...}')`，断言用 `Object.prototype.hasOwnProperty.call(obj, '__proto__')` 而非 `'__proto__' in obj`（`in` 会命中 `Object.prototype` 上的访问器）。
 - **`yaml` v2 把 `__proto__` 解析为自有属性（安全）**，但 `sanitizeConfigValue` 仍「重建为全新普通对象」兜底，即便源对象原型被污染也能隔离；`deepFreeze` 是浅冻结，须递归 + WeakSet 防环 + 跳过非 plain 值（Date/Map/类实例）。
 - **配置加载即信任边界**：TS 配置会被当作代码执行（jiti），默认拒绝、显式 `allowTsConfig` 才开，仅限本地受信任输入；生产/热挂载只走 YAML/JSON。

@@ -207,8 +207,17 @@ export const WebPolicySchema = z.object({
 });
 export type WebPolicy = z.infer<typeof WebPolicySchema>;
 
+export const WebSearchProviderSchema = z.enum(['searxng', 'duckduckgo', 'tavily', 'serper']);
+export type WebSearchProvider = z.infer<typeof WebSearchProviderSchema>;
+
 export const WebSearchPolicySchema = z.object({
-  provider: z.string().default('duckduckgo'),
+  provider: WebSearchProviderSchema.default('searxng'),
+  /** SearXNG 实例 baseURL（如 `http://localhost:8080`）；provider 为 searxng 时用于构造 `/search`。 */
+  endpoint: z.string().url().optional(),
+  /** tavily / serper 的 API key；provider 为二者时必需（可经 `${VAR}` 插值注入）。 */
+  apiKey: z.string().optional(),
+  /** 主 provider 缺失必需配置或运行期失败/空结果时回退的 provider（默认 duckduckgo，keyless）。 */
+  fallback: WebSearchProviderSchema.default('duckduckgo'),
   maxResults: z.number().int().positive().default(8),
   timeoutMs: z.number().int().positive().default(10_000),
 });

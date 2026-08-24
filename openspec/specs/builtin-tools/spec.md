@@ -30,65 +30,13 @@ TBD - created by archiving change 2026-08-24-add-builtin-tools. Update Purpose a
 - **WHEN** 调用 `action: 'delete'` 传入存在的 `id`
 - **THEN** 该 item 被移除
 
-### Requirement: read_file 工具
-
-系统 SHALL 提供 `read_file` 内置工具，仅在允许的根目录内读取文件；路径经 `resolve` + `realpath` 校验，越界（根外 / `..` / symlink 逃逸）SHALL 拒绝。
-
-#### Scenario: 根内读取
-
-- **WHEN** 读取根目录内存在的文件
-- **THEN** 返回文件内容
-
-#### Scenario: 越界拒绝
-
-- **WHEN** 路径经 `realpath` 解析后落在允许根目录之外（含 symlink 逃逸）
-- **THEN** 抛错且不读取
-
-### Requirement: write_file 工具
-
-系统 SHALL 提供 `write_file` 内置工具，仅在允许根目录内写入，且受 `maxFileBytes` 大小上限约束。
-
-#### Scenario: 根内写入
-
-- **WHEN** 写入目标在允许根目录内且未超上限
-- **THEN** 写入成功并返回结果
-
-#### Scenario: 越界或超限拒绝
-
-- **WHEN** 目标越界或内容超过 `maxFileBytes`
-- **THEN** 抛错且不写入
-
-### Requirement: bash 工具
-
-系统 SHALL 提供 `bash` 内置工具，仅在 `security.bash.enabled` 为 true 时可用；执行前 SHALL 校验 `allowCommands`（白名单，空 = 不限制）与 `denyPatterns`（黑名单，命中即拒绝），通过后经 `SandboxBackend.exec` 执行；无沙箱 SHALL 拒绝执行。
-
-#### Scenario: 默认禁用
-
-- **WHEN** `security.bash.enabled` 为 false
-- **THEN** bash 工具不被注册
-
-#### Scenario: 黑名单命中拒绝
-
-- **WHEN** 命令命中 `denyPatterns` 中的模式
-- **THEN** 拒绝执行且不调用沙箱
-
-#### Scenario: 白名单放行
-
-- **WHEN** `allowCommands` 非空且命令命中白名单、未命中黑名单
-- **THEN** 经沙箱执行并返回 `SandboxExecResult`
-
-#### Scenario: 无沙箱拒绝
-
-- **WHEN** 沙箱后端不可用
-- **THEN** 抛可读错误，绝不回退宿主进程执行
-
 ### Requirement: web_search 工具
 
-系统 SHALL 提供 `web_search` 内置工具，经可插拔 `SearchProvider` 执行搜索，返回结构化的 `SearchResult[]`（`title` / `url` / `snippet`）；默认 `duckduckgo`（keyless），`provider` 按名解析；结果条数受 `maxResults` 上限约束。
+系统 SHALL 提供 `web_search` 内置工具，经可插拔 `SearchProvider` 执行搜索，返回结构化的 `SearchResult[]`（`title` / `url` / `snippet`）；`provider` 枚举 `searxng` / `duckduckgo` / `tavily` / `serper`（默认 `searxng`），按名解析；`fallback`（默认 `duckduckgo`）在主 provider 缺失必需配置或运行期失败/空结果时按序回退；结果条数受 `maxResults` 上限约束。
 
 #### Scenario: 返回结构化结果
 
-- **WHEN** 以默认 duckduckgo provider 搜索 query
+- **WHEN** 以某 provider 搜索 query
 - **THEN** 返回 `{ query, results }`，results 为 `SearchResult` 数组（含 title / url / snippet）
 
 #### Scenario: 结果条数受限
@@ -96,9 +44,19 @@ TBD - created by archiving change 2026-08-24-add-builtin-tools. Update Purpose a
 - **WHEN** `maxResults` 为 N
 - **THEN** 返回结果不超过 N 条
 
+#### Scenario: 主 provider 缺配置回退
+
+- **WHEN** `provider: searxng` 未配 `endpoint`
+- **THEN** 解析结果回退到 `fallback`（duckduckgo），不因缺 endpoint 报错
+
+#### Scenario: 运行期失败回退
+
+- **WHEN** 主 provider `search()` 抛错或返回空结果
+- **THEN** 尝试 `fallback` provider，成功则返回其结果
+
 ### Requirement: 内置工具统一装配
 
-系统 SHALL 提供 `registerBuiltinTools(registry, security, deps)`：恒注册**四个通用原语** `todo` / `datetime` / `web_search` / `web_fetch`，`web_search` 按 `security.webSearch.provider` 解析 `SearchProvider`；返回注册的工具名列表供上层注入规划引导。`read_file` / `write_file` / `bash` 不再内置（由内置 plugin `@agent-engine/plugin-files` / `@agent-engine/plugin-bash` 按 `config.plugins` 加载）；`sitesearch` / `calculator` / `json` / `base64` 不再内置（实现保留在 `tools/builtin/`，供 plugin 复用）。
+系统 SHALL 提供 `registerBuiltinTools(registry, security, deps)`：恒注册**四个通用原语** `todo` / `datetime` / `web_search` / `web_fetch`，`web_search` 按 `security.webSearch.provider` 解析 `SearchProvider`；返回注册的工具名列表供上层注入规划引导。`read_file` / `write_file` / `bash` 不再内置（由内置 plugin `@agent-engine/plugin-files` / `@agent-engine/plugin-bash` 按 `config.plugins` 加载）；`sitesearch` / `calculator` / `json` / `base64` 已彻底移除（源码文件亦删除）。
 
 #### Scenario: 默认装配
 
@@ -107,36 +65,32 @@ TBD - created by archiving change 2026-08-24-add-builtin-tools. Update Purpose a
 
 ### Requirement: web_fetch 工具
 
-系统 SHALL 提供 `web_fetch` 内置工具：经可注入 `fetch` 请求 URL，非 2xx 抛错、仅处理 `text/html`，并经 `Readability` 提取正文文本（提取失败退化为去标签文本），施加超时与输出截断；执行前对 URL host 做 domain 白/黑名单校验。
+系统 SHALL 提供 `web_fetch` 内置工具：经可注入 `fetch` 请求 URL，非 2xx 抛错；`text/html`（含 `application/xhtml+xml`）经 `Readability` 提取正文（失败退化为去标签文本），其余 `text/*` 直接返回正文文本；`content-length` 超过 `maxOutputBytes * 20` 时提前拒绝；默认带 `User-Agent`；施加超时与输出截断；执行前对 URL host 做 domain 白/黑名单校验。
 
 #### Scenario: 提取正文
 
 - **WHEN** URL 返回 text/html 的正文内容
 - **THEN** 返回 `{ url, title, content }`，content 为提取后的正文文本（非原始 HTML）
 
+#### Scenario: 纯文本内容
+
+- **WHEN** URL 返回 `text/plain` 内容
+- **THEN** 返回 `{ url, title, content }`，content 为该文本（不报 unsupported content-type）
+
 #### Scenario: 非 2xx 抛错
 
 - **WHEN** 响应状态码非 2xx
 - **THEN** 抛可读错误
 
+#### Scenario: 超长内容预检拒绝
+
+- **WHEN** 响应 `content-length` 超过 `maxOutputBytes * 20`
+- **THEN** 抛可读错误，不读取正文
+
 #### Scenario: 拒绝域拦截
 
 - **WHEN** URL host 命中 `denyDomains`
 - **THEN** 拒绝请求且不发起 fetch
-
-### Requirement: calculator 工具
-
-系统 SHALL 提供 `calculator` 内置工具，经安全解析器（`expr-eval`）求值数学表达式并返回数值结果；禁止使用 `eval` / `Function`。
-
-#### Scenario: 求值表达式
-
-- **WHEN** 传入 `2 + 3 * 4`
-- **THEN** 返回 `{ result: 14 }`
-
-#### Scenario: 非法表达式报错
-
-- **WHEN** 传入非法表达式
-- **THEN** 抛可读错误
 
 ### Requirement: datetime 工具
 
@@ -151,35 +105,3 @@ TBD - created by archiving change 2026-08-24-add-builtin-tools. Update Purpose a
 
 - **WHEN** 调用 `action: format` 传入时间戳（可含 `timeZone` / `locale`）
 - **THEN** 返回格式化后的本地化字符串，且 SHALL 包含星期、日期与时分秒（完整输出，避免模型反复追问）
-
-### Requirement: json 工具
-
-系统 SHALL 提供 `json` 内置工具，支持 `parse`（解析并校验 JSON）/ `stringify`（序列化为 JSON 字符串）。
-
-#### Scenario: parse 合法 JSON
-
-- **WHEN** 调用 `action: parse` 传入合法 JSON 字符串
-- **THEN** 返回解析后的对象
-
-#### Scenario: parse 非法 JSON 报错
-
-- **WHEN** 传入非法 JSON
-- **THEN** 抛可读错误
-
-### Requirement: base64 工具
-
-系统 SHALL 提供 `base64` 内置工具，支持 `encode`（编码）/ `decode`（解码）两种 action，基于 Node `Buffer`。
-
-#### Scenario: encode/decode 往返
-
-- **WHEN** 先 encode 再 decode 一段文本
-- **THEN** 还原为原始文本
-
-### Requirement: sitesearch 工具
-
-系统 SHALL 提供 `sitesearch` 内置工具，复用 `SearchProvider` 并携带 `site` 过滤，返回该站点内的结构化 `SearchResult[]`，受 `maxResults` 上限约束。
-
-#### Scenario: 站点内搜索
-
-- **WHEN** 传入 `query` 与 `site`
-- **THEN** 以 `site` 过滤调用 SearchProvider，返回结构化结果

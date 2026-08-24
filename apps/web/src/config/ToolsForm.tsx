@@ -9,11 +9,7 @@ const BUILTIN_TOOLS = [
   'builtin.bash',
   'builtin.web_search',
   'builtin.web_fetch',
-  'builtin.sitesearch',
-  'builtin.calculator',
   'builtin.datetime',
-  'builtin.json',
-  'builtin.base64',
 ];
 
 interface ToolsFormProps {

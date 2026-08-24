@@ -1,0 +1,6 @@
+- [x] 删除 `tools/builtin/{base64,calculator,json,sitesearch}.ts`
+- [x] 清引用：`core/src/types.ts` re-export、`index.ts` 注释、`core/package.json` 移除 `expr-eval`
+- [x] 清测试：`builtin-tools.test.ts` 删 4 工具的用例与 import
+- [x] 清前端预设：`apps/web/src/config/ToolsForm.tsx` 移除 4 个死工具名
+- [x] spec delta：REMOVE 7 个内置工具需求 + MODIFY「统一装配」
+- [x] 全量 test + typecheck + build + lint / spell / format + openspec validate

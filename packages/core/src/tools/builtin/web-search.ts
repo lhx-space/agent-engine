@@ -32,7 +32,10 @@ export function createWebSearchTool(
     description: 'Search the web and return structured results (title / url / snippet).',
     inputSchema: WebSearchInputSchema,
     execute: async ({ query }) => {
-      const results = await provider.search(query, { timeoutMs: policy.timeoutMs });
+      const results = await provider.search(query, {
+        timeoutMs: policy.timeoutMs,
+        maxResults: policy.maxResults,
+      });
       return { query, results: results.slice(0, policy.maxResults) };
     },
   };

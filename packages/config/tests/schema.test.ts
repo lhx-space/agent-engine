@@ -67,7 +67,8 @@ describe('AgentConfigSchema', () => {
       expect(result.data.security.bash.enabled).toBe(false);
       expect(result.data.security.bash.allowNetwork).toBe(false);
       expect(result.data.security.files.maxFileBytes).toBe(1048576);
-      expect(result.data.security.webSearch.provider).toBe('duckduckgo');
+      expect(result.data.security.webSearch.provider).toBe('searxng');
+      expect(result.data.security.webSearch.fallback).toBe('duckduckgo');
       expect(result.data.security.webSearch.maxResults).toBe(8);
     }
   });

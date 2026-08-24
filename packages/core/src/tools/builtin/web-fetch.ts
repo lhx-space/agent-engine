@@ -27,7 +27,10 @@ const WebFetchInputSchema = z.object({ url: z.string().url() });
 
 // ============ 工具 ============
 
-/** 创建 `web_fetch` 内置工具：fetch → 状态/类型校验 → 提取正文 → 截断。 */
+/** HTML 原始字节相对「提取正文」的经验上限倍数（正文占比通常 <5%）。 */
+const CONTENT_LENGTH_MULTIPLIER = 20;
+
+/** 创建 `web_fetch` 内置工具：fetch → 状态/长度/类型校验 → 提取正文 → 截断。 */
 export function createWebFetchTool(
   policy: WebPolicy,
   fetchImpl: FetchLike = defaultFetch,
@@ -48,13 +51,34 @@ export function createWebFetchTool(
         if (!response.ok) {
           throw new Error(`web_fetch failed: HTTP ${response.status}`);
         }
-        const contentType = response.contentType ?? '';
-        if (contentType && !contentType.includes('text/html')) {
+
+        // content-length 预检：提前拒绝超大响应，避免下载后再截断。
+        const declaredLength = Number(response.headers?.['content-length'] ?? 0);
+        if (declaredLength > policy.maxOutputBytes * CONTENT_LENGTH_MULTIPLIER) {
+          throw new Error(
+            `web_fetch content too large: ${declaredLength} bytes exceeds ${policy.maxOutputBytes * CONTENT_LENGTH_MULTIPLIER} bytes limit`,
+          );
+        }
+
+        const contentType = (response.contentType ?? '').toLowerCase();
+        const isHtml =
+          contentType.includes('text/html') || contentType.includes('application/xhtml+xml');
+
+        let title: string;
+        let content: string;
+        if (isHtml) {
+          const html = await response.text();
+          const extracted = extractContent(html);
+          title = extracted.title;
+          content = extracted.content;
+        } else if (contentType.startsWith('text/')) {
+          // 纯文本源（GitHub raw / README / 日志）：直接返回正文文本。
+          content = (await response.text()).trim();
+          title = url;
+        } else {
           throw new Error(`web_fetch unsupported content-type: ${contentType}`);
         }
 
-        const html = await response.text();
-        const { title, content } = extractContent(html);
         const max = policy.maxOutputBytes;
         if (content.length > max) {
           return {

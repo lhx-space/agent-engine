@@ -26,16 +26,15 @@ function flattenRelatedTopics(topics: DuckDuckGoTopic[] | undefined, out: Search
   }
 }
 
-/** DuckDuckGo Instant Answer（keyless JSON）搜索后端；`site` 过滤走 `site:` 语法。 */
+/** DuckDuckGo Instant Answer（keyless JSON）搜索后端。 */
 export function createDuckDuckGoSearchProvider(
   fetchImpl: FetchLike = defaultFetch,
 ): SearchProvider {
   return {
     name: 'duckduckgo',
     async search(query, opts) {
-      const q = opts?.site ? `${query} site:${opts.site}` : query;
       const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(
-        q,
+        query,
       )}&format=json&no_html=1&skip_disambig=1`;
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), opts?.timeoutMs ?? 10_000);
