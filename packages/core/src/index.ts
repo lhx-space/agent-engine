@@ -35,6 +35,14 @@ export type { SandboxResolution } from './sandbox';
 export { connectMcpServer, connectMcpServers, toTool, normalizeCallToolResult } from './mcp';
 export type { McpConnection, McpToolMeta, ConnectMcpServersResult } from './mcp';
 export { mergeBundles } from './capability';
+export {
+  resolveMcpServer,
+  resolveMcpServers,
+  resolveSkill,
+  resolveSkills,
+  createDefaultSkillSourceDeps,
+} from './capability-source';
+export type { ResolvedMcpServer, SkillSourceDeps, ResolvedSkill } from './capability-source';
 export { resolveAgentConfig } from './resolve';
 export { HookPipeline } from './hooks/pipeline';
 export { RuleRegistry } from './rules/registry';

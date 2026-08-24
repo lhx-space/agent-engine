@@ -9,8 +9,9 @@ import type {
   ToolDefinition,
 } from './types';
 
-function resolveApiKey(): string {
-  return process.env.DEEPSEEK_API_KEY ?? process.env.OPENAI_API_KEY ?? '';
+function resolveApiKey(config: ModelConfig): string {
+  // 内核只消费配置里显式提供的 apiKey；环境变量兜底由上层（server/cli）的 providerFactory 注入。
+  return config.apiKey ?? '';
 }
 
 function toOpenAIToolCall(
@@ -76,10 +77,10 @@ function fromOpenAIToolCall(
 }
 
 export function createOpenAIProvider(config: ModelConfig): LLMProvider {
-  const apiKey = resolveApiKey();
+  const apiKey = resolveApiKey(config);
   if (!apiKey) {
     throw new Error(
-      'OpenAI-compatible provider requires DEEPSEEK_API_KEY (or OPENAI_API_KEY) to be set',
+      'OpenAI-compatible provider requires config.model.apiKey (inject via providerFactory, e.g. from DEEPSEEK_API_KEY/OPENAI_API_KEY)',
     );
   }
 

@@ -8,6 +8,8 @@ export type ModelProvider = z.infer<typeof ModelProviderSchema>;
 export const ModelConfigSchema = z.object({
   provider: ModelProviderSchema.default('openai-compatible'),
   baseURL: z.string().optional(),
+  /** 显式 API Key；缺省时回退环境变量（DEEPSEEK_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY）。 */
+  apiKey: z.string().optional(),
   model: z.string(),
   temperature: z.number().optional(),
   maxTokens: z.number().int().positive().optional(),
@@ -62,17 +64,49 @@ export const ToolRefSchema = z.object({
 });
 export type ToolRef = z.infer<typeof ToolRefSchema>;
 
-export const SkillRefSchema = z.object({
-  path: z.string(),
-});
+/**
+ * 技能来源（一等公民，可插拔）：
+ * - `path` 本地目录（含 SKILL.md）
+ * - `npm` npm 包（从 registry 拉取）
+ * - `git` git 仓库（clone 拉取）
+ */
+export const SkillSourceSchema = z.enum(['path', 'npm', 'git']);
+export type SkillSource = z.infer<typeof SkillSourceSchema>;
+
+export const SkillRefSchema = z.discriminatedUnion('source', [
+  z.object({ source: z.literal('path'), path: z.string() }),
+  z.object({ source: z.literal('npm'), package: z.string(), version: z.string().optional() }),
+  z.object({ source: z.literal('git'), url: z.string(), ref: z.string().optional() }),
+]);
 export type SkillRef = z.infer<typeof SkillRefSchema>;
 
-export const McpServerSchema = z.object({
+/**
+ * MCP server 来源：
+ * - `command` 本地命令（stdio transport）
+ * - `registry` 官方 MCP registry / npm 包（归一化为 `npx -y <package>`）
+ */
+export const McpServerSourceSchema = z.enum(['command', 'registry']);
+export type McpServerSource = z.infer<typeof McpServerSourceSchema>;
+
+const McpServerCommon = {
   name: z.string(),
-  command: z.string(),
-  args: z.array(z.string()).default([]),
   env: z.record(z.string(), z.string()).optional(),
-});
+};
+
+export const McpServerSchema = z.discriminatedUnion('source', [
+  z.object({
+    ...McpServerCommon,
+    source: z.literal('command'),
+    command: z.string(),
+    args: z.array(z.string()).default([]),
+  }),
+  z.object({
+    ...McpServerCommon,
+    source: z.literal('registry'),
+    package: z.string(),
+    args: z.array(z.string()).default([]),
+  }),
+]);
 export type McpServer = z.infer<typeof McpServerSchema>;
 
 export const McpConfigSchema = z.object({

@@ -60,9 +60,12 @@ function toAnthropicMessage(message: ChatMessage): AnthropicMessage {
 }
 
 export function createAnthropicProvider(config: ModelConfig): LLMProvider {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  // 内核只消费配置里显式提供的 apiKey；环境变量兜底由上层（server/cli）的 providerFactory 注入。
+  const apiKey = config.apiKey ?? '';
   if (!apiKey) {
-    throw new Error('Anthropic provider requires ANTHROPIC_API_KEY to be set');
+    throw new Error(
+      'Anthropic provider requires config.model.apiKey (inject via providerFactory, e.g. from ANTHROPIC_API_KEY)',
+    );
   }
 
   const client = new Anthropic({

@@ -30,25 +30,25 @@ import { createOpenAIProvider } from '../src/llm/openai';
 import { createProvider } from '../src/llm/provider';
 
 describe('createProvider 分派', () => {
-  beforeEach(() => {
-    process.env.DEEPSEEK_API_KEY = 'test-deepseek-key';
-    process.env.ANTHROPIC_API_KEY = 'test-anthropic-key';
-  });
-
   afterEach(() => {
-    delete process.env.DEEPSEEK_API_KEY;
-    delete process.env.OPENAI_API_KEY;
-    delete process.env.ANTHROPIC_API_KEY;
     rs.clearAllMocks();
   });
 
   it('openai-compatible 分派到 OpenAI 兼容实现', () => {
-    const provider = createProvider({ provider: 'openai-compatible', model: 'deepseek-chat' });
+    const provider = createProvider({
+      provider: 'openai-compatible',
+      model: 'deepseek-chat',
+      apiKey: 'test-key',
+    });
     expect(provider.name).toBe('openai-compatible');
   });
 
   it('anthropic 分派到 Anthropic 实现', () => {
-    const provider = createProvider({ provider: 'anthropic', model: 'claude-sonnet' });
+    const provider = createProvider({
+      provider: 'anthropic',
+      model: 'claude-sonnet',
+      apiKey: 'test-key',
+    });
     expect(provider.name).toBe('anthropic');
   });
 
@@ -57,6 +57,7 @@ describe('createProvider 分派', () => {
       provider: 'custom',
       model: 'local-model',
       baseURL: 'http://localhost:11434/v1',
+      apiKey: 'test-key',
     });
     expect(provider.name).toBe('custom');
   });
@@ -64,18 +65,16 @@ describe('createProvider 分派', () => {
 
 describe('OpenAI 兼容实现', () => {
   beforeEach(() => {
-    process.env.DEEPSEEK_API_KEY = 'test-deepseek-key';
     mocks.openaiCreate.mockReset();
     mocks.openaiOptions = null;
   });
 
-  afterEach(() => {
-    delete process.env.DEEPSEEK_API_KEY;
-    delete process.env.OPENAI_API_KEY;
-  });
-
   it('默认 baseURL 为 DeepSeek', () => {
-    createOpenAIProvider({ provider: 'openai-compatible', model: 'deepseek-chat' });
+    createOpenAIProvider({
+      provider: 'openai-compatible',
+      model: 'deepseek-chat',
+      apiKey: 'test-key',
+    });
     expect(mocks.openaiOptions?.baseURL).toBe('https://api.deepseek.com');
   });
 
@@ -84,16 +83,24 @@ describe('OpenAI 兼容实现', () => {
       provider: 'custom',
       model: 'local-model',
       baseURL: 'http://localhost:11434/v1',
+      apiKey: 'test-key',
     });
     expect(mocks.openaiOptions?.baseURL).toBe('http://localhost:11434/v1');
   });
 
+  it('config.apiKey 生效', () => {
+    createOpenAIProvider({
+      provider: 'openai-compatible',
+      model: 'deepseek-chat',
+      apiKey: 'from-config',
+    });
+    expect(mocks.openaiOptions?.apiKey).toBe('from-config');
+  });
+
   it('密钥缺失时抛错', () => {
-    delete process.env.DEEPSEEK_API_KEY;
-    delete process.env.OPENAI_API_KEY;
     expect(() =>
       createOpenAIProvider({ provider: 'openai-compatible', model: 'deepseek-chat' }),
-    ).toThrow(/DEEPSEEK_API_KEY/);
+    ).toThrow(/config\.model\.apiKey/);
   });
 
   it('响应归一化（含 tool_calls）', async () => {
@@ -120,6 +127,7 @@ describe('OpenAI 兼容实现', () => {
     const provider = createOpenAIProvider({
       provider: 'openai-compatible',
       model: 'deepseek-chat',
+      apiKey: 'test-key',
     });
     const result = await provider.chatCompletion({
       messages: [{ role: 'user', content: 'hello' }],
@@ -137,20 +145,19 @@ describe('OpenAI 兼容实现', () => {
 
 describe('Anthropic 实现', () => {
   beforeEach(() => {
-    process.env.ANTHROPIC_API_KEY = 'test-anthropic-key';
     mocks.anthropicCreate.mockReset();
     mocks.anthropicOptions = null;
   });
 
-  afterEach(() => {
-    delete process.env.ANTHROPIC_API_KEY;
+  it('密钥缺失时抛错', () => {
+    expect(() => createAnthropicProvider({ provider: 'anthropic', model: 'claude' })).toThrow(
+      /config\.model\.apiKey/,
+    );
   });
 
-  it('密钥缺失时抛错', () => {
-    delete process.env.ANTHROPIC_API_KEY;
-    expect(() => createAnthropicProvider({ provider: 'anthropic', model: 'claude' })).toThrow(
-      /ANTHROPIC_API_KEY/,
-    );
+  it('config.apiKey 生效', () => {
+    createAnthropicProvider({ provider: 'anthropic', model: 'claude', apiKey: 'from-config' });
+    expect(mocks.anthropicOptions?.apiKey).toBe('from-config');
   });
 
   it('tool_use 归一化为 ToolCall', async () => {
@@ -163,7 +170,11 @@ describe('Anthropic 实现', () => {
       stop_reason: 'tool_use',
     });
 
-    const provider = createAnthropicProvider({ provider: 'anthropic', model: 'claude' });
+    const provider = createAnthropicProvider({
+      provider: 'anthropic',
+      model: 'claude',
+      apiKey: 'test-key',
+    });
     const result = await provider.chatCompletion({
       messages: [{ role: 'user', content: 'weather in beijing?' }],
     });

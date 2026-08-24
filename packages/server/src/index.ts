@@ -4,4 +4,5 @@
  */
 export { createApp } from './app';
 export { serve } from './serve';
+export { envProviderFactory, resolveEnvApiKey } from './provider';
 export type { ServerOptions } from './types';

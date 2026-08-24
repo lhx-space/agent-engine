@@ -1,6 +1,7 @@
 import { AgentConfigSchema, deepFreeze, sanitizeConfigValue } from '@agent-engine/config';
 import { resolveAgentConfig } from '@agent-engine/core';
 import { Hono } from 'hono';
+import { envProviderFactory } from './provider';
 import type { ServerOptions } from './types';
 
 /** 创建 HTTP 应用：`GET /health` + `POST /api/agent/run`。 */
@@ -33,7 +34,7 @@ export function createApp(options: ServerOptions = {}): Hono {
     try {
       const resolved = await resolveAgentConfig(config, {
         pluginFactories: options.pluginFactories,
-        providerFactory: options.providerFactory,
+        providerFactory: options.providerFactory ?? envProviderFactory,
       });
       try {
         const result = await resolved.agent.run(userInput);

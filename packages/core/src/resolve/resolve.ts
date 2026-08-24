@@ -1,10 +1,11 @@
 import type { AgentConfig } from '@agent-engine/config';
 import { assembleAgentLoop } from '../agent/assemble';
+import { resolveMcpServers } from '../capability-source/mcp';
+import { resolveSkills } from '../capability-source/skill';
 import { HookPipeline } from '../hooks/pipeline';
 import { createProvider } from '../llm/provider';
 import { ConversationMemory } from '../memory/conversation-memory';
 import type { Plugin } from '../plugins/types';
-import { loadSkillFromPath } from '../skills/load';
 import { ToolRegistry } from '../tools/registry';
 import type { ResolveDeps, ResolvedAgent } from './types';
 
@@ -34,15 +35,15 @@ export async function resolveAgentConfig(
     plugins.push(await factory());
   }
 
-  // skills：按配置路径加载（SKILL.md → Skill）。
-  const skills = await Promise.all(config.skills.map((skill) => loadSkillFromPath(skill.path)));
+  // skills：按来源（path / npm / git）解析加载，并聚合临时资源清理。
+  const { skills, dispose: disposeSkills } = await resolveSkills(config.skills);
 
   // memory：会话窗口（长期记忆 M3 后续）。
   const memory = config.memory?.session
     ? new ConversationMemory({ maxMessages: config.memory.session.maxMessages })
     : undefined;
 
-  return assembleAgentLoop({
+  const resolved = await assembleAgentLoop({
     provider,
     registry,
     hooks,
@@ -53,7 +54,16 @@ export async function resolveAgentConfig(
     memory,
     security: config.security,
     tools: config.tools,
-    mcp: config.mcp?.servers ?? [],
+    mcp: resolveMcpServers(config.mcp?.servers ?? []),
     sandbox: deps.sandbox,
   });
+
+  const { dispose: disposeAgent } = resolved;
+  return {
+    agent: resolved.agent,
+    dispose: async () => {
+      await disposeAgent();
+      await disposeSkills();
+    },
+  };
 }

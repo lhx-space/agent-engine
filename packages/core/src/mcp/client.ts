@@ -1,6 +1,6 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import type { McpServer } from '@agent-engine/config';
+import type { ResolvedMcpServer } from '../capability-source/types';
 import type { CapabilityBundle } from '../capability/types';
 import { toTool } from './normalize';
 import type { McpConnection } from './types';
@@ -21,7 +21,7 @@ function resolveEnv(env: Record<string, string> | undefined): Record<string, str
 }
 
 /** 连接一个 MCP server（stdio transport），并把其工具归一化为标准 Tool。 */
-export async function connectMcpServer(server: McpServer): Promise<McpConnection> {
+export async function connectMcpServer(server: ResolvedMcpServer): Promise<McpConnection> {
   const client = new Client(CLIENT_INFO);
   const transport = new StdioClientTransport({
     command: server.command,
@@ -63,7 +63,9 @@ export interface ConnectMcpServersResult {
 }
 
 /** 并发连接多个 MCP server；单个失败不阻断其他，失败项以错误报告返回。 */
-export async function connectMcpServers(servers: McpServer[]): Promise<ConnectMcpServersResult> {
+export async function connectMcpServers(
+  servers: ResolvedMcpServer[],
+): Promise<ConnectMcpServersResult> {
   const settled = await Promise.allSettled(servers.map((server) => connectMcpServer(server)));
 
   const connections: McpConnection[] = [];

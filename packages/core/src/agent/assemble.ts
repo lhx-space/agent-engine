@@ -1,5 +1,6 @@
-import type { McpServer, Rule, SecurityConfig, ToolRef } from '@agent-engine/config';
+import type { Rule, SecurityConfig, ToolRef } from '@agent-engine/config';
 import { mergeBundles } from '../capability/bundle';
+import type { ResolvedMcpServer } from '../capability-source/types';
 import type { CapabilityBundle } from '../capability/types';
 import type { HookPipeline } from '../hooks/pipeline';
 import type { LLMProvider } from '../llm/types';
@@ -34,8 +35,8 @@ export interface AssembleAgentLoopOptions {
   tools?: ToolRef[];
   /** 预置沙箱后端（bash 启用时使用；缺省按 security.sandbox.backend 解析）。 */
   sandbox?: SandboxBackend;
-  /** 配置声明的 MCP servers；装配时连接并把归一化工具注册进 registry。 */
-  mcp?: McpServer[];
+  /** 归一化后的 MCP servers（command 形态）；装配时连接并把归一化工具注册进 registry。 */
+  mcp?: ResolvedMcpServer[];
 }
 
 /** 把 prompt 片段追加到 system prompt（string 追加文本 / 模板对象追加到 template；函数式跳过）。 */
