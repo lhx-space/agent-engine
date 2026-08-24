@@ -6,4 +6,9 @@ export default defineConfig({
   html: {
     title: 'Agent Engine',
   },
+  server: {
+    proxy: {
+      '/api': 'http://localhost:8080',
+    },
+  },
 });

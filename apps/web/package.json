@@ -7,9 +7,13 @@
   "scripts": {
     "dev": "rsbuild dev",
     "build": "rsbuild build",
-    "preview": "rsbuild preview"
+    "preview": "rsbuild preview",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@agent-engine/config": "workspace:*",
+    "@ant-design/icons": "^6.3.2",
+    "antd": "^6.6.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
