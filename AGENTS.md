@@ -178,7 +178,7 @@ docs/（Rspress）为独立站点，无运行时依赖
 
 - **tools**：原子能力单元，一个函数即一个工具（如 `read_file`、`bash`、`web_search`）。注册进 **Tool Registry**。已落地内置工具 `todo` / `read_file` / `write_file` / `bash` / `web_search` / `web_fetch` / `sitesearch` / `calculator` / `datetime` / `json` / `base64`（`core/tools/builtin/`），其中 `bash` 默认禁用、经 `SandboxBackend` 沙箱执行（见 5.6）；非 tool 的支撑代码（http/搜索后端/路径/domain/html/store/policy）统一在 `core/tools/utils/`。
 - **skills**：可复用能力包 = 一份指令（`SKILL.md`）+ 可选捆绑的 tools/资源。按需动态加载，加载后将其指令注入上下文、工具并入注册表。已落地 `Skill` 类型 + 统一 `CapabilityLoader`（BM25 检索，复用 `CapabilityRegistry`）+ `loadSkillFromPath`（gray-matter 解析 SKILL.md）；`AgentLoop.skills` 注入后按需注入指令 + 注册捆绑工具。
-- **mcp**：通过 Model Context Protocol 接入的**外部能力来源**。一个外部 MCP server 的 `tools/resources` 会被归一化为标准 Tool，纳入同一注册表，内核无感知差异。
+- **mcp**：通过 Model Context Protocol 接入的**外部能力来源**。一个外部 MCP server 的 `tools/resources` 会被归一化为标准 Tool，纳入同一注册表，内核无感知差异。**未落地**：MCP client 尚未实现（`core/mcp/` 待建，下一个 change）；SDK 依赖 `@modelcontextprotocol/sdk`（stdio transport）已就位，配置 `mcp.servers`（name/command/args/env）已在 Schema 中声明。
 
 ### 5.2 扩展层（能力的「打包与分发」单元）
 
@@ -194,8 +194,10 @@ docs/（Rspress）为独立站点，无运行时依赖
 
 - **system-prompt**：系统提示词，由「模板 + 变量 + 各模块（skills/rules/plugins）注入的片段」组装而成。组装已落地 `context` 模块：`buildSystemPrompt({ systemPrompt, rulesText, skillsText })` 做模板渲染（`renderTemplate`，`{{var}}` 正则替换、未提供变量保留原样、null/undefined 空串）+ rules / skills 注入（`rules` / `skills` 为内置变量，模板用 `{{rules}}` / `{{skills}}` 占位符声明注入点，未声明时兜底追加）；检索由 AgentLoop 用统一 `CapabilityLoader` 完成。`AgentLoop.systemPrompt` 支持三种形态——静态字符串 / `SystemPrompt` 模板对象（配 `rules` 每次 `run` 内建检索注入）/ 函数式（完全自定义），每次 `run` 动态解析，使 rules 按需检索结果真正进入 system prompt。
 - **memory**：记忆管理，分两层：
-  - **会话上下文**：单次会话的 message 窗口管理（含窗口裁剪）。已落地 `ConversationMemory`（历史管理 + `maxMessages` 窗口裁剪，不存 system——system 每次 run 动态组装）；`AgentLoop.memory` 选项注入后跨 run 累积历史实现多轮对话（异常不回写）。压缩（LLM 摘要）留后续。
+  - **会话上下文**：单次会话的 message 窗口管理（含窗口裁剪）。已落地 `ConversationMemory`（历史管理 + `maxMessages` 窗口裁剪，不存 system——system 每次 run 动态组装）；`AgentLoop.memory` 选项注入后跨 run 累积历史实现多轮对话（异常不回写）。
   - **长期记忆**：跨会话的持久化 + 向量检索（可选，后端可插拔，M3）。
+
+  > **已知局限与演进方向（M3）**：当前窗口裁剪是「按条数从头丢弃」，两个问题——(1) 条数 ≠ token 预算，裁剪粒度失控；(2) 可能拆散 assistant `tool_call` 与后续 `tool` 结果的配对，导致下一轮请求非法。演进为**三层记忆**：① 正确截取（token 预算 + 整轮边界淘汰，绝不拆散配对）→ ② 压缩层（滚动摘要，LLM 摘要旧轮）→ ③ 语义层（embedding 向量化 + pgvector 召回，长期记忆）。
 
 ### 关系速记
 
@@ -319,10 +321,12 @@ Task Planner 不是内核的一等公民，而是「工具 + 编排」的自然�
 | `onSessionEnd`   | 会话结束                                 |
 | `onError`        | 任何错误                                 |
 
+> 落地状态：已实现 6 个循环级/错误级 hook（`beforeLLM` / `afterLLM` / `beforeToolCall` / `afterToolCall` / `onStepEnd` / `onError`）；`onInit` / `onSessionStart` / `onSessionEnd` 三个装配级/会话级 hook **待补齐**（在 `Hook` 接口与 assemble/loop 中触发）。
+
 hooks 是内核执行流程的**有限生命周期锚点**，不会随模块膨胀：
 
 - **模块复用而非新增**：guardrail（走 beforeToolCall）、skill（触发走 beforeLLM）、memory（写入走 afterLLM / afterToolCall）、plugin（日志走任意锚点）都**复用**现有钩子点，不各自发明「rule hook」「skill hook」。
-- **模块特定事件走 events 总线**：需要「规则命中」等业务事件时，用 `events/` 事件总线（发布/订阅，见目录结构），而非扩充 hooks。
+- **模块特定事件走 events 总线**：需要「规则命中」「plugin 已装」「mcp 已连」等业务事件时，用 `events/` 事件总线（发布/订阅，见目录结构）而非扩充 hooks；`events/` 目录尚未建立（M3）。加载了哪些能力（plugins/rules/skills/mcp）的可观测同样走 events 总线 + pino 结构化日志，**不新增 per-module loading hook**。
 - **分层钩子**：装配级（onInit）/ 会话级（onSessionStart/End）/ 循环级（beforeLLM…onStepEnd）/ 错误级（onError）；多 Agent 编排（M3）会有独立的**编排级钩子**（如 onSubagentStart/End），不与单 Agent 循环钩子混用。
 - **职责边界**：hooks 负责「观察 + 改写（增强）」，**不做阻断**；阻断是 guardrail 的职责。
 
@@ -337,6 +341,8 @@ hooks 是内核执行流程的**有限生命周期锚点**，不会随模块膨�
 - **TypeScript**：类型安全、可编程（通过 `jiti` 动态加载，`export default` 配置对象）。
 
 三者加载后统一走 **Zod Schema 校验**，产出同一份 `AgentConfig`。内核只面向 `AgentConfig`。
+
+> **配置加载安全（已落地）**：`loadAgentConfig(path, options?)` 内置四道防线——① TypeScript 配置默认拒绝（`allowTsConfig: true` 才经 jiti 执行，因 TS 配置本质是代码）；② 入口 `sanitizeConfigValue` 递归剔除 `__proto__`/`constructor`/`prototype` 防原型污染；③ 出口 `deepFreeze` 深度冻结产物防篡改；④ 资源限制（文件大小默认 1 MiB + YAML `maxAliasCount`/`uniqueKeys` 防别名炸弹与重复 key）。TS 格式仅用于受信任的本地开发输入。
 
 ### 7.2 配置示例（垂直领域 Agent：devops-agent.yaml）
 
@@ -652,7 +658,7 @@ services:
 
 1. **M1 内核骨架**（✅ 已完成）：monorepo 搭建（tsdown 构建）+ `config` 包（Schema + 三格式加载）+ `core` 包（LLM Provider 抽象——**默认接 DeepSeek**、Tool 注册表、单 Agent Loop）。
 2. **M2 配置化能力**（✅ 已完成）：hooks、rules、skills、plugins 系统 + system-prompt 组装 + 会话 memory + 内置工具（`todo` / `read_file` / `write_file` / `bash` / `web_search` / `web_fetch` / `sitesearch` / `calculator` / `datetime` / `json` / `base64`）+ 执行沙箱（`SandboxBackend`：docker / nsjail 双后端，bash 默认禁用，rtk 输出压缩）+ `@agent-engine/plugin-git`。
-3. **M3 扩展接入**：MCP client、长期记忆后端（pgvector）、多 Agent 编排、config resolve 层（AgentConfig→AgentLoop 一键装配）、FunctionSandbox（WASM/WASI）。
+3. **M3 扩展接入**（**当前进行中，优先顺序**）：① **MCP client**（连接外部世界的核心缺口，复用 `@modelcontextprotocol/sdk`，stdio transport，tools/resources 归一化为标准 Tool）；② 长期记忆后端（pgvector，三层记忆：正确截取 + 滚动摘要 + 语义向量）；③ 多 Agent 编排；④ config resolve 层（AgentConfig→AgentLoop 一键装配）；⑤ FunctionSandbox（WASM/WASI）。此外待补齐：流式输出（`llm-streaming`）、`onInit`/`onSessionStart`/`onSessionEnd` 三个 hook、`events/` 事件总线 + pino 接线。
 4. **M4 服务化**：server（HTTP API）+ CLI。
 5. **M5 平台与文档**：apps/web 一体化平台 + docs（Rspress）+ Docker 编排 + 示例垂直领域 Agent。
 
@@ -666,3 +672,6 @@ M2 落地过程中沉淀的坑点与约定，后续开发直接复用：
 - **路径约束两侧 realpath**：macOS 上 `/var → /private/var` 是符号链接，越界校验时 `roots` 与目标路径**都要** `realpath`，否则根内路径会被误判越界。
 - **readability 需 DOM lib**：`@mozilla/readability` 依赖 DOM 类型，`core` 的 tsconfig 需 `lib: ["ES2023", "DOM"]`。
 - **复用优先持续生效**：HTML 正文提取（readability+linkedom）、表达式求值（expr-eval）、命令输出压缩（rtk）均为成熟三方方案，未自研。
+- **`__proto__` 是对象字面量的特殊语法**：`{ __proto__: x }` 是「设置原型」而非「自有属性」；测试/构造带危险 key 的对象须用 `JSON.parse('{"__proto__":...}')`，断言用 `Object.prototype.hasOwnProperty.call(obj, '__proto__')` 而非 `'__proto__' in obj`（`in` 会命中 `Object.prototype` 上的访问器）。
+- **`yaml` v2 把 `__proto__` 解析为自有属性（安全）**，但 `sanitizeConfigValue` 仍「重建为全新普通对象」兜底，即便源对象原型被污染也能隔离；`deepFreeze` 是浅冻结，须递归 + WeakSet 防环 + 跳过非 plain 值（Date/Map/类实例）。
+- **配置加载即信任边界**：TS 配置会被当作代码执行（jiti），默认拒绝、显式 `allowTsConfig` 才开，仅限本地受信任输入；生产/热挂载只走 YAML/JSON。
