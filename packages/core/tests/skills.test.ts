@@ -101,13 +101,15 @@ describe('buildSystemPrompt {{skills}}', () => {
 });
 
 describe('AgentLoop skill 集成', () => {
-  it('命中带工具的 skill：注入指令 + 注册捆绑工具', async () => {
+  it('命中带工具的 skill：注入指令 + 注册捆绑工具 + run 结束清理', async () => {
     const registry = new ToolRegistry();
     const captured: ChatMessage[][] = [];
+    const capturedTools: string[][] = [];
     const provider: LLMProvider = {
       name: 'mock',
       async chatCompletion(params) {
         captured.push(params.messages);
+        capturedTools.push((params.tools ?? []).map((t) => t.function.name));
         return { message: { role: 'assistant', content: 'done' } };
       },
     };
@@ -123,12 +125,11 @@ describe('AgentLoop skill 集成', () => {
 
     const systemMsg = captured[0]?.find((m) => m.role === 'system');
     console.log('\n[AgentLoop skill] system prompt：\n' + systemMsg?.content);
-    console.log(
-      '[AgentLoop skill] 注册的工具:',
-      registry.list().map((t) => t.name),
-    );
 
     expect(systemMsg?.content).toContain('get events');
-    expect(registry.has('kubectl')).toBe(true);
+    // 本轮 LLM 调用能看到 kubectl 工具定义。
+    expect(capturedTools[0]).toContain('kubectl');
+    // run 结束后清理：kubectl 不再残留于 registry（避免跨 run 工具面膨胀）。
+    expect(registry.has('kubectl')).toBe(false);
   });
 });

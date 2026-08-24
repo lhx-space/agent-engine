@@ -1,6 +1,8 @@
-import type { Rule, SecurityConfig, ToolRef } from '@agent-engine/config';
+import type { McpServer, Rule, SecurityConfig, ToolRef } from '@agent-engine/config';
 import type { HookPipeline } from '../hooks/pipeline';
 import type { LLMProvider } from '../llm/types';
+import { connectMcpServers } from '../mcp/client';
+import type { McpConnection } from '../mcp/types';
 import type { ConversationMemory } from '../memory/conversation-memory';
 import { PluginManager } from '../plugins/manager';
 import type { Plugin } from '../plugins/types';
@@ -30,6 +32,8 @@ export interface AssembleAgentLoopOptions {
   tools?: ToolRef[];
   /** 预置沙箱后端（bash 启用时使用；缺省按 security.sandbox.backend 解析）。 */
   sandbox?: SandboxBackend;
+  /** 配置声明的 MCP servers；装配时连接并把归一化工具注册进 registry。 */
+  mcp?: McpServer[];
 }
 
 /** 把 prompt 片段追加到 system prompt（string 追加文本 / 模板对象追加到 template；函数式跳过）。 */
@@ -69,6 +73,21 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     options.hooks?.register(hook);
   }
 
+  // 连接 MCP servers，归一化工具注册进 registry；单个失败不阻断整体（错误隔离，warn 报告）。
+  const mcpConnections: McpConnection[] = [];
+  if (options.mcp && options.mcp.length > 0) {
+    const { connections, errors } = await connectMcpServers(options.mcp);
+    mcpConnections.push(...connections);
+    for (const connection of connections) {
+      for (const tool of connection.tools) {
+        options.registry.register(tool);
+      }
+    }
+    for (const { name, error } of errors) {
+      console.warn(`[assembleAgentLoop] MCP server "${name}" 连接失败，已跳过：${error.message}`);
+    }
+  }
+
   const skills = [...(options.skills ?? []), ...assembly.skills];
   const rules = [...(options.rules ?? []), ...assembly.rules];
   const promptText = promptFragments.join('\n\n');
@@ -84,5 +103,6 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     guardrails: options.guardrails,
     memory: options.memory,
     maxSteps: options.maxSteps,
+    mcpConnections,
   });
 }

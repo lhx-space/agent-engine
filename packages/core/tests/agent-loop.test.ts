@@ -254,4 +254,50 @@ describe('AgentLoop', () => {
     expect(systemMsg?.content).toContain('回答要简洁');
     expect(systemMsg?.content).toContain('使用 script setup');
   });
+
+  it('string systemPrompt 兜底追加 rules 文本', async () => {
+    const captured: ChatMessage[][] = [];
+    const provider: LLMProvider = {
+      name: 'mock',
+      async chatCompletion(params) {
+        captured.push(params.messages);
+        return { message: { role: 'assistant', content: 'ok' } };
+      },
+    };
+    const loop = new AgentLoop({
+      provider,
+      registry: new ToolRegistry(),
+      systemPrompt: 'you are helpful',
+      rules: [{ id: 'r1', kind: 'always', description: '简洁', content: '回答要简洁', tags: [] }],
+    });
+
+    await loop.run('hi');
+
+    const systemMsg = captured[0]?.find((m) => m.role === 'system');
+    expect(systemMsg?.content).toContain('you are helpful');
+    expect(systemMsg?.content).toContain('回答要简洁');
+  });
+
+  it('函数式 systemPrompt 兜底追加 rules 文本', async () => {
+    const captured: ChatMessage[][] = [];
+    const provider: LLMProvider = {
+      name: 'mock',
+      async chatCompletion(params) {
+        captured.push(params.messages);
+        return { message: { role: 'assistant', content: 'ok' } };
+      },
+    };
+    const loop = new AgentLoop({
+      provider,
+      registry: new ToolRegistry(),
+      systemPrompt: async (input: string) => `你是 ${input} 专家`,
+      rules: [{ id: 'r1', kind: 'always', description: '简洁', content: '回答要简洁', tags: [] }],
+    });
+
+    await loop.run('Vue');
+
+    const systemMsg = captured[0]?.find((m) => m.role === 'system');
+    expect(systemMsg?.content).toContain('你是 Vue 专家');
+    expect(systemMsg?.content).toContain('回答要简洁');
+  });
 });

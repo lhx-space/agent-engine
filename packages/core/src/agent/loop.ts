@@ -2,12 +2,14 @@ import type { Rule } from '@agent-engine/config';
 import { buildSystemPrompt } from '../context/build-system-prompt';
 import type { HookPipeline } from '../hooks/pipeline';
 import type { ChatCompletionResult, ChatMessage, LLMProvider } from '../llm/types';
+import type { McpConnection } from '../mcp/types';
 import type { ConversationMemory } from '../memory/conversation-memory';
 import { loadRulesText } from '../rules/load';
 import type { RuleRegistry } from '../rules/registry';
 import { CapabilityLoader } from '../retrieval/loader';
 import type { Skill } from '../skills/types';
 import type { ToolRegistry } from '../tools/registry';
+import type { Tool } from '../tools/types';
 import type { AgentLoopOptions, AgentLoopResult, SystemPromptInput } from './types';
 
 /** 单 Agent ReAct 执行循环。 */
@@ -22,6 +24,7 @@ export class AgentLoop {
   private readonly ruleLoader: CapabilityLoader<Rule> | undefined;
   private readonly skillLoader: CapabilityLoader<Skill> | undefined;
   private readonly memory: ConversationMemory | undefined;
+  private readonly mcpConnections: McpConnection[];
 
   constructor(options: AgentLoopOptions) {
     this.provider = options.provider;
@@ -38,14 +41,23 @@ export class AgentLoop {
         ? new CapabilityLoader<Skill>('skill', options.skills)
         : undefined;
     this.memory = options.memory;
+    this.mcpConnections = options.mcpConnections ?? [];
+  }
+
+  /** 关闭所有 MCP 连接（幂等）。 */
+  async dispose(): Promise<void> {
+    await Promise.all(this.mcpConnections.map((connection) => connection.close()));
   }
 
   async run(userInput: string): Promise<AgentLoopResult> {
     // 检索 rules（always + on-demand）与 skills（on-demand）。
     const rulesText = this.ruleLoader ? loadRulesText(this.rules, this.ruleLoader, userInput) : '';
     const skillHits = this.skillLoader?.loadForQuery(userInput) ?? [];
+    // 记录本轮注册的 skill 工具（含覆盖前的同名工具），run 结束（含异常）时还原/移除，避免跨 run 残留。
+    const registeredSkillTools: { name: string; prior: Tool | undefined }[] = [];
     for (const hit of skillHits) {
       for (const tool of hit.record.tools ?? []) {
+        registeredSkillTools.push({ name: tool.name, prior: this.registry.get(tool.name) });
         this.registry.register(tool);
       }
     }
@@ -153,6 +165,15 @@ export class AgentLoop {
         // onError 钩子自身错误忽略，保留原错误。
       }
       throw err;
+    } finally {
+      // 清理本轮注册的 skill 工具：覆盖过同名工具则还原，否则移除。
+      for (const { name, prior } of registeredSkillTools) {
+        if (prior) {
+          this.registry.register(prior);
+        } else {
+          this.registry.unregister(name);
+        }
+      }
     }
 
     // 正常结束（自然终止 / maxSteps 兜底）时，把本轮消息（system 之外）写回会话记忆。
@@ -169,12 +190,18 @@ export class AgentLoop {
     skillsText: string,
   ): Promise<string> {
     if (typeof this.systemPrompt === 'function') {
-      return this.systemPrompt(userInput);
+      return this.appendContext(await this.systemPrompt(userInput), rulesText, skillsText);
     }
     if (typeof this.systemPrompt === 'string') {
-      return this.systemPrompt;
+      return this.appendContext(this.systemPrompt, rulesText, skillsText);
     }
-    // SystemPrompt 模板对象：渲染变量 + 注入 rules / skills 文本。
+    // SystemPrompt 模板对象：渲染变量 + 注入 rules / skills 文本（buildSystemPrompt 内部有兜底追加）。
     return buildSystemPrompt({ systemPrompt: this.systemPrompt, rulesText, skillsText });
+  }
+
+  /** 把 rules/skills 文本兜底追加到基础 prompt 之后（string / 函数式形态同样生效）。 */
+  private appendContext(base: string, rulesText: string, skillsText: string): string {
+    const extra = [rulesText, skillsText].filter((text) => text).join('\n\n');
+    return extra ? `${base}\n\n${extra}` : base;
   }
 }

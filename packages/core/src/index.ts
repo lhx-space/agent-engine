@@ -32,6 +32,8 @@ export {
   SandboxUnavailableError,
 } from './sandbox';
 export type { SandboxResolution } from './sandbox';
+export { connectMcpServer, connectMcpServers, toTool, normalizeCallToolResult } from './mcp';
+export type { McpConnection, McpToolMeta, ConnectMcpServersResult } from './mcp';
 export { HookPipeline } from './hooks/pipeline';
 export { RuleRegistry } from './rules/registry';
 export { loadRulesText } from './rules/load';

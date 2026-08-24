@@ -53,6 +53,8 @@ export type { CapabilityRecord, CapabilityRecordHit } from './retrieval/loader';
 export type { Skill } from './skills/types';
 // plugins
 export type { Plugin, PluginAssembly, PluginContext } from './plugins/types';
+// mcp
+export type { McpConnection, McpToolMeta, ConnectMcpServersResult } from './mcp';
 // memory
 export type { ConversationMemoryOptions } from './memory/types';
 // context

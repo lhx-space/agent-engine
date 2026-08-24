@@ -1,29 +1,4 @@
-# session-memory Specification
-
-## Purpose
-
-TBD - created by archiving change add-session-memory. Update Purpose after archive.
-
-## Requirements
-
-### Requirement: 会话历史管理
-
-系统 SHALL 提供 `ConversationMemory`，保存会话消息历史（user / assistant / tool），支持 `push` / `append` 追加、`getMessages` 读取（返回副本）、`size` 计数、`clear` 清空。
-
-#### Scenario: 追加与读取
-
-- **WHEN** 依次 push / append 若干消息
-- **THEN** `getMessages` 按追加顺序返回全部消息，`size` 等于条数
-
-#### Scenario: 清空
-
-- **WHEN** 调用 `clear`
-- **THEN** 历史清空，`size` 为 0
-
-#### Scenario: 读取返回副本
-
-- **WHEN** 修改 `getMessages` 返回的数组
-- **THEN** 不影响内部历史
+## MODIFIED Requirements
 
 ### Requirement: 窗口裁剪
 

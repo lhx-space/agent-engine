@@ -38,6 +38,15 @@ describe('ToolRegistry 注册与查询', () => {
     expect(registry.get('get_weather')).toBe(v2);
     expect(registry.list()).toHaveLength(1);
   });
+
+  it('注销已注册工具', () => {
+    const registry = new ToolRegistry();
+    registry.register(makeWeatherTool());
+
+    expect(registry.unregister('get_weather')).toBe(true);
+    expect(registry.has('get_weather')).toBe(false);
+    expect(registry.unregister('get_weather')).toBe(false);
+  });
 });
 
 describe('ToolRegistry 执行', () => {
@@ -91,5 +100,22 @@ describe('Zod → JSON Schema 转换', () => {
     expect(def?.function.name).toBe('get_weather');
     expect(def?.function.description).toBe('Get weather for a city');
     expect(def?.function.parameters).toMatchObject({ type: 'object' });
+  });
+
+  it('jsonSchema 优先透传（MCP 工具）', () => {
+    const registry = new ToolRegistry();
+    registry.register({
+      name: 'mcp_tool',
+      description: 'mcp tool',
+      inputSchema: z.unknown(),
+      jsonSchema: { type: 'object', properties: { x: { type: 'string' } } },
+      execute: async () => 'ok',
+    });
+
+    const def = registry.toToolDefinitions()[0];
+    expect(def?.function.parameters).toEqual({
+      type: 'object',
+      properties: { x: { type: 'string' } },
+    });
   });
 });

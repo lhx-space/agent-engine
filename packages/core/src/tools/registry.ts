@@ -13,6 +13,11 @@ export class ToolRegistry {
     this.tools.set(tool.name, tool);
   }
 
+  /** 按名移除工具。已注册返回 true，未注册返回 false 且无副作用。 */
+  unregister(name: string): boolean {
+    return this.tools.delete(name);
+  }
+
   /** 按名查询工具，未注册返回 undefined。 */
   get(name: string): Tool | undefined {
     return this.tools.get(name);
@@ -67,7 +72,7 @@ export class ToolRegistry {
       function: {
         name: tool.name,
         description: tool.description,
-        parameters: toJSONSchema(tool.inputSchema) as Record<string, unknown>,
+        parameters: (tool.jsonSchema ?? toJSONSchema(tool.inputSchema)) as Record<string, unknown>,
       },
     };
   }

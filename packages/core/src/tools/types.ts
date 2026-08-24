@@ -10,6 +10,11 @@ export interface Tool<TInput = unknown, TOutput = unknown> {
   description: string;
   /** 入参 Zod schema，定义工具接受的参数结构。 */
   inputSchema: z.ZodType<TInput>;
+  /**
+   * 原生 JSON Schema（可选）。MCP 等外部工具已有现成 JSON Schema 时用它无损透传，
+   * 供 LLM 使用；`ToolRegistry.toToolDefinition` 优先取它，否则回退 `toJSONSchema(inputSchema)`。
+   */
+  jsonSchema?: Record<string, unknown>;
   /** 执行工具，入参为经过 schema 校验后的强类型对象。 */
   execute(input: TInput): Promise<TOutput>;
 }
