@@ -4,6 +4,7 @@ import type { HookPipeline } from '../hooks/pipeline';
 import type { HookTrace } from '../hooks/types';
 import type { ChatMessage, DeltaKind, LLMProvider } from '../llm/types';
 import type { ConversationMemory } from '../memory/conversation-memory';
+import type { LongTermMemory } from '../memory/long-term-memory';
 import type { RuleRegistry } from '../rules/registry';
 import type { Skill } from '../skills/types';
 import type { ToolRegistry } from '../tools/registry';
@@ -48,6 +49,8 @@ export interface AgentLoopOptions {
   guardrails?: RuleRegistry;
   /** 会话记忆（可选），注入后跨 run 累积历史，实现多轮对话。 */
   memory?: ConversationMemory;
+  /** 长期记忆（可选），run 开始召回注入、正常结束写回（三层记忆③）。 */
+  longTermMemory?: LongTermMemory;
   /** 可复用能力包（可选），按 query 检索命中后注入指令 + 注册捆绑工具。 */
   skills?: Skill[];
   /** 事件总线（可选）：run 期间把总线 `custom` 事件转发到 `onEvent`。 */

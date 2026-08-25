@@ -5,6 +5,7 @@ import type { TokenCounter } from '../context/token-counter';
 import type { EmbeddingProvider } from '../embedding/embedding';
 import type { EventBus } from '../events/event-bus';
 import type { ProviderFactory } from '../llm/provider';
+import type { LongTermMemory } from '../memory/long-term-memory';
 import type { MemoryBackend } from '../memory/memory-backend';
 import type { Plugin } from '../plugins/types';
 import type { Reranker } from '../retrieval/reranker';
@@ -36,6 +37,8 @@ export interface ResolvedAgent {
   vectorStore: VectorStore;
   /** 语义召回 embedding 提供商（需真实向量模型，插件注册；缺省 undefined）。 */
   embeddingProvider?: EmbeddingProvider;
+  /** 语义长期记忆（embedding 向量化 + 向量召回 + 持久化；无 embedding 时优雅 no-op）。 */
+  longTermMemory: LongTermMemory;
   /** 事件总线（模块业务事件发布/订阅，含 `custom` 逃生舱）。 */
   eventBus: EventBus;
   /** token 计数器（默认粗估；插件可注入精确 tokenizer）。 */

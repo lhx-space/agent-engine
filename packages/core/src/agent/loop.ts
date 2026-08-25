@@ -10,6 +10,7 @@ import {
   type ToolCall,
 } from '../llm/types';
 import type { ConversationMemory } from '../memory/conversation-memory';
+import type { LongTermMemory } from '../memory/long-term-memory';
 import { loadRulesText } from '../rules/load';
 import type { RuleRegistry } from '../rules/registry';
 import { CapabilityLoader } from '../retrieval/loader';
@@ -47,6 +48,7 @@ export class AgentLoop {
   private readonly ruleLoader: CapabilityLoader<Rule> | undefined;
   private readonly skillLoader: CapabilityLoader<Skill> | undefined;
   private readonly memory: ConversationMemory | undefined;
+  private readonly longTermMemory: LongTermMemory | undefined;
   private readonly eventBus: EventBus | undefined;
   private sessionStarted = false;
   private sessionEnded = false;
@@ -73,6 +75,7 @@ export class AgentLoop {
         ? new CapabilityLoader<Skill>('skill', options.skills)
         : undefined;
     this.memory = options.memory;
+    this.longTermMemory = options.longTermMemory;
     this.eventBus = options.eventBus;
   }
 
@@ -110,9 +113,13 @@ export class AgentLoop {
       .join('\n\n');
 
     const systemPrompt = await this.resolveSystemPrompt(userInput, rulesText, skillsText);
+    // 长期记忆召回（三层记忆③）：命中则作为背景知识注入 system prompt。
+    const memories = (await this.longTermMemory?.recall(userInput)) ?? [];
+    const systemWithMemory =
+      memories.length > 0 ? `${systemPrompt}\n\n[长期记忆]\n${memories.join('\n')}` : systemPrompt;
     const history = (await this.memory?.getWindow()) ?? [];
     const messages: ChatMessage[] = [
-      { role: 'system', content: systemPrompt },
+      { role: 'system', content: systemWithMemory },
       ...history,
       { role: 'user', content: userInput },
     ];
@@ -264,6 +271,16 @@ export class AgentLoop {
     // 正常结束（自然终止 / maxSteps 兜底 / 超时）时，把本轮消息（system 之外）写回会话记忆。
     // 异常路径（catch 内 throw）不会执行到这里，故不回写，保持历史不变。
     this.memory?.append(messages.slice(sessionStart));
+
+    // 长期记忆写回（三层记忆③）：本轮「用户输入 + 最终答案」作为一条长期记忆（best-effort，失败不阻断）。
+    const finalContent = finalMessage.content ?? '';
+    if (this.longTermMemory && finalContent) {
+      try {
+        await this.longTermMemory.remember(`${userInput}\n${finalContent}`);
+      } catch {
+        // 长期记忆写回失败忽略，不影响本轮结果。
+      }
+    }
 
     emit?.({ type: 'done', finalMessage, steps });
     return { finalMessage, messages, steps, finishReason };

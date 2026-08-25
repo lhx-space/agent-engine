@@ -21,6 +21,8 @@ import type { HookPipeline } from '../hooks/pipeline';
 import type { LLMProvider } from '../llm/types';
 import { connectMcpServers } from '../mcp/client';
 import { ConversationMemory } from '../memory/conversation-memory';
+import { SemanticMemory } from '../memory/long-term-memory';
+import type { LongTermMemory } from '../memory/long-term-memory';
 import { InMemoryMemoryBackend } from '../memory/memory-backend';
 import type { MemoryBackend } from '../memory/memory-backend';
 import { LLMSummarizer } from '../memory/summarizer';
@@ -195,7 +197,31 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
   const summarizer: Summarizer =
     merged.summarizers[0] ?? options.summarizer ?? new LLMSummarizer(options.provider);
 
-  // 5.6 会话记忆：注入的 memory 直接用；否则按 config.memory.session 构造（token 预算 + 滚动摘要）。
+  // 5.6 可插拔存储/检索后端：按名解析（内置 in-memory + 插件注册）。
+  const memoryBackend: MemoryBackend = resolveBackendByName(
+    options.longTermBackend ?? 'in-memory',
+    new InMemoryMemoryBackend(),
+    merged.memoryBackends,
+    'memory.longTerm.backend',
+  );
+  const cacheBackend: CacheBackend = resolveBackendByName(
+    options.cacheBackend ?? 'in-memory',
+    new InMemoryCacheBackend(),
+    merged.cacheBackends,
+    'cache.backend',
+  );
+  const vectorStore: VectorStore = merged.vectorStores[0] ?? new InMemoryVectorStore();
+  const embeddingProvider: EmbeddingProvider | undefined =
+    merged.embeddingProviders[0] ?? options.embeddingProvider;
+
+  // 5.7 语义长期记忆：embedding 向量化 + 向量召回 + 持久化（无 embedding 时优雅 no-op）。
+  const longTermMemory: LongTermMemory = new SemanticMemory(
+    vectorStore,
+    embeddingProvider,
+    memoryBackend,
+  );
+
+  // 5.8 会话记忆：注入的 memory 直接用；否则按 config.memory.session 构造（token 预算 + 滚动摘要）。
   const session = options.sessionMemory;
   const memory: ConversationMemory =
     options.memory ??
@@ -206,7 +232,7 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
       summarizer: session?.summary ? summarizer : undefined,
     });
 
-  // 5.7 guardrail 装配：预置可执行规则 + 插件注册 + 声明式配置编译，合并进同一 RuleRegistry。
+  // 5.9 guardrail 装配：预置可执行规则 + 插件注册 + 声明式配置编译，合并进同一 RuleRegistry。
   const guardrailRegistry = new RuleRegistry();
   for (const rule of options.guardrails?.list() ?? []) guardrailRegistry.register(rule);
   for (const rule of merged.guardrails) guardrailRegistry.register(rule);
@@ -223,29 +249,11 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     hooks: options.hooks,
     guardrails: guardrailRegistry,
     memory,
+    longTermMemory,
     maxSteps: options.maxSteps,
     execution: options.execution,
     eventBus,
   });
-
-  // 6. 可插拔存储后端：按名解析（内置 in-memory + 插件注册），随 ResolvedAgent 暴露供上层/hooks 消费。
-  const memoryBackend: MemoryBackend = resolveBackendByName(
-    options.longTermBackend ?? 'in-memory',
-    new InMemoryMemoryBackend(),
-    merged.memoryBackends,
-    'memory.longTerm.backend',
-  );
-  const cacheBackend: CacheBackend = resolveBackendByName(
-    options.cacheBackend ?? 'in-memory',
-    new InMemoryCacheBackend(),
-    merged.cacheBackends,
-    'cache.backend',
-  );
-
-  // 6.5 语义检索后端：向量库（缺省 in-memory）+ embedding（插件注册优先，否则按配置预置）。
-  const vectorStore: VectorStore = merged.vectorStores[0] ?? new InMemoryVectorStore();
-  const embeddingProvider: EmbeddingProvider | undefined =
-    merged.embeddingProviders[0] ?? options.embeddingProvider;
 
   let disposed = false;
   const dispose = async (): Promise<void> => {
@@ -260,6 +268,7 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     cacheBackend,
     vectorStore,
     embeddingProvider,
+    longTermMemory,
     eventBus,
     tokenCounter,
     contextCompactor,

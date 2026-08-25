@@ -1,0 +1,7 @@
+- [x] `core/src/memory/long-term-memory.ts`：`LongTermMemory` 接口 + `SemanticMemory`
+- [x] `core/src/memory/index.ts` + `core/src/{index,types}.ts`：导出
+- [x] `core/src/agent/loop.ts`：`longTermMemory` 选项 + `recall` 注入 + `remember` 写回
+- [x] `core/src/agent/assemble.ts`：构造 `SemanticMemory` 注入循环
+- [x] `core/src/resolve/types.ts`：`ResolvedAgent.longTermMemory` 暴露
+- [x] 测试：SemanticMemory 召回/持久化 / 无 embedding no-op / resolve 装配
+- [x] 全量校验：`pnpm build` / `typecheck` / `test` / web build / `lint` / `spell` / `format:check` / `lint:md` / `openspec validate --strict`

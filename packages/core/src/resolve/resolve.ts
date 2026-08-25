@@ -75,6 +75,7 @@ export async function resolveAgentConfig(
     cacheBackend: resolved.cacheBackend,
     vectorStore: resolved.vectorStore,
     embeddingProvider: resolved.embeddingProvider,
+    longTermMemory: resolved.longTermMemory,
     eventBus: resolved.eventBus,
     tokenCounter: resolved.tokenCounter,
     contextCompactor: resolved.contextCompactor,
