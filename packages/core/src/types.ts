@@ -69,6 +69,7 @@ export type { ResolvedAgent, ResolveDeps, PluginFactory } from './resolve/types'
 // memory
 export type { ConversationMemoryOptions } from './memory/types';
 export type { MemoryBackend } from './memory/memory-backend';
+export type { Summarizer } from './memory/summarizer';
 // cache
 export type { CacheBackend } from './cache/cache-backend';
 // context

@@ -1,5 +1,8 @@
 import { describe, expect, it } from '@rstest/core';
+import { TokenBudgetCompactor } from '../src/context/compactor';
+import { ApproximateTokenCounter } from '../src/context/token-counter';
 import { ConversationMemory } from '../src/memory/conversation-memory';
+import type { Summarizer } from '../src/memory/summarizer';
 
 describe('ConversationMemory', () => {
   it('追加 / 读取 / size / 清空', () => {
@@ -78,5 +81,83 @@ describe('ConversationMemory', () => {
 
     expect(m.size).toBe(1);
     expect(m.getMessages().map((x) => x.content)).toEqual(['hi']);
+  });
+});
+
+describe('ConversationMemory token 预算 + 滚动摘要', () => {
+  const compactor = new TokenBudgetCompactor(new ApproximateTokenCounter());
+
+  function twoTurns(): ConversationMemory {
+    const m = new ConversationMemory({ compactor, budgetTokens: 2 });
+    m.append([
+      { role: 'user', content: 'u1' },
+      { role: 'assistant', content: 'a1' },
+      { role: 'user', content: 'u2' },
+      { role: 'assistant', content: 'a2' },
+    ]);
+    return m;
+  }
+
+  it('getWindow 按 token 预算整轮淘汰', async () => {
+    const m = twoTurns();
+    const window = await m.getWindow();
+    // 预算只容得下最近一轮（每轮 2 token）。
+    expect(window.map((x) => x.content)).toEqual(['u2', 'a2']);
+    // 淘汰已提交：原始历史同步移除旧轮。
+    expect(m.getMessages().map((x) => x.content)).toEqual(['u2', 'a2']);
+  });
+
+  it('getWindow 淘汰轮并入滚动摘要并作为头部 user 注入', async () => {
+    const summarizer: Summarizer = { name: 'mock', summarize: async () => 'OLD SUMMARY' };
+    const m = new ConversationMemory({ compactor, budgetTokens: 2, summarizer });
+    m.append([
+      { role: 'user', content: 'u1' },
+      { role: 'assistant', content: 'a1' },
+      { role: 'user', content: 'u2' },
+      { role: 'assistant', content: 'a2' },
+    ]);
+
+    const window = await m.getWindow();
+    expect(window[0]).toEqual({ role: 'user', content: '[历史摘要]\nOLD SUMMARY' });
+    expect(window.slice(1).map((x) => x.content)).toEqual(['u2', 'a2']);
+  });
+
+  it('摘要累积：连续淘汰追加到既有摘要后', async () => {
+    const summaries: string[] = ['S1', 'S2'];
+    let call = 0;
+    const summarizer: Summarizer = {
+      name: 'mock',
+      summarize: async () => summaries[call++] ?? 'S',
+    };
+    const m = new ConversationMemory({ compactor, budgetTokens: 2, summarizer });
+    // 第一轮淘汰 → S1；再追加一轮并淘汰 → S2 追加。
+    m.append([
+      { role: 'user', content: 'u1' },
+      { role: 'assistant', content: 'a1' },
+      { role: 'user', content: 'u2' },
+      { role: 'assistant', content: 'a2' },
+    ]);
+    await m.getWindow();
+    m.append([
+      { role: 'user', content: 'u3' },
+      { role: 'assistant', content: 'a3' },
+    ]);
+    const window = await m.getWindow();
+    expect(window[0]?.content).toBe('[历史摘要]\nS1\n\nS2');
+  });
+
+  it('clear 清空摘要', async () => {
+    const summarizer: Summarizer = { name: 'mock', summarize: async () => 'S' };
+    const m = new ConversationMemory({ compactor, budgetTokens: 2, summarizer });
+    m.append([
+      { role: 'user', content: 'u1' },
+      { role: 'assistant', content: 'a1' },
+      { role: 'user', content: 'u2' },
+      { role: 'assistant', content: 'a2' },
+    ]);
+    await m.getWindow();
+    m.clear();
+    const window = await m.getWindow();
+    expect(window).toEqual([]);
   });
 });

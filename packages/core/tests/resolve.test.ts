@@ -44,6 +44,7 @@ describe('mergeBundles', () => {
       contextCompactors: [],
       retrievers: [],
       rerankers: [],
+      summarizers: [],
       dispose: async () => {
         disposed.push('a');
       },
@@ -63,6 +64,7 @@ describe('mergeBundles', () => {
       contextCompactors: [],
       retrievers: [],
       rerankers: [],
+      summarizers: [],
       dispose: async () => {
         disposed.push('b');
       },
@@ -139,6 +141,20 @@ describe('resolveAgentConfig', () => {
     const tools = capturedTools[0] ?? [];
     expect(tools).not.toContain('builtin_todo');
     expect(tools).toContain('builtin_datetime');
+  });
+
+  it('memory.session.maxTokens + summary 经 resolve 装配（单轮不触发摘要也不报错）', async () => {
+    const config = baseConfig();
+    config.memory = { session: { maxTokens: 50, summary: true } };
+
+    const resolved = await resolveAgentConfig(config, {
+      providerFactory: () => makeProvider(),
+    });
+
+    const result = await resolved.agent.run('hi');
+    await resolved.dispose();
+
+    expect(result.finalMessage.content).toBe('ok');
   });
 
   it('声明式 guardrail 阻断工具调用（resolve 装配进循环）', async () => {

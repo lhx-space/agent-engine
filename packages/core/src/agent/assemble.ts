@@ -3,6 +3,7 @@ import type {
   GuardrailConfig,
   Rule,
   SecurityConfig,
+  SessionMemory,
   ToolsConfig,
 } from '@agent-engine/config';
 import { InMemoryCacheBackend } from '../cache/cache-backend';
@@ -19,9 +20,11 @@ import { EventBus } from '../events/event-bus';
 import type { HookPipeline } from '../hooks/pipeline';
 import type { LLMProvider } from '../llm/types';
 import { connectMcpServers } from '../mcp/client';
-import type { ConversationMemory } from '../memory/conversation-memory';
+import { ConversationMemory } from '../memory/conversation-memory';
 import { InMemoryMemoryBackend } from '../memory/memory-backend';
 import type { MemoryBackend } from '../memory/memory-backend';
+import { LLMSummarizer } from '../memory/summarizer';
+import type { Summarizer } from '../memory/summarizer';
 import { PluginManager } from '../plugins/manager';
 import type { Plugin } from '../plugins/types';
 import type { ResolvedAgent } from '../resolve/types';
@@ -73,6 +76,10 @@ export interface AssembleAgentLoopOptions {
   eventBus?: EventBus;
   /** 声明式 guardrail 配置（`config.guardrails`）；装配时编译为 `GuardrailRule` 注入循环。 */
   guardrailConfig?: GuardrailConfig;
+  /** 会话记忆配置（`config.memory.session`）；未注入 `memory` 时据此构造（token 预算 + 滚动摘要）。 */
+  sessionMemory?: SessionMemory;
+  /** 预置滚动摘要策略（插件注册的优先；缺省 `LLMSummarizer(provider)`）。 */
+  summarizer?: Summarizer;
 }
 
 /** 把 prompt 片段追加到 system prompt（string 追加文本 / 模板对象追加到 template；函数式跳过）。 */
@@ -179,7 +186,27 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
   const promptText = [...merged.promptFragments, ...derivedFragments].join('\n\n');
   const systemPrompt = injectPromptText(options.systemPrompt, promptText);
 
-  // 5.5 guardrail 装配：预置可执行规则 + 插件注册 + 声明式配置编译，合并进同一 RuleRegistry。
+  // 5.5 上下文/检索/摘要策略接口：插件注册优先，否则默认（token 计数 + 裁剪 + 检索 + 重排 + 摘要）。
+  const tokenCounter: TokenCounter = merged.tokenCounters[0] ?? new ApproximateTokenCounter();
+  const contextCompactor: ContextCompactor =
+    merged.contextCompactors[0] ?? new TokenBudgetCompactor(tokenCounter);
+  const retriever: Retriever = merged.retrievers[0] ?? new Bm25Retriever(new CapabilityRegistry());
+  const reranker: Reranker = merged.rerankers[0] ?? new IdentityReranker();
+  const summarizer: Summarizer =
+    merged.summarizers[0] ?? options.summarizer ?? new LLMSummarizer(options.provider);
+
+  // 5.6 会话记忆：注入的 memory 直接用；否则按 config.memory.session 构造（token 预算 + 滚动摘要）。
+  const session = options.sessionMemory;
+  const memory: ConversationMemory =
+    options.memory ??
+    new ConversationMemory({
+      maxMessages: session?.maxMessages,
+      compactor: contextCompactor,
+      budgetTokens: session?.maxTokens,
+      summarizer: session?.summary ? summarizer : undefined,
+    });
+
+  // 5.7 guardrail 装配：预置可执行规则 + 插件注册 + 声明式配置编译，合并进同一 RuleRegistry。
   const guardrailRegistry = new RuleRegistry();
   for (const rule of options.guardrails?.list() ?? []) guardrailRegistry.register(rule);
   for (const rule of merged.guardrails) guardrailRegistry.register(rule);
@@ -195,7 +222,7 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     skills,
     hooks: options.hooks,
     guardrails: guardrailRegistry,
-    memory: options.memory,
+    memory,
     maxSteps: options.maxSteps,
     execution: options.execution,
     eventBus,
@@ -219,13 +246,6 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
   const vectorStore: VectorStore = merged.vectorStores[0] ?? new InMemoryVectorStore();
   const embeddingProvider: EmbeddingProvider | undefined =
     merged.embeddingProviders[0] ?? options.embeddingProvider;
-
-  // 6.6 上下文/检索策略接口：token 计数 + 裁剪 + 检索 + 重排（插件注册优先，否则默认）。
-  const tokenCounter: TokenCounter = merged.tokenCounters[0] ?? new ApproximateTokenCounter();
-  const contextCompactor: ContextCompactor =
-    merged.contextCompactors[0] ?? new TokenBudgetCompactor(tokenCounter);
-  const retriever: Retriever = merged.retrievers[0] ?? new Bm25Retriever(new CapabilityRegistry());
-  const reranker: Reranker = merged.rerankers[0] ?? new IdentityReranker();
 
   let disposed = false;
   const dispose = async (): Promise<void> => {

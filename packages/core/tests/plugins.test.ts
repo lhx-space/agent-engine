@@ -31,6 +31,7 @@ describe('PluginManager', () => {
           on: 'beforeToolCall',
           validate: async () => ({ allowed: true }),
         });
+        ctx.registerSummarizer({ name: 'mock', summarize: async () => '摘要' });
         ctx.provideSystemPrompt('插件提示片段');
       },
     };
@@ -46,6 +47,7 @@ describe('PluginManager', () => {
           tools: a.tools.map((t) => t.name),
           rules: a.rules.map((r) => r.id),
           guardrails: a.guardrails.map((g) => g.id),
+          summarizers: a.summarizers.map((s) => s.name),
           promptFragments: a.promptFragments,
         },
         null,
@@ -56,6 +58,7 @@ describe('PluginManager', () => {
     expect(a.tools).toHaveLength(1);
     expect(a.rules).toHaveLength(1);
     expect(a.guardrails.map((g) => g.id)).toEqual(['g1']);
+    expect(a.summarizers.map((s) => s.name)).toEqual(['mock']);
     expect(a.promptFragments).toEqual(['插件提示片段']);
   });
 });

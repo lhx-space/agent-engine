@@ -1,0 +1,11 @@
+- [x] `config/src/schema/index.ts`：`SessionMemorySchema` 增 `maxTokens` / `summary`
+- [x] `core/src/memory/summarizer.ts`：`Summarizer` 接口 + `LLMSummarizer`
+- [x] `core/src/memory/types.ts`：`ConversationMemoryOptions` 增 `compactor` / `budgetTokens` / `summarizer`
+- [x] `core/src/memory/conversation-memory.ts`：`getWindow()`（token 预算 + 滚动摘要），`clear()` 清摘要
+- [x] `core/src/agent/loop.ts`：`run` 用 `await memory.getWindow()`
+- [x] `plugins/types.ts` + `manager.ts` + `capability/{types,bundle}.ts`：`registerSummarizer` + `summarizers` 汇聚
+- [x] `agent/assemble.ts`：解析 `summarizer`（插件优先，否则 `LLMSummarizer(provider)`），构造带裁剪/摘要的 memory
+- [x] `resolve/resolve.ts`：传 `sessionMemory` 配置给装配层（不再自建 memory）
+- [x] `core/src/{index,types}.ts` + `memory/index.ts`：导出
+- [x] 测试：token 预算整轮裁剪 / 滚动摘要 / 插件 summarizer 注入 / resolve 装配
+- [x] 全量校验：`pnpm build` / `typecheck` / `test` / web build / `lint` / `spell` / `format:check` / `lint:md` / `openspec validate --strict`

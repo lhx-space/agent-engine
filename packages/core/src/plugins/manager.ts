@@ -18,6 +18,7 @@ export class PluginManager {
     contextCompactors: [],
     retrievers: [],
     rerankers: [],
+    summarizers: [],
   };
 
   /** 安装单个 plugin，能力收集进 assembly。 */
@@ -53,6 +54,7 @@ export class PluginManager {
       registerContextCompactor: (compactor) => this.assembly.contextCompactors.push(compactor),
       registerRetriever: (retriever) => this.assembly.retrievers.push(retriever),
       registerReranker: (reranker) => this.assembly.rerankers.push(reranker),
+      registerSummarizer: (summarizer) => this.assembly.summarizers.push(summarizer),
     };
   }
 }

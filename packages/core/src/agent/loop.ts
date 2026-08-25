@@ -110,7 +110,7 @@ export class AgentLoop {
       .join('\n\n');
 
     const systemPrompt = await this.resolveSystemPrompt(userInput, rulesText, skillsText);
-    const history = this.memory?.getMessages() ?? [];
+    const history = (await this.memory?.getWindow()) ?? [];
     const messages: ChatMessage[] = [
       { role: 'system', content: systemPrompt },
       ...history,

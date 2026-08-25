@@ -5,7 +5,6 @@ import { resolveSkills } from '../capability-source/skill';
 import { createEmbeddingProvider } from '../embedding/openai';
 import { HookPipeline } from '../hooks/pipeline';
 import { createProvider } from '../llm/provider';
-import { ConversationMemory } from '../memory/conversation-memory';
 import type { Plugin } from '../plugins/types';
 import { ToolRegistry } from '../tools/registry';
 import type { ResolveDeps, ResolvedAgent } from './types';
@@ -39,11 +38,6 @@ export async function resolveAgentConfig(
   // skills：按来源（path / npm / git）解析加载，并聚合临时资源清理。
   const { skills, dispose: disposeSkills } = await resolveSkills(config.skills);
 
-  // memory：会话窗口始终创建（多轮会话复用依赖它）；`memory.session.maxMessages` 仅调窗口裁剪。
-  const memory = new ConversationMemory(
-    config.memory?.session?.maxMessages ? { maxMessages: config.memory.session.maxMessages } : {},
-  );
-
   const resolved = await assembleAgentLoop({
     provider,
     registry,
@@ -52,7 +46,7 @@ export async function resolveAgentConfig(
     rules: config.rules,
     skills,
     plugins,
-    memory,
+    sessionMemory: config.memory?.session,
     security: config.security,
     tools: config.tools,
     guardrailConfig: config.guardrails,

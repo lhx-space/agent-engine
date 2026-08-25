@@ -5,6 +5,7 @@ import type { TokenCounter } from '../context/token-counter';
 import type { EmbeddingProvider } from '../embedding/embedding';
 import type { Hook } from '../hooks/types';
 import type { MemoryBackend } from '../memory/memory-backend';
+import type { Summarizer } from '../memory/summarizer';
 import type { Reranker } from '../retrieval/reranker';
 import type { Retriever } from '../retrieval/retriever';
 import type { VectorStore } from '../retrieval/vector-store';
@@ -53,4 +54,6 @@ export interface PluginContext {
   registerRetriever(retriever: Retriever): void;
   /** 注册重排器（缺省恒等）。 */
   registerReranker(reranker: Reranker): void;
+  /** 注册滚动摘要策略（缺省 `LLMSummarizer`）。 */
+  registerSummarizer(summarizer: Summarizer): void;
 }

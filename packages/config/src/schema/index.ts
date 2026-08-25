@@ -122,6 +122,10 @@ export type McpConfig = z.infer<typeof McpConfigSchema>;
 
 export const SessionMemorySchema = z.object({
   maxMessages: z.number().int().positive().optional(),
+  /** token 预算（三层记忆①）：超过则按整轮边界从头部淘汰。 */
+  maxTokens: z.number().int().positive().optional(),
+  /** 滚动摘要（三层记忆②）：裁剪淘汰的旧轮经 LLM 摘要注入，默认关闭。 */
+  summary: z.boolean().default(false),
 });
 export type SessionMemory = z.infer<typeof SessionMemorySchema>;
 

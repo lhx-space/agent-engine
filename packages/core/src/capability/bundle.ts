@@ -5,6 +5,7 @@ import type { TokenCounter } from '../context/token-counter';
 import type { EmbeddingProvider } from '../embedding/embedding';
 import type { Hook } from '../hooks/types';
 import type { MemoryBackend } from '../memory/memory-backend';
+import type { Summarizer } from '../memory/summarizer';
 import type { Reranker } from '../retrieval/reranker';
 import type { Retriever } from '../retrieval/retriever';
 import type { VectorStore } from '../retrieval/vector-store';
@@ -29,6 +30,7 @@ export interface MergedBundles {
   contextCompactors: ContextCompactor[];
   retrievers: Retriever[];
   rerankers: Reranker[];
+  summarizers: Summarizer[];
   /** 关闭所有 bundle 的资源（幂等）。 */
   dispose: () => Promise<void>;
 }
@@ -53,6 +55,7 @@ export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
   const contextCompactors: ContextCompactor[] = [];
   const retrievers: Retriever[] = [];
   const rerankers: Reranker[] = [];
+  const summarizers: Summarizer[] = [];
   const disposers: (() => Promise<void>)[] = [];
 
   for (const bundle of bundles) {
@@ -70,6 +73,7 @@ export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
     contextCompactors.push(...bundle.contextCompactors);
     retrievers.push(...bundle.retrievers);
     rerankers.push(...bundle.rerankers);
+    summarizers.push(...bundle.summarizers);
     if (bundle.dispose) disposers.push(bundle.dispose);
   }
 
@@ -88,6 +92,7 @@ export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
     contextCompactors,
     retrievers,
     rerankers,
+    summarizers,
     dispose: async () => {
       await Promise.all(disposers.map((dispose) => dispose()));
     },
