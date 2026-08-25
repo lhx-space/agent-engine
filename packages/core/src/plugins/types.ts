@@ -1,8 +1,12 @@
 import type { Rule } from '@agent-engine/config';
 import type { CacheBackend } from '../cache/cache-backend';
+import type { ContextCompactor } from '../context/compactor';
+import type { TokenCounter } from '../context/token-counter';
 import type { EmbeddingProvider } from '../embedding/embedding';
 import type { Hook } from '../hooks/types';
 import type { MemoryBackend } from '../memory/memory-backend';
+import type { Reranker } from '../retrieval/reranker';
+import type { Retriever } from '../retrieval/retriever';
 import type { VectorStore } from '../retrieval/vector-store';
 import type { Skill } from '../skills/types';
 import type { Tool } from '../tools/types';
@@ -38,4 +42,12 @@ export interface PluginContext {
   registerVectorStore(store: VectorStore): void;
   /** 注册 embedding 提供商（语义召回；缺省 undefined）。 */
   registerEmbeddingProvider(provider: EmbeddingProvider): void;
+  /** 注册 token 计数器（上下文预算；缺省粗估）。 */
+  registerTokenCounter(counter: TokenCounter): void;
+  /** 注册上下文裁剪器（三层记忆②；缺省 token 预算整轮淘汰）。 */
+  registerContextCompactor(compactor: ContextCompactor): void;
+  /** 注册检索器（缺省 BM25）。 */
+  registerRetriever(retriever: Retriever): void;
+  /** 注册重排器（缺省恒等）。 */
+  registerReranker(reranker: Reranker): void;
 }

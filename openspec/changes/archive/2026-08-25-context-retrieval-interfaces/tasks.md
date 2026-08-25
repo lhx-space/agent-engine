@@ -1,0 +1,10 @@
+- [x] `context/token-counter.ts`：`TokenCounter` + `ApproximateTokenCounter`
+- [x] `context/compactor.ts`：`ContextCompactor` + `TokenBudgetCompactor`（整轮 + token 预算）
+- [x] `retrieval/retriever.ts`：`Retriever` + `RetrievalCandidate` + `Bm25Retriever`
+- [x] `retrieval/reranker.ts`：`Reranker` + `IdentityReranker`
+- [x] `context/index.ts` / `retrieval/index.ts`：导出
+- [x] `plugins/types.ts` + `manager.ts` + `capability/{types,bundle}.ts`：四类注入 + 汇聚
+- [x] `agent/assemble.ts` + `resolve/types.ts`：解析默认 + `ResolvedAgent` 暴露四者
+- [x] `core/src/{index,types}.ts`：导出
+- [x] 测试：四接口默认 + 插件注入 + 解析默认
+- [x] 全量校验：`pnpm build` / `typecheck` / `test` / web build / `lint` / `spell` / `format:check` / `lint:md` / `openspec validate --strict`

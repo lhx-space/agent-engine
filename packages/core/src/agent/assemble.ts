@@ -4,6 +4,10 @@ import type { CacheBackend } from '../cache/cache-backend';
 import { mergeBundles } from '../capability/bundle';
 import type { ResolvedMcpServer } from '../capability-source/types';
 import type { CapabilityBundle } from '../capability/types';
+import { TokenBudgetCompactor } from '../context/compactor';
+import type { ContextCompactor } from '../context/compactor';
+import { ApproximateTokenCounter } from '../context/token-counter';
+import type { TokenCounter } from '../context/token-counter';
 import type { EmbeddingProvider } from '../embedding/embedding';
 import { EventBus } from '../events/event-bus';
 import type { HookPipeline } from '../hooks/pipeline';
@@ -15,6 +19,11 @@ import type { MemoryBackend } from '../memory/memory-backend';
 import { PluginManager } from '../plugins/manager';
 import type { Plugin } from '../plugins/types';
 import type { ResolvedAgent } from '../resolve/types';
+import { IdentityReranker } from '../retrieval/reranker';
+import type { Reranker } from '../retrieval/reranker';
+import { Bm25Retriever } from '../retrieval/retriever';
+import type { Retriever } from '../retrieval/retriever';
+import { CapabilityRegistry } from '../retrieval/registry';
 import { InMemoryVectorStore } from '../retrieval/vector-store';
 import type { VectorStore } from '../retrieval/vector-store';
 import type { RuleRegistry } from '../rules/registry';
@@ -194,6 +203,13 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
   const embeddingProvider: EmbeddingProvider | undefined =
     merged.embeddingProviders[0] ?? options.embeddingProvider;
 
+  // 6.6 上下文/检索策略接口：token 计数 + 裁剪 + 检索 + 重排（插件注册优先，否则默认）。
+  const tokenCounter: TokenCounter = merged.tokenCounters[0] ?? new ApproximateTokenCounter();
+  const contextCompactor: ContextCompactor =
+    merged.contextCompactors[0] ?? new TokenBudgetCompactor(tokenCounter);
+  const retriever: Retriever = merged.retrievers[0] ?? new Bm25Retriever(new CapabilityRegistry());
+  const reranker: Reranker = merged.rerankers[0] ?? new IdentityReranker();
+
   let disposed = false;
   const dispose = async (): Promise<void> => {
     if (disposed) return;
@@ -208,6 +224,10 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     vectorStore,
     embeddingProvider,
     eventBus,
+    tokenCounter,
+    contextCompactor,
+    retriever,
+    reranker,
     dispose,
   };
 }

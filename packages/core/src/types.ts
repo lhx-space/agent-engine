@@ -49,6 +49,8 @@ export type { GuardrailContext, GuardrailResult, GuardrailRule } from './rules/t
 export type { CapabilityHit, CapabilityMeta, CapabilityType } from './retrieval/types';
 export type { CapabilityRecord, CapabilityRecordHit } from './retrieval/loader';
 export type { VectorStore, VectorRecord, VectorMatch } from './retrieval/vector-store';
+export type { Retriever, RetrievalCandidate } from './retrieval/retriever';
+export type { Reranker } from './retrieval/reranker';
 // embedding
 export type { EmbeddingProvider } from './embedding/embedding';
 // events
@@ -71,5 +73,7 @@ export type { MemoryBackend } from './memory/memory-backend';
 export type { CacheBackend } from './cache/cache-backend';
 // context
 export type { BuildSystemPromptOptions } from './context/types';
+export type { TokenCounter } from './context/token-counter';
+export type { ContextCompactor } from './context/compactor';
 // agent
 export type { AgentLoopOptions, AgentLoopResult, SystemPromptInput } from './agent/types';

@@ -39,6 +39,10 @@ describe('mergeBundles', () => {
       cacheBackends: [],
       vectorStores: [],
       embeddingProviders: [],
+      tokenCounters: [],
+      contextCompactors: [],
+      retrievers: [],
+      rerankers: [],
       dispose: async () => {
         disposed.push('a');
       },
@@ -53,6 +57,10 @@ describe('mergeBundles', () => {
       cacheBackends: [],
       vectorStores: [],
       embeddingProviders: [],
+      tokenCounters: [],
+      contextCompactors: [],
+      retrievers: [],
+      rerankers: [],
       dispose: async () => {
         disposed.push('b');
       },

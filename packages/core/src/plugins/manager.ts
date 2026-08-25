@@ -13,6 +13,10 @@ export class PluginManager {
     cacheBackends: [],
     vectorStores: [],
     embeddingProviders: [],
+    tokenCounters: [],
+    contextCompactors: [],
+    retrievers: [],
+    rerankers: [],
   };
 
   /** 安装单个 plugin，能力收集进 assembly。 */
@@ -43,6 +47,10 @@ export class PluginManager {
       registerCacheBackend: (backend) => this.assembly.cacheBackends.push(backend),
       registerVectorStore: (store) => this.assembly.vectorStores.push(store),
       registerEmbeddingProvider: (provider) => this.assembly.embeddingProviders.push(provider),
+      registerTokenCounter: (counter) => this.assembly.tokenCounters.push(counter),
+      registerContextCompactor: (compactor) => this.assembly.contextCompactors.push(compactor),
+      registerRetriever: (retriever) => this.assembly.retrievers.push(retriever),
+      registerReranker: (reranker) => this.assembly.rerankers.push(reranker),
     };
   }
 }

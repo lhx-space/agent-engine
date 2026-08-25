@@ -81,6 +81,10 @@ export async function resolveAgentConfig(
     vectorStore: resolved.vectorStore,
     embeddingProvider: resolved.embeddingProvider,
     eventBus: resolved.eventBus,
+    tokenCounter: resolved.tokenCounter,
+    contextCompactor: resolved.contextCompactor,
+    retriever: resolved.retriever,
+    reranker: resolved.reranker,
     dispose: async () => {
       await disposeAgent();
       await disposeSkills();

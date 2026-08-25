@@ -1,8 +1,12 @@
 import type { Rule } from '@agent-engine/config';
 import type { CacheBackend } from '../cache/cache-backend';
+import type { ContextCompactor } from '../context/compactor';
+import type { TokenCounter } from '../context/token-counter';
 import type { EmbeddingProvider } from '../embedding/embedding';
 import type { Hook } from '../hooks/types';
 import type { MemoryBackend } from '../memory/memory-backend';
+import type { Reranker } from '../retrieval/reranker';
+import type { Retriever } from '../retrieval/retriever';
 import type { VectorStore } from '../retrieval/vector-store';
 import type { Skill } from '../skills/types';
 import type { Tool } from '../tools/types';
@@ -19,6 +23,10 @@ export interface MergedBundles {
   cacheBackends: CacheBackend[];
   vectorStores: VectorStore[];
   embeddingProviders: EmbeddingProvider[];
+  tokenCounters: TokenCounter[];
+  contextCompactors: ContextCompactor[];
+  retrievers: Retriever[];
+  rerankers: Reranker[];
   /** 关闭所有 bundle 的资源（幂等）。 */
   dispose: () => Promise<void>;
 }
@@ -38,6 +46,10 @@ export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
   const cacheBackends: CacheBackend[] = [];
   const vectorStores: VectorStore[] = [];
   const embeddingProviders: EmbeddingProvider[] = [];
+  const tokenCounters: TokenCounter[] = [];
+  const contextCompactors: ContextCompactor[] = [];
+  const retrievers: Retriever[] = [];
+  const rerankers: Reranker[] = [];
   const disposers: (() => Promise<void>)[] = [];
 
   for (const bundle of bundles) {
@@ -50,6 +62,10 @@ export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
     cacheBackends.push(...bundle.cacheBackends);
     vectorStores.push(...bundle.vectorStores);
     embeddingProviders.push(...bundle.embeddingProviders);
+    tokenCounters.push(...bundle.tokenCounters);
+    contextCompactors.push(...bundle.contextCompactors);
+    retrievers.push(...bundle.retrievers);
+    rerankers.push(...bundle.rerankers);
     if (bundle.dispose) disposers.push(bundle.dispose);
   }
 
@@ -63,6 +79,10 @@ export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
     cacheBackends,
     vectorStores,
     embeddingProviders,
+    tokenCounters,
+    contextCompactors,
+    retrievers,
+    rerankers,
     dispose: async () => {
       await Promise.all(disposers.map((dispose) => dispose()));
     },

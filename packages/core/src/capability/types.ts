@@ -1,8 +1,12 @@
 import type { Rule } from '@agent-engine/config';
 import type { CacheBackend } from '../cache/cache-backend';
+import type { ContextCompactor } from '../context/compactor';
+import type { TokenCounter } from '../context/token-counter';
 import type { EmbeddingProvider } from '../embedding/embedding';
 import type { Hook } from '../hooks/types';
 import type { MemoryBackend } from '../memory/memory-backend';
+import type { Reranker } from '../retrieval/reranker';
+import type { Retriever } from '../retrieval/retriever';
 import type { VectorStore } from '../retrieval/vector-store';
 import type { Skill } from '../skills/types';
 import type { Tool } from '../tools/types';
@@ -23,6 +27,10 @@ export interface CapabilityBundle {
   cacheBackends: CacheBackend[];
   vectorStores: VectorStore[];
   embeddingProviders: EmbeddingProvider[];
+  tokenCounters: TokenCounter[];
+  contextCompactors: ContextCompactor[];
+  retrievers: Retriever[];
+  rerankers: Reranker[];
   /** 释放来源持有的资源（幂等）。 */
   dispose?: () => Promise<void>;
 }
