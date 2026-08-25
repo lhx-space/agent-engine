@@ -35,6 +35,8 @@ describe('mergeBundles', () => {
       hooks: [],
       rules: [],
       promptFragments: ['p1'],
+      memoryBackends: [],
+      cacheBackends: [],
       dispose: async () => {
         disposed.push('a');
       },
@@ -45,6 +47,8 @@ describe('mergeBundles', () => {
       hooks: [],
       rules: [],
       promptFragments: [],
+      memoryBackends: [],
+      cacheBackends: [],
       dispose: async () => {
         disposed.push('b');
       },

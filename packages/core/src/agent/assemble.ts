@@ -1,4 +1,6 @@
 import type { ExecutionConfig, Rule, SecurityConfig, ToolsConfig } from '@agent-engine/config';
+import { InMemoryCacheBackend } from '../cache/cache-backend';
+import type { CacheBackend } from '../cache/cache-backend';
 import { mergeBundles } from '../capability/bundle';
 import type { ResolvedMcpServer } from '../capability-source/types';
 import type { CapabilityBundle } from '../capability/types';
@@ -6,6 +8,8 @@ import type { HookPipeline } from '../hooks/pipeline';
 import type { LLMProvider } from '../llm/types';
 import { connectMcpServers } from '../mcp/client';
 import type { ConversationMemory } from '../memory/conversation-memory';
+import { InMemoryMemoryBackend } from '../memory/memory-backend';
+import type { MemoryBackend } from '../memory/memory-backend';
 import { PluginManager } from '../plugins/manager';
 import type { Plugin } from '../plugins/types';
 import type { ResolvedAgent } from '../resolve/types';
@@ -39,6 +43,10 @@ export interface AssembleAgentLoopOptions {
   sandbox?: SandboxBackend;
   /** 归一化后的 MCP servers（command 形态）；装配时连接并把归一化工具注册进 registry。 */
   mcp?: ResolvedMcpServer[];
+  /** 长期记忆后端名（缺省 in-memory）；按名解析内置/插件注册的后端。 */
+  longTermBackend?: string;
+  /** 缓存后端名（缺省 in-memory）；按名解析内置/插件注册的后端。 */
+  cacheBackend?: string;
 }
 
 /** 把 prompt 片段追加到 system prompt（string 追加文本 / 模板对象追加到 template；函数式跳过）。 */
@@ -47,6 +55,28 @@ function injectPromptText(systemPrompt: SystemPromptInput, promptText: string): 
   if (typeof systemPrompt === 'function') return systemPrompt;
   if (typeof systemPrompt === 'string') return `${systemPrompt}\n\n${promptText}`;
   return { ...systemPrompt, template: `${systemPrompt.template}\n\n${promptText}` };
+}
+
+/**
+ * 按名解析可插拔后端：内置默认 + 插件注册的后端（同名后者覆盖）；未注册名字抛可读错误。
+ */
+function resolveBackendByName<T extends { readonly name: string }>(
+  name: string,
+  builtin: T,
+  plugins: T[],
+  configKey: string,
+): T {
+  const registry = new Map<string, T>([[builtin.name, builtin]]);
+  for (const backend of plugins) {
+    registry.set(backend.name, backend);
+  }
+  const backend = registry.get(name);
+  if (!backend) {
+    throw new Error(
+      `Unknown ${configKey} backend "${name}". Available: ${[...registry.keys()].join(', ')}`,
+    );
+  }
+  return backend;
 }
 
 /**
@@ -113,6 +143,20 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     execution: options.execution,
   });
 
+  // 6. 可插拔存储后端：按名解析（内置 in-memory + 插件注册），随 ResolvedAgent 暴露供上层/hooks 消费。
+  const memoryBackend: MemoryBackend = resolveBackendByName(
+    options.longTermBackend ?? 'in-memory',
+    new InMemoryMemoryBackend(),
+    merged.memoryBackends,
+    'memory.longTerm.backend',
+  );
+  const cacheBackend: CacheBackend = resolveBackendByName(
+    options.cacheBackend ?? 'in-memory',
+    new InMemoryCacheBackend(),
+    merged.cacheBackends,
+    'cache.backend',
+  );
+
   let disposed = false;
   const dispose = async (): Promise<void> => {
     if (disposed) return;
@@ -120,5 +164,5 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     await merged.dispose();
   };
 
-  return { agent, dispose };
+  return { agent, memoryBackend, cacheBackend, dispose };
 }

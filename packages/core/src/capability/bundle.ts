@@ -1,5 +1,7 @@
 import type { Rule } from '@agent-engine/config';
+import type { CacheBackend } from '../cache/cache-backend';
 import type { Hook } from '../hooks/types';
+import type { MemoryBackend } from '../memory/memory-backend';
 import type { Skill } from '../skills/types';
 import type { Tool } from '../tools/types';
 import type { CapabilityBundle } from './types';
@@ -11,6 +13,8 @@ export interface MergedBundles {
   hooks: Hook[];
   rules: Rule[];
   promptFragments: string[];
+  memoryBackends: MemoryBackend[];
+  cacheBackends: CacheBackend[];
   /** 关闭所有 bundle 的资源（幂等）。 */
   dispose: () => Promise<void>;
 }
@@ -26,6 +30,8 @@ export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
   const hooks: Hook[] = [];
   const rules: Rule[] = [];
   const promptFragments: string[] = [];
+  const memoryBackends: MemoryBackend[] = [];
+  const cacheBackends: CacheBackend[] = [];
   const disposers: (() => Promise<void>)[] = [];
 
   for (const bundle of bundles) {
@@ -34,6 +40,8 @@ export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
     hooks.push(...bundle.hooks);
     rules.push(...bundle.rules);
     promptFragments.push(...bundle.promptFragments);
+    memoryBackends.push(...bundle.memoryBackends);
+    cacheBackends.push(...bundle.cacheBackends);
     if (bundle.dispose) disposers.push(bundle.dispose);
   }
 
@@ -43,6 +51,8 @@ export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
     hooks,
     rules,
     promptFragments,
+    memoryBackends,
+    cacheBackends,
     dispose: async () => {
       await Promise.all(disposers.map((dispose) => dispose()));
     },

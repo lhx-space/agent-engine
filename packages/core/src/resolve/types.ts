@@ -1,5 +1,7 @@
 import type { AgentLoop } from '../agent/loop';
+import type { CacheBackend } from '../cache/cache-backend';
 import type { ProviderFactory } from '../llm/provider';
+import type { MemoryBackend } from '../memory/memory-backend';
 import type { Plugin } from '../plugins/types';
 import type { SandboxBackend } from '../sandbox/types';
 
@@ -16,8 +18,12 @@ export interface ResolveDeps {
   sandbox?: SandboxBackend;
 }
 
-/** 装配完成的 Agent：可 run 的循环 + 释放资源（MCP 连接等）的 dispose。 */
+/** 装配完成的 Agent：可 run 的循环 + 解析出的可插拔后端 + 释放资源（MCP 连接等）的 dispose。 */
 export interface ResolvedAgent {
   agent: AgentLoop;
+  /** 按 `memory.longTerm.backend` 解析出的长期记忆后端（默认 in-memory）。 */
+  memoryBackend: MemoryBackend;
+  /** 按 `cache.backend` 解析出的缓存后端（默认 in-memory）。 */
+  cacheBackend: CacheBackend;
   dispose(): Promise<void>;
 }

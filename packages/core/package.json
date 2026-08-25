@@ -38,6 +38,16 @@
         "default": "./dist/capability.cjs"
       }
     },
+    "./cache": {
+      "import": {
+        "types": "./dist/cache.d.mts",
+        "default": "./dist/cache.mjs"
+      },
+      "require": {
+        "types": "./dist/cache.d.cts",
+        "default": "./dist/cache.cjs"
+      }
+    },
     "./capability-source": {
       "import": {
         "types": "./dist/capability-source.d.mts",

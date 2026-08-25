@@ -4,6 +4,7 @@ export default defineConfig({
   entry: {
     index: 'src/index.ts',
     agent: 'src/agent/index.ts',
+    cache: 'src/cache/index.ts',
     capability: 'src/capability/index.ts',
     'capability-source': 'src/capability-source/index.ts',
     context: 'src/context/index.ts',

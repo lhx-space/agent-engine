@@ -1,0 +1,10 @@
+- [x] `core/src/memory/memory-backend.ts`：`MemoryBackend` 接口 + `InMemoryMemoryBackend`；`memory/index.ts` 导出
+- [x] `core/src/cache/{cache-backend.ts,index.ts}`：`CacheBackend` 接口 + `InMemoryCacheBackend`（TTL）
+- [x] `plugins/types.ts`：`PluginContext` 增 `registerMemoryBackend` / `registerCacheBackend`
+- [x] `plugins/manager.ts` + `capability/{types,bundle}.ts`：bundle 携 `memoryBackends`/`cacheBackends` 并汇聚
+- [x] `config/src/schema/index.ts`：新增 `CacheConfigSchema`（`backend` 默认 in-memory）+ `AgentConfig.cache`
+- [x] `agent/assemble.ts`：接收 `memory`/`cache` 配置，建注册表解析后端，随 `ResolvedAgent` 返回
+- [x] `resolve/{resolve,types}.ts`：透传 `config.memory`/`config.cache`；`ResolvedAgent` 增 `memoryBackend`/`cacheBackend`
+- [x] `core/src/{index,types}.ts` + `tsdown.config.ts` + `package.json`：导出 + `./cache` 子路径
+- [x] 测试：`memory-backend.test.ts`（KV 行为 + 插件注入 + 配置解析 + 未注册报错）+ `cache-backend.test.ts`（TTL 行为）
+- [x] 全量校验：`pnpm build` / `typecheck` / `test` / web build / `lint` / `spell` / `format:check` / `lint:md` / `openspec validate --strict`

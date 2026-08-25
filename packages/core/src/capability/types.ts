@@ -1,5 +1,7 @@
 import type { Rule } from '@agent-engine/config';
+import type { CacheBackend } from '../cache/cache-backend';
 import type { Hook } from '../hooks/types';
+import type { MemoryBackend } from '../memory/memory-backend';
 import type { Skill } from '../skills/types';
 import type { Tool } from '../tools/types';
 
@@ -15,6 +17,8 @@ export interface CapabilityBundle {
   hooks: Hook[];
   rules: Rule[];
   promptFragments: string[];
+  memoryBackends: MemoryBackend[];
+  cacheBackends: CacheBackend[];
   /** 释放来源持有的资源（幂等）。 */
   dispose?: () => Promise<void>;
 }

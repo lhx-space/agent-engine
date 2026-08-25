@@ -61,6 +61,9 @@ export type { McpConnection, McpToolMeta, ConnectMcpServersResult } from './mcp'
 export type { ResolvedAgent, ResolveDeps, PluginFactory } from './resolve/types';
 // memory
 export type { ConversationMemoryOptions } from './memory/types';
+export type { MemoryBackend } from './memory/memory-backend';
+// cache
+export type { CacheBackend } from './cache/cache-backend';
 // context
 export type { BuildSystemPromptOptions } from './context/types';
 // agent

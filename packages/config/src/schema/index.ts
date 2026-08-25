@@ -136,6 +136,14 @@ export const MemoryConfigSchema = z.object({
 });
 export type MemoryConfig = z.infer<typeof MemoryConfigSchema>;
 
+// ============ cache ============
+
+export const CacheConfigSchema = z.object({
+  /** 缓存后端名（默认 in-memory；redis 等经插件 registerCacheBackend 注册后按名选中）。 */
+  backend: z.string().default('in-memory'),
+});
+export type CacheConfig = z.infer<typeof CacheConfigSchema>;
+
 // ============ orchestration ============
 
 export const OrchestrationModeSchema = z.enum(['single', 'sequential', 'parallel', 'graph']);
@@ -255,6 +263,7 @@ export const AgentConfigSchema = z.object({
   mcp: McpConfigSchema.optional(),
   skills: z.array(SkillRefSchema).default([]),
   memory: MemoryConfigSchema.optional(),
+  cache: CacheConfigSchema.optional(),
   hooks: z.array(HookConfigSchema).default([]),
   plugins: z.array(z.string()).default([]),
   orchestration: OrchestrationSchema.optional(),

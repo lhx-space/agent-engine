@@ -1,5 +1,7 @@
 import type { Rule } from '@agent-engine/config';
+import type { CacheBackend } from '../cache/cache-backend';
 import type { Hook } from '../hooks/types';
+import type { MemoryBackend } from '../memory/memory-backend';
 import type { Skill } from '../skills/types';
 import type { Tool } from '../tools/types';
 
@@ -26,4 +28,8 @@ export interface PluginContext {
   registerHook(hook: Hook): void;
   registerRule(rule: Rule): void;
   provideSystemPrompt(fragment: string): void;
+  /** 注册长期记忆后端（按 `memory.longTerm.backend` 名字选中）。 */
+  registerMemoryBackend(backend: MemoryBackend): void;
+  /** 注册缓存后端（按 `cache.backend` 名字选中）。 */
+  registerCacheBackend(backend: CacheBackend): void;
 }

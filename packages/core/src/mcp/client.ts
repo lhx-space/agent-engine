@@ -90,6 +90,8 @@ export async function connectMcpServers(
     hooks: [],
     rules: [],
     promptFragments: [],
+    memoryBackends: [],
+    cacheBackends: [],
     dispose: async () => {
       await Promise.all(connections.map((connection) => connection.close()));
     },

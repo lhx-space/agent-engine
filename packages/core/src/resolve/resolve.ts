@@ -57,6 +57,8 @@ export async function resolveAgentConfig(
     execution: config.execution,
     mcp: resolveMcpServers(config.mcp?.servers ?? []),
     sandbox: deps.sandbox,
+    longTermBackend: config.memory?.longTerm?.backend,
+    cacheBackend: config.cache?.backend,
   });
 
   const { dispose: disposeAgent } = resolved;
@@ -72,6 +74,8 @@ export async function resolveAgentConfig(
 
   return {
     agent: resolved.agent,
+    memoryBackend: resolved.memoryBackend,
+    cacheBackend: resolved.cacheBackend,
     dispose: async () => {
       await disposeAgent();
       await disposeSkills();
