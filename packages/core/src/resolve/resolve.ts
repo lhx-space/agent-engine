@@ -2,6 +2,7 @@ import type { AgentConfig } from '@agent-engine/config';
 import { assembleAgentLoop } from '../agent/assemble';
 import { resolveMcpServers } from '../capability-source/mcp';
 import { resolveSkills } from '../capability-source/skill';
+import { createEmbeddingProvider } from '../embedding/openai';
 import { HookPipeline } from '../hooks/pipeline';
 import { createProvider } from '../llm/provider';
 import { ConversationMemory } from '../memory/conversation-memory';
@@ -59,6 +60,7 @@ export async function resolveAgentConfig(
     sandbox: deps.sandbox,
     longTermBackend: config.memory?.longTerm?.backend,
     cacheBackend: config.cache?.backend,
+    embeddingProvider: config.embedding ? createEmbeddingProvider(config.embedding) : undefined,
   });
 
   const { dispose: disposeAgent } = resolved;

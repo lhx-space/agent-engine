@@ -98,6 +98,32 @@ describe('AgentConfigSchema', () => {
     }
   });
 
+  it('缺省无 embedding', () => {
+    const result = AgentConfigSchema.safeParse({
+      name: 'test-agent',
+      model: { model: 'deepseek-chat' },
+      systemPrompt: { template: 'hello' },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.embedding).toBeUndefined();
+    }
+  });
+
+  it('embedding 显式声明', () => {
+    const result = AgentConfigSchema.safeParse({
+      name: 'test-agent',
+      model: { model: 'deepseek-chat' },
+      systemPrompt: { template: 'hello' },
+      embedding: { baseURL: 'http://localhost/v1', model: 'text-embedding-3-small' },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.embedding?.model).toBe('text-embedding-3-small');
+      expect(result.data.embedding?.provider).toBe('openai-compatible');
+    }
+  });
+
   it('bash 显式开启并声明策略', () => {
     const result = AgentConfigSchema.safeParse({
       name: 'test-agent',

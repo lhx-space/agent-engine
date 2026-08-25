@@ -477,11 +477,12 @@ orchestration:
 
 ### 7.3 多模型设计（能力分离 + 实例级覆盖）
 
-模型配置遵循社区主流做法（借鉴 OpenAI Agents SDK / Claude Code / LlamaIndex）。关键：**「模型角色」是两个正交维度，不能混为一个角色字典**。
+模型配置遵循社区主流做法（OpenAI Agents SDK 每 agent 单 model、LlamaIndex `Settings.llm`/`embed_model`、LangChain 分离 `ChatModel`/`Embeddings`）。关键：**「能力维度」与「角色维度」是两个正交维度，不能混为一个角色字典或扁平数组**。
 
-- **能力维度（顶层分字段）**：chat（推理 + tool call）与 embedding（向量化）是不同能力、不同接口、不同协议，**顶层分开**。默认推理模型用 `model`；向量模型用独立的 `embedding` 字段（做长期记忆时引入，M3）。
+- **能力维度（顶层分字段）**：chat（推理 + tool call）与 embedding（向量化）是不同能力、不同接口、不同协议，**顶层分开**——默认推理模型用 `model`；向量模型用独立的 `embedding` 字段（**已落地** `EmbeddingConfigSchema` + `createEmbeddingProvider`，经 `ResolvedAgent.embeddingProvider` 暴露）。
+- **不拆 reasoning / execution**：`deepseek-reasoner` 单模型已含「think + execute」，拆「思考模型 + 执行模型」是成本/稳定性优化而非能力缺口；真需要时是**编排层的双 agent 模式**（如 Swarms「Reasoning Duo」），不是配置字段。
+- **vision 多模态**：不配置，交给自定义工具（能力外置，协议差异大、依赖多）。
 - **角色维度（实例级覆盖）**：subagent 用哪个模型，是在 **subagent 定义里覆盖**（如 `subagents[].model`），而非全局一个 `subagent model` 字段。
-- **vision 多模态**：不配置，交给自定义工具（能力外置）。
 - **接口边界**：`LLMProvider` 只覆盖 chat（chat completion）；embedding 是另一个抽象（`EmbeddingProvider`），不要塞进 `LLMProvider`。
 
 ---

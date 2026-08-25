@@ -1,0 +1,8 @@
+- [x] `config/src/schema/index.ts`：`EmbeddingConfigSchema` + `AgentConfig.embedding`
+- [x] `core/src/embedding/openai.ts`：`createEmbeddingProvider`（openai-compatible `/embeddings`，复用 FetchLike）
+- [x] `core/src/embedding/index.ts`：导出 `createEmbeddingProvider`
+- [x] `resolve/resolve.ts` + `agent/assemble.ts`：`embedding` 解析接线（插件优先，否则按配置）
+- [x] `core/src/index.ts` / `types.ts`：导出 `createEmbeddingProvider` + `EmbeddingConfig` 相关类型
+- [x] 测试：schema（embedding 默认/显式）+ embedding provider（openai 兼容端点 mock）
+- [x] AGENTS.md §7.3：落地「能力分离 + 不拆 reasoning + vision 外置」决策
+- [x] 全量校验：`pnpm build` / `typecheck` / `test` / web build / `lint` / `spell` / `format:check` / `lint:md` / `openspec validate --strict`

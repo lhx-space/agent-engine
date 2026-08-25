@@ -144,6 +144,18 @@ export const CacheConfigSchema = z.object({
 });
 export type CacheConfig = z.infer<typeof CacheConfigSchema>;
 
+// ============ embedding ============
+
+export const EmbeddingConfigSchema = z.object({
+  provider: ModelProviderSchema.default('openai-compatible'),
+  baseURL: z.string().url().optional(),
+  apiKey: z.string().optional(),
+  model: z.string(),
+  /** 向量维度；缺省时取首次响应向量长度。 */
+  dimension: z.number().int().positive().optional(),
+});
+export type EmbeddingConfig = z.infer<typeof EmbeddingConfigSchema>;
+
 // ============ orchestration ============
 
 export const OrchestrationModeSchema = z.enum(['single', 'sequential', 'parallel', 'graph']);
@@ -264,6 +276,7 @@ export const AgentConfigSchema = z.object({
   skills: z.array(SkillRefSchema).default([]),
   memory: MemoryConfigSchema.optional(),
   cache: CacheConfigSchema.optional(),
+  embedding: EmbeddingConfigSchema.optional(),
   hooks: z.array(HookConfigSchema).default([]),
   plugins: z.array(z.string()).default([]),
   orchestration: OrchestrationSchema.optional(),

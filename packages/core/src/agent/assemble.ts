@@ -50,6 +50,8 @@ export interface AssembleAgentLoopOptions {
   longTermBackend?: string;
   /** 缓存后端名（缺省 in-memory）；按名解析内置/插件注册的后端。 */
   cacheBackend?: string;
+  /** 预置 embedding provider（按 `embedding` 配置解析；插件注册的优先）。 */
+  embeddingProvider?: EmbeddingProvider;
 }
 
 /** 把 prompt 片段追加到 system prompt（string 追加文本 / 模板对象追加到 template；函数式跳过）。 */
@@ -160,9 +162,10 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     'cache.backend',
   );
 
-  // 6.5 语义检索后端：向量库（缺省 in-memory）+ embedding（可缺省，需真实向量模型）。
+  // 6.5 语义检索后端：向量库（缺省 in-memory）+ embedding（插件注册优先，否则按配置预置）。
   const vectorStore: VectorStore = merged.vectorStores[0] ?? new InMemoryVectorStore();
-  const embeddingProvider: EmbeddingProvider | undefined = merged.embeddingProviders[0];
+  const embeddingProvider: EmbeddingProvider | undefined =
+    merged.embeddingProviders[0] ?? options.embeddingProvider;
 
   let disposed = false;
   const dispose = async (): Promise<void> => {
