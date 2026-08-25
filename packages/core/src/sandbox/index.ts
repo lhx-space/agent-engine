@@ -15,6 +15,12 @@ export type {
 export { SandboxUnavailableError } from './types';
 export { buildDockerArgs, createDockerSandbox } from './docker';
 export { buildNsJailArgs, createNsJailSandbox } from './nsjail';
+export { WasiFunctionSandbox } from './function';
+export type {
+  FunctionSandbox,
+  FunctionSandboxExecRequest,
+  FunctionSandboxExecResult,
+} from './function';
 
 function defaultHasBinary(bin: string): boolean {
   const result = spawnSync(bin, ['--version'], { stdio: 'ignore' });

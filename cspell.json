@@ -65,6 +65,7 @@
     "tvly",
     "turborepo",
     "vitest",
+    "wabt",
     "wasi",
     "wasmer",
     "wasmtime",

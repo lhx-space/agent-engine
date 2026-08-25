@@ -1,0 +1,6 @@
+- [x] `core/src/sandbox/function.ts`：`FunctionSandbox` 接口 + `WasiFunctionSandbox`（node:wasi 子进程）
+- [x] `core/src/sandbox/index.ts` + `core/src/{index,types}.ts`：导出
+- [x] `cspell.json`：加 `wabt`
+- [x] dev 依赖：`wabt`（WAT → wasm，仅测试）
+- [x] 测试：执行/exitCode/截断/超时
+- [x] 全量校验：`pnpm build` / `typecheck` / `test` / web build / `lint` / `spell` / `format:check` / `lint:md` / `openspec validate --strict`

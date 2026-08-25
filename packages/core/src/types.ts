@@ -41,6 +41,11 @@ export type {
   SandboxResolution,
   ResolveSandboxDeps,
 } from './sandbox/types';
+export type {
+  FunctionSandbox,
+  FunctionSandboxExecRequest,
+  FunctionSandboxExecResult,
+} from './sandbox/function';
 // hooks
 export type { Hook } from './hooks/types';
 // rules

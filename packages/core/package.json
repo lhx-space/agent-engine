@@ -221,6 +221,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/picomatch": "^4.0.3"
+    "@types/picomatch": "^4.0.3",
+    "wabt": "^1.0.39"
   }
 }
