@@ -73,6 +73,31 @@ describe('AgentConfigSchema', () => {
     }
   });
 
+  it('缺省 tools 时 disabled 为空数组', () => {
+    const result = AgentConfigSchema.safeParse({
+      name: 'test-agent',
+      model: { model: 'deepseek-chat' },
+      systemPrompt: { template: 'hello' },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.tools.disabled).toEqual([]);
+    }
+  });
+
+  it('tools.disabled 显式声明', () => {
+    const result = AgentConfigSchema.safeParse({
+      name: 'test-agent',
+      model: { model: 'deepseek-chat' },
+      systemPrompt: { template: 'hello' },
+      tools: { disabled: ['builtin.web_search'] },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.tools.disabled).toEqual(['builtin.web_search']);
+    }
+  });
+
   it('bash 显式开启并声明策略', () => {
     const result = AgentConfigSchema.safeParse({
       name: 'test-agent',

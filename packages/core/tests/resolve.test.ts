@@ -105,4 +105,21 @@ describe('resolveAgentConfig', () => {
       resolveAgentConfig(config, { providerFactory: () => makeProvider() }),
     ).rejects.toThrow(/missing-plugin/);
   });
+
+  it('tools.disabled 禁用内置工具（todo 不进入 LLM 工具列表）', async () => {
+    const config = baseConfig();
+    config.tools = { disabled: ['builtin.todo'] };
+
+    const capturedTools: string[][] = [];
+    const resolved = await resolveAgentConfig(config, {
+      providerFactory: () => makeProvider(capturedTools),
+    });
+
+    await resolved.agent.run('hi');
+    await resolved.dispose();
+
+    const tools = capturedTools[0] ?? [];
+    expect(tools).not.toContain('builtin_todo');
+    expect(tools).toContain('builtin_datetime');
+  });
 });

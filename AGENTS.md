@@ -192,13 +192,13 @@ docs/（Rspress）为独立站点，无运行时依赖
 
 ### 5.1 能力层（Agent 能「做什么」）
 
-- **tools**：原子能力单元，一个函数即一个工具（如 `read_file`、`bash`、`web_search`）。注册进 **Tool Registry**。已落地**内置通用原语** `todo` / `datetime` / `web_search` / `web_fetch`（`core/tools/builtin/`）；`web_search` 支持多 provider（`searxng` 默认 / `duckduckgo` 兜底 / `tavily` / `serper`，经 `webSearch.endpoint` / `apiKey` / `fallback` 配置，缺失必需配置或运行期失败按序回退）；垂直能力 `read_file` / `write_file` / `bash` 迁出为内置 plugin `@agent-engine/plugin-files` / `@agent-engine/plugin-bash`（经 `config.plugins` 声明加载，bash 经 `SandboxBackend` 沙箱执行，见 5.6）；`sitesearch` / `calculator` / `json` / `base64` 已彻底移除（源码亦删除）。非 tool 的支撑代码（http/搜索后端/路径/domain/html/store/policy）统一在 `core/tools/utils/`。
+- **tools**：原子能力单元，一个函数即一个工具（如 `read_file`、`bash`、`web_search`）。注册进 **Tool Registry**。已落地**内置通用原语** `todo` / `datetime` / `web_search` / `web_fetch`（`core/tools/builtin/`）；`web_search` 支持多 provider（`searxng` 默认 / `duckduckgo` 兜底 / `tavily` / `serper`，经 `webSearch.endpoint` / `apiKey` / `fallback` 配置，缺失必需配置或运行期失败按序回退）；垂直能力 `read_file` / `write_file` / `list_files` / `bash` 迁出为内置 plugin `@agent-engine/plugin-files` / `@agent-engine/plugin-bash`（经 `config.plugins` 声明加载，bash 经 `SandboxBackend` 沙箱执行，见 5.6）；`tools.disabled`（配置轴）在装配末按名禁用任意内置 / plugin / MCP 工具；`sitesearch` / `calculator` / `json` / `base64` 已彻底移除（源码亦删除）。非 tool 的支撑代码（http/搜索后端/路径/domain/html/store/policy）统一在 `core/tools/utils/`。
 - **skills**：可复用能力包 = 一份指令（`SKILL.md`）+ 可选捆绑的 tools/资源。按需动态加载，加载后将其指令注入上下文、工具并入注册表。已落地 `Skill` 类型 + 统一 `CapabilityLoader`（BM25 检索，复用 `CapabilityRegistry`）+ `loadSkillFromPath`（gray-matter 解析 SKILL.md）；`AgentLoop.skills` 注入后按需注入指令 + 注册捆绑工具。
 - **mcp**：通过 Model Context Protocol 接入的**外部能力来源**。一个外部 MCP server 的 `tools/resources` 会被归一化为标准 Tool，纳入同一注册表，内核无感知差异。已落地 `core/mcp/`（`connectMcpServer` / `connectMcpServers`，stdio transport 复用 `@modelcontextprotocol/sdk`，tools 归一化为标准 Tool + `jsonSchema` 透传 + 错误隔离 + `dispose` 生命周期）；配置 `mcp.servers`（name/command/args/env）由 resolve 层装配。
 
 ### 5.2 扩展层（能力的「打包与分发」单元）
 
-- **plugins**：最大的扩展单元，可打包「多个 tools + skills + hooks + rules + memory 后端 + system-prompt 片段」整体注册/卸载。插件通过 `PluginContext` 注入能力，是实现「开箱即用领域能力」的载体。已落地 `Plugin` 类型 + `PluginContext`（registerTool / registerSkill / registerHook / registerRule / provideSystemPrompt）+ `PluginManager`（install → `CapabilityBundle`）+ `assembleAgentLoop`（async 装配工厂，安装 plugins 并合并能力）；内置插件包 `@agent-engine/plugin-files`（read_file / write_file）、`@agent-engine/plugin-bash`（bash，经沙箱）、`@agent-engine/plugin-git`（git 工具套件，只读默认、破坏性子命令阻断、经沙箱）均在 `packages/plugins/` 下，经 `config.plugins` 声明、由 server 层注入工厂加载。
+- **plugins**：最大的扩展单元，可打包「多个 tools + skills + hooks + rules + memory 后端 + system-prompt 片段」整体注册/卸载。插件通过 `PluginContext` 注入能力，是实现「开箱即用领域能力」的载体。已落地 `Plugin` 类型 + `PluginContext`（registerTool / registerSkill / registerHook / registerRule / provideSystemPrompt）+ `PluginManager`（install → `CapabilityBundle`）+ `assembleAgentLoop`（async 装配工厂，安装 plugins 并合并能力）；内置插件包 `@agent-engine/plugin-files`（read_file / write_file / list_files）、`@agent-engine/plugin-bash`（bash，经沙箱）、`@agent-engine/plugin-git`（git 工具套件，只读默认、破坏性子命令阻断、经沙箱）均在 `packages/plugins/` 下，经 `config.plugins` 声明、由 server 层注入工厂加载。
 
 ### 5.3 执行控制层（Agent「如何做」的约束）
 
@@ -398,6 +398,10 @@ rules:
       排查顺序：kubectl get events → describe pod → logs → 逐层定位。
     tags: [k8s, kubernetes, 诊断]
 
+# 工具轴：禁用不需要的工具（装配末按名移除，可覆盖 builtin / plugin / mcp 工具）
+tools:
+  disabled: [] # 如 ['builtin.web_search'] 关掉联网搜索
+
 # 垂直能力（文件/命令）经 plugins 声明加载，不再内置
 mcp:
   servers:
@@ -422,7 +426,7 @@ hooks:
     on: [beforeLLM, afterToolCall, onError]
 
 plugins:
-  - '@agent-engine/plugin-files' # 本地文件读写（read_file / write_file）
+  - '@agent-engine/plugin-files' # 本地文件读写/列举（read_file / write_file / list_files）
   - '@agent-engine/plugin-bash' # 命令执行（bash，需 security.bash.enabled + 沙箱）
   - '@agent-engine/plugin-otel'
 
@@ -475,7 +479,7 @@ orchestration:
 2. 通过 `ToolRegistry.register()` 或配置文件 `tools` 段注册。
 3. 覆盖 `inputSchema`（Zod），保证 LLM 可正确理解参数。
 
-> 内置**通用原语**（`todo` / `datetime` / `web_search` / `web_fetch`）已提供（`core/tools/builtin/`），通过 `registerBuiltinTools` 统一装配。垂直能力 `read_file` / `write_file` / `bash` 是内置 plugin `@agent-engine/plugin-files` / `@agent-engine/plugin-bash`（经 `config.plugins` 声明加载，bash 需 `security.bash.enabled` + 沙箱）。非 tool 支撑在 `core/tools/utils/`。
+> 内置**通用原语**（`todo` / `datetime` / `web_search` / `web_fetch`）已提供（`core/tools/builtin/`），通过 `registerBuiltinTools` 统一装配。垂直能力 `read_file` / `write_file` / `list_files` / `bash` 是内置 plugin `@agent-engine/plugin-files` / `@agent-engine/plugin-bash`（工厂在 `core/tools/{file,bash}.ts`，经 `config.plugins` 声明加载，bash 需 `security.bash.enabled` + 沙箱）。非 tool 支撑在 `core/tools/utils/`。
 
 ### 8.2 新增一个 skill
 

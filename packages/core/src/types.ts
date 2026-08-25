@@ -19,8 +19,11 @@ export type {
   ReadFileResult,
   WriteFileInput,
   WriteFileResult,
-} from './tools/builtin/file';
-export type { BashInput } from './tools/builtin/bash';
+  ListFilesInput,
+  ListFilesResult,
+  FileEntry,
+} from './tools/file';
+export type { BashInput } from './tools/bash';
 export type { WebSearchInput, WebSearchResult } from './tools/builtin/web-search';
 export type { WebFetchInput, WebFetchResult } from './tools/builtin/web-fetch';
 export type { DatetimeInput, DatetimeResult } from './tools/builtin/datetime';

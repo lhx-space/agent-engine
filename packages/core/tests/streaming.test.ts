@@ -41,7 +41,6 @@ function makeConfig(): AgentConfig {
     name: 'stream-test',
     model: { provider: 'custom', baseURL: 'http://localhost', model: 'mock', apiKey: 'x' },
     systemPrompt: { template: '你是助手' },
-    tools: [{ use: 'builtin.todo' }],
   });
 }
 

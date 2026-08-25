@@ -1,0 +1,13 @@
+- [x] `config/src/schema/index.ts`：新增 `ToolsConfigSchema`（`disabled: string[]` 默认 []），`AgentConfig.tools` 改用它；删除 `ToolRefSchema`/`ToolRef`
+- [x] `core/src/tools/builtin/file.ts` → `tools/file.ts`（git mv）：加 `createListFilesTool`（roots 约束 + glob + maxDepth/maxEntries）+ `read_file` UTF-8 安全截断 helper
+- [x] `core/src/tools/builtin/bash.ts` → `tools/bash.ts`（git mv）
+- [x] `core/src/tools/builtin/datetime.ts`：抽 `formatDate` helper；`now` 支持 `timeZone`/`locale` 返回 `formatted`
+- [x] `core/src/agent/assemble.ts`：新增 `tools?: ToolsConfig` 选项；装配末 `unregister(tools.disabled)`；todo 引导按最终 registry 判断
+- [x] `core/src/resolve/resolve.ts`：传入 `config.tools`
+- [x] `core/src/index.ts` / `types.ts`：路径与类型同步（file/bash 移出 builtin + `ListFilesInput/Result`）
+- [x] `core/package.json`：新增 `picomatch` 依赖（`pnpm install` 锁同步）
+- [x] `plugins/files/src/index.ts`：注册 `createListFilesTool`
+- [x] `apps/web/src/config/ToolsForm.tsx`：改为「禁用内置工具」多选（移除 `ToolRef` 依赖）
+- [x] `apps/web/src/lib/export-config.ts`：`tools.disabled` 非空才输出
+- [x] 测试：`builtin-tools.test.ts`（list_files / datetime now 本地化 / UTF-8 截断 / 路径 import）、`schema.test.ts`（tools.disabled 默认）、`resolve.test.ts`/`streaming.test.ts`（tools 结构）、`files.test.ts`（list_files 注册）
+- [x] 全量校验：`pnpm test` / `typecheck` / web typecheck+build / `lint` / `spell` / `format:check` / `lint:md` / `openspec validate --strict`

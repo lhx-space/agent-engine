@@ -60,13 +60,13 @@ export type HookConfig = z.infer<typeof HookConfigSchema>;
 // ============ tools / skills / mcp ============
 
 /**
- * 额外工具引用（横向拓展）。内置工具（builtin.*）由内核恒全注册，不在此过滤；
- * 此字段用于声明额外的非内置工具（如插件 / 自定义工具名）。
+ * 工具轴配置：`disabled` 按语义名禁用任意已装配工具（builtin.* / plugin / MCP 工具名）。
+ * 禁用是装配末的统一过滤，故可覆盖三类来源；缺省空数组 = 全部照常注册。
  */
-export const ToolRefSchema = z.object({
-  use: z.string(),
+export const ToolsConfigSchema = z.object({
+  disabled: z.array(z.string()).default([]),
 });
-export type ToolRef = z.infer<typeof ToolRefSchema>;
+export type ToolsConfig = z.infer<typeof ToolsConfigSchema>;
 
 /**
  * 技能来源（一等公民，可插拔）：
@@ -251,7 +251,7 @@ export const AgentConfigSchema = z.object({
   model: ModelConfigSchema,
   systemPrompt: SystemPromptSchema,
   rules: z.array(RuleSchema).default([]),
-  tools: z.array(ToolRefSchema).default([]),
+  tools: ToolsConfigSchema.default(ToolsConfigSchema.parse({})),
   mcp: McpConfigSchema.optional(),
   skills: z.array(SkillRefSchema).default([]),
   memory: MemoryConfigSchema.optional(),

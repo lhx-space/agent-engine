@@ -8,11 +8,11 @@ function makeFilePolicy(): FilePolicy {
 }
 
 describe('createFilesPlugin', () => {
-  it('注册 read_file / write_file', async () => {
+  it('注册 read_file / write_file / list_files', async () => {
     const manager = new PluginManager();
     await manager.install(createFilesPlugin(makeFilePolicy()));
 
     const names = manager.getAssembly().tools.map((tool) => tool.name);
-    expect(names).toEqual(['builtin.read_file', 'builtin.write_file']);
+    expect(names).toEqual(['builtin.read_file', 'builtin.write_file', 'builtin.list_files']);
   });
 });

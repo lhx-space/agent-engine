@@ -1,4 +1,4 @@
-import type { ExecutionConfig, Rule, SecurityConfig } from '@agent-engine/config';
+import type { ExecutionConfig, Rule, SecurityConfig, ToolsConfig } from '@agent-engine/config';
 import { mergeBundles } from '../capability/bundle';
 import type { ResolvedMcpServer } from '../capability-source/types';
 import type { CapabilityBundle } from '../capability/types';
@@ -33,6 +33,8 @@ export interface AssembleAgentLoopOptions {
   execution?: ExecutionConfig;
   /** 安全配置；传入时装配全部内置工具。 */
   security?: SecurityConfig;
+  /** 工具轴配置；`disabled` 在全部工具（builtin / plugin / mcp）注册完成后按名移除。 */
+  tools?: ToolsConfig;
   /** 预置沙箱后端（bash 启用时使用；缺省按 security.sandbox.backend 解析）。 */
   sandbox?: SandboxBackend;
   /** 归一化后的 MCP servers（command 形态）；装配时连接并把归一化工具注册进 registry。 */
@@ -58,13 +60,9 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
   await manager.installAll(options.plugins ?? []);
   const bundles: CapabilityBundle[] = [manager.getAssembly()];
 
-  // 2. 内置工具直接写 registry（无 dispose），并收集 todo 规划引导片段。
-  const derivedFragments: string[] = [];
+  // 2. 内置工具直接写 registry（无 dispose）。
   if (options.security) {
-    const registered = registerBuiltinTools(options.registry, options.security);
-    if (registered.includes('builtin.todo')) {
-      derivedFragments.push(TODO_PLANNING_GUIDANCE);
-    }
+    registerBuiltinTools(options.registry, options.security);
   }
 
   // 3. MCP 能力束（tools + dispose 关闭连接）；单个失败不阻断整体（错误隔离，warn 报告）。
@@ -84,6 +82,17 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
   }
   for (const hook of merged.hooks) {
     options.hooks?.register(hook);
+  }
+
+  // 4.5 工具轴：装配末按名移除被禁用工具（覆盖 builtin / plugin / mcp 三类来源）。
+  for (const name of options.tools?.disabled ?? []) {
+    options.registry.unregister(name);
+  }
+
+  // 5. todo 规划引导：仅在 todo 最终仍注册时注入（被 `tools.disabled` 禁用则不再引导）。
+  const derivedFragments: string[] = [];
+  if (options.registry.has('builtin.todo')) {
+    derivedFragments.push(TODO_PLANNING_GUIDANCE);
   }
 
   const skills = [...(options.skills ?? []), ...merged.skills];

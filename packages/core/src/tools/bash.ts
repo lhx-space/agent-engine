@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import type { BashPolicy } from '@agent-engine/config';
-import type { SandboxBackend, SandboxExecResult } from '../../sandbox/types';
-import type { Tool } from '../types';
-import { checkBashPolicy } from '../utils/bash-policy';
+import type { SandboxBackend, SandboxExecResult } from '../sandbox/types';
+import type { Tool } from './types';
+import { checkBashPolicy } from './utils/bash-policy';
 
 // ============ 类型 ============
 
@@ -21,7 +21,7 @@ const BashInputSchema = z.object({
 
 // ============ 工具 ============
 
-/** 创建 `bash` 内置工具：策略校验（白/黑名单 + 网络开关）通过后经 SandboxBackend 沙箱执行。 */
+/** 创建 `bash` 工具工厂（供 `@agent-engine/plugin-bash` 使用）：策略校验（白/黑名单 + 网络开关）通过后经 SandboxBackend 沙箱执行。 */
 export function createBashTool(
   policy: BashPolicy,
   sandbox: SandboxBackend,

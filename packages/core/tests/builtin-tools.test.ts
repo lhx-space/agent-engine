@@ -11,9 +11,9 @@ import type {
 } from '@agent-engine/config';
 import type { SandboxBackend, SandboxExecResult } from '../src/sandbox/types';
 import { ToolRegistry } from '../src/tools/registry';
-import { createBashTool } from '../src/tools/builtin/bash';
+import { createBashTool } from '../src/tools/bash';
 import { createDatetimeTool } from '../src/tools/builtin/datetime';
-import { createReadFileTool, createWriteFileTool } from '../src/tools/builtin/file';
+import { createListFilesTool, createReadFileTool, createWriteFileTool } from '../src/tools/file';
 import { createTodoTool, TodoStore } from '../src/tools/builtin/todo';
 import type { TodoItem } from '../src/tools/builtin/todo';
 import { createWebFetchTool } from '../src/tools/builtin/web-fetch';
@@ -170,6 +170,86 @@ describe('文件路径约束', () => {
           tool.execute({ path: path.join(outside, 'x.txt'), content: 'x' }),
         ).rejects.toThrow(/outside allowed roots/);
       });
+    });
+  });
+});
+
+describe('read_file UTF-8 截断', () => {
+  it('截断不切断多字节字符', async () => {
+    await withTempDir(async (dir) => {
+      const content = 'ab中'; // '中' 为 3 字节
+      await fs.writeFile(path.join(dir, 'a.txt'), content);
+      // maxFileBytes=4 落在 '中' 的第 2 个连续字节，安全截断应回退到 '中' 之前。
+      const tool = createReadFileTool({ roots: [dir], maxFileBytes: 4 });
+      const res = (await tool.execute({ path: path.join(dir, 'a.txt') })) as {
+        content: string;
+        truncated: boolean;
+      };
+      expect(res.truncated).toBe(true);
+      expect(res.content).toContain('ab');
+      expect(res.content).not.toContain('\uFFFD');
+    });
+  });
+});
+
+describe('list_files', () => {
+  it('列举根目录（目录优先 + 排序）', async () => {
+    await withTempDir(async (dir) => {
+      await fs.writeFile(path.join(dir, 'b.txt'), 'b');
+      await fs.mkdir(path.join(dir, 'a-dir'));
+      await fs.writeFile(path.join(dir, 'a-dir', 'x.txt'), 'x');
+      const tool = createListFilesTool({ roots: [dir], maxFileBytes: 1024 });
+      const res = (await tool.execute({ path: dir, maxDepth: 0 })) as {
+        entries: { path: string; type: string }[];
+      };
+      expect(res.entries.map((e) => e.path)).toEqual(['a-dir', 'b.txt']);
+      expect(res.entries[0]?.type).toBe('dir');
+    });
+  });
+
+  it('glob 过滤', async () => {
+    await withTempDir(async (dir) => {
+      await fs.writeFile(path.join(dir, 'a.ts'), '');
+      await fs.writeFile(path.join(dir, 'b.md'), '');
+      const tool = createListFilesTool({ roots: [dir], maxFileBytes: 1024 });
+      const res = (await tool.execute({ path: dir, glob: '*.ts' })) as {
+        entries: { path: string }[];
+      };
+      expect(res.entries.map((e) => e.path)).toEqual(['a.ts']);
+    });
+  });
+
+  it('maxEntries 截断置 truncated', async () => {
+    await withTempDir(async (dir) => {
+      await fs.writeFile(path.join(dir, 'a.txt'), '');
+      await fs.writeFile(path.join(dir, 'b.txt'), '');
+      await fs.writeFile(path.join(dir, 'c.txt'), '');
+      const tool = createListFilesTool({ roots: [dir], maxFileBytes: 1024 });
+      const res = (await tool.execute({ path: dir, maxEntries: 2 })) as {
+        entries: unknown[];
+        truncated: boolean;
+      };
+      expect(res.entries).toHaveLength(2);
+      expect(res.truncated).toBe(true);
+    });
+  });
+
+  it('越界路径拒绝', async () => {
+    await withTempDir(async (dir) => {
+      await withTempDir(async (outside) => {
+        const tool = createListFilesTool({ roots: [dir], maxFileBytes: 1024 });
+        await expect(tool.execute({ path: outside })).rejects.toThrow(/outside allowed roots/);
+      });
+    });
+  });
+
+  it('非目录报错', async () => {
+    await withTempDir(async (dir) => {
+      await fs.writeFile(path.join(dir, 'f.txt'), '');
+      const tool = createListFilesTool({ roots: [dir], maxFileBytes: 1024 });
+      await expect(tool.execute({ path: path.join(dir, 'f.txt') })).rejects.toThrow(
+        /Not a directory/,
+      );
     });
   });
 });
@@ -498,6 +578,17 @@ describe('datetime', () => {
     // 2024-01-01 00:00 UTC = 北京时间周一 08:00
     expect(res.formatted).toContain('星期一');
     expect(res.formatted).toContain('08');
+  });
+
+  it('datetime now 带 timeZone 返回本地化 formatted', async () => {
+    const tool = createDatetimeTool();
+    const res = (await tool.execute({
+      action: 'now',
+      timeZone: 'Asia/Shanghai',
+      locale: 'zh-CN',
+    })) as { formatted?: string };
+    expect(res.formatted).toBeDefined();
+    expect(res.formatted).toContain('星期');
   });
 });
 

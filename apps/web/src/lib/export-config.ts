@@ -65,7 +65,7 @@ function minimize(config: AgentConfig): Record<string, unknown> {
   if (config.description) out.description = config.description;
   if (config.version) out.version = config.version;
   if (config.rules.length > 0) out.rules = config.rules;
-  if (config.tools.length > 0) out.tools = config.tools;
+  if (config.tools.disabled.length > 0) out.tools = config.tools;
   if (config.skills.length > 0) out.skills = config.skills;
   if ((config.mcp?.servers.length ?? 0) > 0) out.mcp = config.mcp;
   if (config.memory) out.memory = config.memory;

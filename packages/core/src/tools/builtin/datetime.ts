@@ -29,6 +29,18 @@ const DatetimeInputSchema = z.object({
 
 // ============ 工具 ============
 
+/**
+ * 完整输出（星期 + 日期 + 时分秒）的本地化渲染；未提供 locale/timeZone 时用系统默认时区。
+ */
+function formatDate(date: Date, locale?: string, timeZone?: string): string {
+  return new Intl.DateTimeFormat(
+    locale,
+    timeZone
+      ? { timeZone, dateStyle: 'full', timeStyle: 'long' }
+      : { dateStyle: 'full', timeStyle: 'long' },
+  ).format(date);
+}
+
 /** 创建 `datetime` 内置工具：now（当前时间）/ format（时间戳格式化）/ parse（字符串解析）。 */
 export function createDatetimeTool(): Tool<DatetimeInput, DatetimeResult> {
   return {
@@ -40,7 +52,12 @@ export function createDatetimeTool(): Tool<DatetimeInput, DatetimeResult> {
       switch (input.action) {
         case 'now': {
           const now = new Date();
-          return { iso: now.toISOString(), epochMs: now.getTime() };
+          const result: DatetimeResult = { iso: now.toISOString(), epochMs: now.getTime() };
+          // 提供 timeZone/locale 时直接返回本地化完整串，模型一次调用即可答「现在几点/星期几」。
+          if (input.timeZone || input.locale) {
+            result.formatted = formatDate(now, input.locale, input.timeZone);
+          }
+          return result;
         }
         case 'parse': {
           if (!input.value) throw new Error('datetime parse requires "value"');
@@ -53,12 +70,7 @@ export function createDatetimeTool(): Tool<DatetimeInput, DatetimeResult> {
           const date = new Date(input.value);
           if (Number.isNaN(date.getTime())) throw new Error(`Invalid date: "${input.value}"`);
           // 完整输出（星期 + 日期 + 时分秒），避免模型反复追问「星期几 / 几点」。
-          const formatted = new Intl.DateTimeFormat(
-            input.locale,
-            input.timeZone
-              ? { timeZone: input.timeZone, dateStyle: 'full', timeStyle: 'long' }
-              : { dateStyle: 'full', timeStyle: 'long' },
-          ).format(date);
+          const formatted = formatDate(date, input.locale, input.timeZone);
           return { iso: date.toISOString(), epochMs: date.getTime(), formatted };
         }
       }

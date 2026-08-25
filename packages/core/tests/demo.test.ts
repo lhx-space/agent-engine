@@ -8,7 +8,7 @@ import { assembleAgentLoop } from '../src/agent/assemble';
 import type { ChatCompletionResult, ChatMessage, LLMProvider } from '../src/llm/types';
 import { ConversationMemory } from '../src/memory/conversation-memory';
 import type { Plugin } from '../src/plugins/types';
-import { createReadFileTool, createWriteFileTool } from '../src/tools/builtin/file';
+import { createReadFileTool, createWriteFileTool } from '../src/tools/file';
 import { ToolRegistry } from '../src/tools/registry';
 
 function makeSecurity(workspaceRoot: string): SecurityConfig {

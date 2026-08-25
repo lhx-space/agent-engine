@@ -53,6 +53,7 @@ export async function resolveAgentConfig(
     plugins,
     memory,
     security: config.security,
+    tools: config.tools,
     execution: config.execution,
     mcp: resolveMcpServers(config.mcp?.servers ?? []),
     sandbox: deps.sandbox,
