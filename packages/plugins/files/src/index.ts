@@ -1,6 +1,10 @@
 import type { FilePolicy } from '@agent-engine/config';
-import { createListFilesTool, createReadFileTool, createWriteFileTool } from '@agent-engine/core';
-import type { Plugin } from '@agent-engine/core';
+import {
+  createListFilesTool,
+  createReadFileTool,
+  createWriteFileTool,
+} from '@agent-engine/core/tools';
+import type { Plugin } from '@agent-engine/core/plugins';
 
 /** 创建文件工具套件插件：注册 `read_file` / `write_file` / `list_files`（受 `files.roots` 约束）。 */
 export function createFilesPlugin(policy: FilePolicy): Plugin {

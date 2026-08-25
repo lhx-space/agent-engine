@@ -1,5 +1,7 @@
 import { z } from 'zod';
-import type { Plugin, SandboxBackend, Tool } from '@agent-engine/core';
+import type { Plugin } from '@agent-engine/core/plugins';
+import type { SandboxBackend } from '@agent-engine/core/sandbox';
+import type { Tool } from '@agent-engine/core/tools';
 
 // ============ 类型 ============
 

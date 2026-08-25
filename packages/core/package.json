@@ -17,6 +17,156 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
+    },
+    "./agent": {
+      "import": {
+        "types": "./dist/agent.d.mts",
+        "default": "./dist/agent.mjs"
+      },
+      "require": {
+        "types": "./dist/agent.d.cts",
+        "default": "./dist/agent.cjs"
+      }
+    },
+    "./capability": {
+      "import": {
+        "types": "./dist/capability.d.mts",
+        "default": "./dist/capability.mjs"
+      },
+      "require": {
+        "types": "./dist/capability.d.cts",
+        "default": "./dist/capability.cjs"
+      }
+    },
+    "./capability-source": {
+      "import": {
+        "types": "./dist/capability-source.d.mts",
+        "default": "./dist/capability-source.mjs"
+      },
+      "require": {
+        "types": "./dist/capability-source.d.cts",
+        "default": "./dist/capability-source.cjs"
+      }
+    },
+    "./context": {
+      "import": {
+        "types": "./dist/context.d.mts",
+        "default": "./dist/context.mjs"
+      },
+      "require": {
+        "types": "./dist/context.d.cts",
+        "default": "./dist/context.cjs"
+      }
+    },
+    "./hooks": {
+      "import": {
+        "types": "./dist/hooks.d.mts",
+        "default": "./dist/hooks.mjs"
+      },
+      "require": {
+        "types": "./dist/hooks.d.cts",
+        "default": "./dist/hooks.cjs"
+      }
+    },
+    "./llm": {
+      "import": {
+        "types": "./dist/llm.d.mts",
+        "default": "./dist/llm.mjs"
+      },
+      "require": {
+        "types": "./dist/llm.d.cts",
+        "default": "./dist/llm.cjs"
+      }
+    },
+    "./mcp": {
+      "import": {
+        "types": "./dist/mcp.d.mts",
+        "default": "./dist/mcp.mjs"
+      },
+      "require": {
+        "types": "./dist/mcp.d.cts",
+        "default": "./dist/mcp.cjs"
+      }
+    },
+    "./memory": {
+      "import": {
+        "types": "./dist/memory.d.mts",
+        "default": "./dist/memory.mjs"
+      },
+      "require": {
+        "types": "./dist/memory.d.cts",
+        "default": "./dist/memory.cjs"
+      }
+    },
+    "./plugins": {
+      "import": {
+        "types": "./dist/plugins.d.mts",
+        "default": "./dist/plugins.mjs"
+      },
+      "require": {
+        "types": "./dist/plugins.d.cts",
+        "default": "./dist/plugins.cjs"
+      }
+    },
+    "./resolve": {
+      "import": {
+        "types": "./dist/resolve.d.mts",
+        "default": "./dist/resolve.mjs"
+      },
+      "require": {
+        "types": "./dist/resolve.d.cts",
+        "default": "./dist/resolve.cjs"
+      }
+    },
+    "./retrieval": {
+      "import": {
+        "types": "./dist/retrieval.d.mts",
+        "default": "./dist/retrieval.mjs"
+      },
+      "require": {
+        "types": "./dist/retrieval.d.cts",
+        "default": "./dist/retrieval.cjs"
+      }
+    },
+    "./rules": {
+      "import": {
+        "types": "./dist/rules.d.mts",
+        "default": "./dist/rules.mjs"
+      },
+      "require": {
+        "types": "./dist/rules.d.cts",
+        "default": "./dist/rules.cjs"
+      }
+    },
+    "./sandbox": {
+      "import": {
+        "types": "./dist/sandbox.d.mts",
+        "default": "./dist/sandbox.mjs"
+      },
+      "require": {
+        "types": "./dist/sandbox.d.cts",
+        "default": "./dist/sandbox.cjs"
+      }
+    },
+    "./skills": {
+      "import": {
+        "types": "./dist/skills.d.mts",
+        "default": "./dist/skills.mjs"
+      },
+      "require": {
+        "types": "./dist/skills.d.cts",
+        "default": "./dist/skills.cjs"
+      }
+    },
+    "./tools": {
+      "import": {
+        "types": "./dist/tools.d.mts",
+        "default": "./dist/tools.mjs"
+      },
+      "require": {
+        "types": "./dist/tools.d.cts",
+        "default": "./dist/tools.cjs"
+      }
     }
   },
   "files": [

@@ -1,0 +1,6 @@
+- [x] `core/src/{agent,hooks,llm,retrieval,rules,tools}/index.ts`：补 6 个 re-export 入口（显式命名导出）
+- [x] `core/tsdown.config.ts`：`entry` 改对象（16 个入口：index + 15 模块）
+- [x] `core/package.json`：`exports` 补 15 个子路径（import/require + types 条件，照 `./schema`）
+- [x] `AGENTS.md`：4 节目录树 tools/ 注释更新 + 新增「内核职责边界」小节（接口 + 默认实现 + 注入点；已达标/未达标清单）
+- [x] smoke：把 `@agent-engine/plugin-files` 的 tools 导入改走 `@agent-engine/core/tools`，验证子路径可解析
+- [x] 全量校验：`pnpm build` / `typecheck` / `test` / web build / `lint` / `spell` / `format:check` / `lint:md` / `openspec validate --strict`

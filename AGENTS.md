@@ -33,6 +33,20 @@
 6. **复用优先，拒绝重复造轮子（核心纪律）**：动手前先调研并采用成熟三方库/生态库（React 生态、Node 生态、协议 SDK 等）；仅当无合适现成方案时才自研，且需在注释/PR 中说明理由。
 7. **内核自研 + SDK 复用（不引入 LangChain）**：执行内核（Agent Loop / 编排 / 插件 / hooks / rules）自研，因为这是核心资产且需细粒度控制；能力层一律复用官方 SDK（LLM / MCP / 向量等）。库照用、框架不引入。
 
+### 2.1 内核职责边界：接口 + 默认实现 + 注入点（「core 只做适配器」）
+
+「可插拔 Provider」（理念 3）的落地尺子，判断一个能力该放 core 还是交给用户接入：
+
+> **core 的职责 = 定义接口 + 提供一个 in-memory / 开发默认实现 + 一个装配/注入点；具体后端（pgvector / redis / embedding 模型 / 缓存）由用户或生态以 plugin / factory 形式接入。**
+
+据此分三档：
+
+| 状态                                   | 能力                                                                                                                                                                                                                           | 说明                                                                  |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| ✅ 已达标（有接口 + 有默认 + 可注入）  | LLM（`LLMProvider` + openai/anthropic + `providerFactory`）、搜索（`SearchProvider` + searxng/ddg/tavily/serper + fallback）、沙箱（`SandboxBackend` + docker/nsjail/auto）、MCP（`connectMcpServer`）、Skills（path/npm/git） | 用户按接口接入自己的实现即可                                          |
+| ⚠️ 接口尚未定义（文档/配置却声称存在） | **长期记忆 `MemoryBackend`**（`memory.longTerm.backend` 是死字段，无消费点）、**缓存 `CacheBackend`**、**向量库 `VectorStore` + `EmbeddingProvider`**、**`events/` 事件总线**（目录未建）                                      | M3 剩余：core 先补接口 + in-memory 默认，再让用户接 pgvector/redis 等 |
+| ⏳ 未落地                              | 多 Agent 编排（`orchestration` 仅 `single`，`spawn` 未实现）、FunctionSandbox（WASM/WASI）                                                                                                                                     | M3 剩余                                                               |
+
 ---
 
 ## 3. 技术栈选型
@@ -123,9 +137,10 @@ agent-engine/
 │   │       ├── capability/    #   CapabilityBundle 统一能力束 + mergeBundles 汇聚
 │   │       ├── resolve/       #   resolveAgentConfig（AgentConfig→AgentLoop 一键装配）
 │   │       ├── llm/           #   Provider 抽象（OpenAI/Anthropic/自定义）
-│   │       ├── tools/         #   Tool 注册表与执行器
+│   │       ├── tools/         #   Tool 注册表、工具工厂与执行器
 │   │       │   ├── builtin/   #   内置通用原语（todo/datetime/web_search/web_fetch）
-│   │       │   └── utils/     #   非 tool 支撑（http/搜索/路径/domain/html/store/policy）
+│   │       │   ├── utils/     #   非 tool 支撑（http/搜索/路径/domain/html/store/policy）
+│   │       │   └── {file,bash}.ts # 文件/命令工具工厂（供 plugin-files/bash 使用）
 │   │       ├── sandbox/       #   SandboxBackend（docker / nsjail 执行沙箱）
 │   │       ├── memory/        #   会话上下文 + 长期记忆抽象
 │   │       ├── skills/        #   Skill 加载/注册/触发
