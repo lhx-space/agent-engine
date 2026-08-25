@@ -4,6 +4,7 @@ import type { CacheBackend } from '../cache/cache-backend';
 import { mergeBundles } from '../capability/bundle';
 import type { ResolvedMcpServer } from '../capability-source/types';
 import type { CapabilityBundle } from '../capability/types';
+import type { EmbeddingProvider } from '../embedding/embedding';
 import type { HookPipeline } from '../hooks/pipeline';
 import type { LLMProvider } from '../llm/types';
 import { connectMcpServers } from '../mcp/client';
@@ -13,6 +14,8 @@ import type { MemoryBackend } from '../memory/memory-backend';
 import { PluginManager } from '../plugins/manager';
 import type { Plugin } from '../plugins/types';
 import type { ResolvedAgent } from '../resolve/types';
+import { InMemoryVectorStore } from '../retrieval/vector-store';
+import type { VectorStore } from '../retrieval/vector-store';
 import type { RuleRegistry } from '../rules/registry';
 import type { SandboxBackend } from '../sandbox/types';
 import type { Skill } from '../skills/types';
@@ -157,6 +160,10 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     'cache.backend',
   );
 
+  // 6.5 语义检索后端：向量库（缺省 in-memory）+ embedding（可缺省，需真实向量模型）。
+  const vectorStore: VectorStore = merged.vectorStores[0] ?? new InMemoryVectorStore();
+  const embeddingProvider: EmbeddingProvider | undefined = merged.embeddingProviders[0];
+
   let disposed = false;
   const dispose = async (): Promise<void> => {
     if (disposed) return;
@@ -164,5 +171,5 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     await merged.dispose();
   };
 
-  return { agent, memoryBackend, cacheBackend, dispose };
+  return { agent, memoryBackend, cacheBackend, vectorStore, embeddingProvider, dispose };
 }

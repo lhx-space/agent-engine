@@ -1,7 +1,9 @@
 import type { Rule } from '@agent-engine/config';
 import type { CacheBackend } from '../cache/cache-backend';
+import type { EmbeddingProvider } from '../embedding/embedding';
 import type { Hook } from '../hooks/types';
 import type { MemoryBackend } from '../memory/memory-backend';
+import type { VectorStore } from '../retrieval/vector-store';
 import type { Skill } from '../skills/types';
 import type { Tool } from '../tools/types';
 
@@ -32,4 +34,8 @@ export interface PluginContext {
   registerMemoryBackend(backend: MemoryBackend): void;
   /** 注册缓存后端（按 `cache.backend` 名字选中）。 */
   registerCacheBackend(backend: CacheBackend): void;
+  /** 注册向量库（语义召回；缺省回退 in-memory）。 */
+  registerVectorStore(store: VectorStore): void;
+  /** 注册 embedding 提供商（语义召回；缺省 undefined）。 */
+  registerEmbeddingProvider(provider: EmbeddingProvider): void;
 }

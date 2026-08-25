@@ -48,6 +48,9 @@ export type { GuardrailContext, GuardrailResult, GuardrailRule } from './rules/t
 // retrieval
 export type { CapabilityHit, CapabilityMeta, CapabilityType } from './retrieval/types';
 export type { CapabilityRecord, CapabilityRecordHit } from './retrieval/loader';
+export type { VectorStore, VectorRecord, VectorMatch } from './retrieval/vector-store';
+// embedding
+export type { EmbeddingProvider } from './embedding/embedding';
 // skills
 export type { Skill } from './skills/types';
 // capability

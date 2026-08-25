@@ -1,7 +1,9 @@
 import type { Rule } from '@agent-engine/config';
 import type { CacheBackend } from '../cache/cache-backend';
+import type { EmbeddingProvider } from '../embedding/embedding';
 import type { Hook } from '../hooks/types';
 import type { MemoryBackend } from '../memory/memory-backend';
+import type { VectorStore } from '../retrieval/vector-store';
 import type { Skill } from '../skills/types';
 import type { Tool } from '../tools/types';
 import type { CapabilityBundle } from './types';
@@ -15,6 +17,8 @@ export interface MergedBundles {
   promptFragments: string[];
   memoryBackends: MemoryBackend[];
   cacheBackends: CacheBackend[];
+  vectorStores: VectorStore[];
+  embeddingProviders: EmbeddingProvider[];
   /** 关闭所有 bundle 的资源（幂等）。 */
   dispose: () => Promise<void>;
 }
@@ -32,6 +36,8 @@ export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
   const promptFragments: string[] = [];
   const memoryBackends: MemoryBackend[] = [];
   const cacheBackends: CacheBackend[] = [];
+  const vectorStores: VectorStore[] = [];
+  const embeddingProviders: EmbeddingProvider[] = [];
   const disposers: (() => Promise<void>)[] = [];
 
   for (const bundle of bundles) {
@@ -42,6 +48,8 @@ export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
     promptFragments.push(...bundle.promptFragments);
     memoryBackends.push(...bundle.memoryBackends);
     cacheBackends.push(...bundle.cacheBackends);
+    vectorStores.push(...bundle.vectorStores);
+    embeddingProviders.push(...bundle.embeddingProviders);
     if (bundle.dispose) disposers.push(bundle.dispose);
   }
 
@@ -53,6 +61,8 @@ export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
     promptFragments,
     memoryBackends,
     cacheBackends,
+    vectorStores,
+    embeddingProviders,
     dispose: async () => {
       await Promise.all(disposers.map((dispose) => dispose()));
     },

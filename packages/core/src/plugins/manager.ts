@@ -11,6 +11,8 @@ export class PluginManager {
     promptFragments: [],
     memoryBackends: [],
     cacheBackends: [],
+    vectorStores: [],
+    embeddingProviders: [],
   };
 
   /** 安装单个 plugin，能力收集进 assembly。 */
@@ -39,6 +41,8 @@ export class PluginManager {
       provideSystemPrompt: (fragment) => this.assembly.promptFragments.push(fragment),
       registerMemoryBackend: (backend) => this.assembly.memoryBackends.push(backend),
       registerCacheBackend: (backend) => this.assembly.cacheBackends.push(backend),
+      registerVectorStore: (store) => this.assembly.vectorStores.push(store),
+      registerEmbeddingProvider: (provider) => this.assembly.embeddingProviders.push(provider),
     };
   }
 }

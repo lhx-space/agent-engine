@@ -8,6 +8,7 @@ export default defineConfig({
     capability: 'src/capability/index.ts',
     'capability-source': 'src/capability-source/index.ts',
     context: 'src/context/index.ts',
+    embedding: 'src/embedding/index.ts',
     hooks: 'src/hooks/index.ts',
     llm: 'src/llm/index.ts',
     mcp: 'src/mcp/index.ts',

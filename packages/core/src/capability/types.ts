@@ -1,7 +1,9 @@
 import type { Rule } from '@agent-engine/config';
 import type { CacheBackend } from '../cache/cache-backend';
+import type { EmbeddingProvider } from '../embedding/embedding';
 import type { Hook } from '../hooks/types';
 import type { MemoryBackend } from '../memory/memory-backend';
+import type { VectorStore } from '../retrieval/vector-store';
 import type { Skill } from '../skills/types';
 import type { Tool } from '../tools/types';
 
@@ -19,6 +21,8 @@ export interface CapabilityBundle {
   promptFragments: string[];
   memoryBackends: MemoryBackend[];
   cacheBackends: CacheBackend[];
+  vectorStores: VectorStore[];
+  embeddingProviders: EmbeddingProvider[];
   /** 释放来源持有的资源（幂等）。 */
   dispose?: () => Promise<void>;
 }

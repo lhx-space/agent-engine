@@ -76,6 +76,8 @@ export async function resolveAgentConfig(
     agent: resolved.agent,
     memoryBackend: resolved.memoryBackend,
     cacheBackend: resolved.cacheBackend,
+    vectorStore: resolved.vectorStore,
+    embeddingProvider: resolved.embeddingProvider,
     dispose: async () => {
       await disposeAgent();
       await disposeSkills();

@@ -37,6 +37,8 @@ describe('mergeBundles', () => {
       promptFragments: ['p1'],
       memoryBackends: [],
       cacheBackends: [],
+      vectorStores: [],
+      embeddingProviders: [],
       dispose: async () => {
         disposed.push('a');
       },
@@ -49,6 +51,8 @@ describe('mergeBundles', () => {
       promptFragments: [],
       memoryBackends: [],
       cacheBackends: [],
+      vectorStores: [],
+      embeddingProviders: [],
       dispose: async () => {
         disposed.push('b');
       },

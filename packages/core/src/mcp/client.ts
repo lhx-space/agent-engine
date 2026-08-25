@@ -92,6 +92,8 @@ export async function connectMcpServers(
     promptFragments: [],
     memoryBackends: [],
     cacheBackends: [],
+    vectorStores: [],
+    embeddingProviders: [],
     dispose: async () => {
       await Promise.all(connections.map((connection) => connection.close()));
     },

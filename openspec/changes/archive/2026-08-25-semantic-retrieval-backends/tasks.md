@@ -1,0 +1,8 @@
+- [x] `core/src/retrieval/vector-store.ts`：`VectorStore` 接口 + `InMemoryVectorStore`（余弦）；`retrieval/index.ts` 导出
+- [x] `core/src/embedding/{embedding.ts,index.ts}`：`EmbeddingProvider` 接口
+- [x] `plugins/types.ts`：`PluginContext` 增 `registerVectorStore` / `registerEmbeddingProvider`
+- [x] `plugins/manager.ts` + `capability/{types,bundle}.ts`：bundle 携 `vectorStores`/`embeddingProviders` 并汇聚
+- [x] `agent/assemble.ts` + `resolve/types.ts`：解析并随 `ResolvedAgent` 暴露 `vectorStore` / `embeddingProvider?`
+- [x] `core/src/{index,types}.ts` + `tsdown.config.ts` + `package.json`：导出 + `./embedding` 子路径
+- [x] 测试：`vector-store.test.ts`（余弦召回 / 删除 / 清空）+ `embedding.test.ts`（插件注入 + 缺省 undefined）
+- [x] 全量校验：`pnpm build` / `typecheck` / `test` / web build / `lint` / `spell` / `format:check` / `lint:md` / `openspec validate --strict`

@@ -68,6 +68,16 @@
         "default": "./dist/context.cjs"
       }
     },
+    "./embedding": {
+      "import": {
+        "types": "./dist/embedding.d.mts",
+        "default": "./dist/embedding.mjs"
+      },
+      "require": {
+        "types": "./dist/embedding.d.cts",
+        "default": "./dist/embedding.cjs"
+      }
+    },
     "./hooks": {
       "import": {
         "types": "./dist/hooks.d.mts",

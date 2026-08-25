@@ -1,8 +1,10 @@
 import type { AgentLoop } from '../agent/loop';
 import type { CacheBackend } from '../cache/cache-backend';
+import type { EmbeddingProvider } from '../embedding/embedding';
 import type { ProviderFactory } from '../llm/provider';
 import type { MemoryBackend } from '../memory/memory-backend';
 import type { Plugin } from '../plugins/types';
+import type { VectorStore } from '../retrieval/vector-store';
 import type { SandboxBackend } from '../sandbox/types';
 
 /** plugin 工厂：`name → () => Plugin`（由 cli/server 注入，core 不反向依赖各 plugin 包）。 */
@@ -25,5 +27,9 @@ export interface ResolvedAgent {
   memoryBackend: MemoryBackend;
   /** 按 `cache.backend` 解析出的缓存后端（默认 in-memory）。 */
   cacheBackend: CacheBackend;
+  /** 语义召回向量库（默认 in-memory；插件可注册自定义）。 */
+  vectorStore: VectorStore;
+  /** 语义召回 embedding 提供商（需真实向量模型，插件注册；缺省 undefined）。 */
+  embeddingProvider?: EmbeddingProvider;
   dispose(): Promise<void>;
 }
