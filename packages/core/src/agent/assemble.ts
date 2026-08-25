@@ -1,4 +1,10 @@
-import type { ExecutionConfig, Rule, SecurityConfig, ToolsConfig } from '@agent-engine/config';
+import type {
+  ExecutionConfig,
+  GuardrailConfig,
+  Rule,
+  SecurityConfig,
+  ToolsConfig,
+} from '@agent-engine/config';
 import { InMemoryCacheBackend } from '../cache/cache-backend';
 import type { CacheBackend } from '../cache/cache-backend';
 import { mergeBundles } from '../capability/bundle';
@@ -26,7 +32,8 @@ import type { Retriever } from '../retrieval/retriever';
 import { CapabilityRegistry } from '../retrieval/registry';
 import { InMemoryVectorStore } from '../retrieval/vector-store';
 import type { VectorStore } from '../retrieval/vector-store';
-import type { RuleRegistry } from '../rules/registry';
+import { compileGuardrails } from '../rules/declarative';
+import { RuleRegistry } from '../rules/registry';
 import type { SandboxBackend } from '../sandbox/types';
 import type { Skill } from '../skills/types';
 import { registerBuiltinTools } from '../tools/builtin';
@@ -64,6 +71,8 @@ export interface AssembleAgentLoopOptions {
   embeddingProvider?: EmbeddingProvider;
   /** 预置事件总线（缺省新建；测试可注入以断言事件）。 */
   eventBus?: EventBus;
+  /** 声明式 guardrail 配置（`config.guardrails`）；装配时编译为 `GuardrailRule` 注入循环。 */
+  guardrailConfig?: GuardrailConfig;
 }
 
 /** 把 prompt 片段追加到 system prompt（string 追加文本 / 模板对象追加到 template；函数式跳过）。 */
@@ -170,6 +179,14 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
   const promptText = [...merged.promptFragments, ...derivedFragments].join('\n\n');
   const systemPrompt = injectPromptText(options.systemPrompt, promptText);
 
+  // 5.5 guardrail 装配：预置可执行规则 + 插件注册 + 声明式配置编译，合并进同一 RuleRegistry。
+  const guardrailRegistry = new RuleRegistry();
+  for (const rule of options.guardrails?.list() ?? []) guardrailRegistry.register(rule);
+  for (const rule of merged.guardrails) guardrailRegistry.register(rule);
+  for (const rule of compileGuardrails(options.guardrailConfig ?? [])) {
+    guardrailRegistry.register(rule);
+  }
+
   const agent = new AgentLoop({
     provider: options.provider,
     registry: options.registry,
@@ -177,7 +194,7 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     rules,
     skills,
     hooks: options.hooks,
-    guardrails: options.guardrails,
+    guardrails: guardrailRegistry,
     memory: options.memory,
     maxSteps: options.maxSteps,
     execution: options.execution,

@@ -124,6 +124,35 @@ describe('AgentConfigSchema', () => {
     }
   });
 
+  it('缺省 guardrails 为空数组', () => {
+    const result = AgentConfigSchema.safeParse({
+      name: 'test-agent',
+      model: { model: 'deepseek-chat' },
+      systemPrompt: { template: 'hello' },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.guardrails).toEqual([]);
+    }
+  });
+
+  it('guardrails 显式声明一条 deny 规则', () => {
+    const result = AgentConfigSchema.safeParse({
+      name: 'test-agent',
+      model: { model: 'deepseek-chat' },
+      systemPrompt: { template: 'hello' },
+      guardrails: [{ id: 'deny-rm', denyTools: ['builtin.bash'], denyPatterns: ['rm -rf'] }],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      const rule = result.data.guardrails[0];
+      expect(rule?.id).toBe('deny-rm');
+      expect(rule?.on).toBe('beforeToolCall');
+      expect(rule?.allowTools).toEqual([]);
+      expect(rule?.denyTools).toEqual(['builtin.bash']);
+    }
+  });
+
   it('bash 显式开启并声明策略', () => {
     const result = AgentConfigSchema.safeParse({
       name: 'test-agent',

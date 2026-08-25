@@ -34,6 +34,7 @@ describe('mergeBundles', () => {
       skills: [],
       hooks: [],
       rules: [],
+      guardrails: [],
       promptFragments: ['p1'],
       memoryBackends: [],
       cacheBackends: [],
@@ -52,6 +53,7 @@ describe('mergeBundles', () => {
       skills: [],
       hooks: [],
       rules: [],
+      guardrails: [],
       promptFragments: [],
       memoryBackends: [],
       cacheBackends: [],
@@ -137,5 +139,42 @@ describe('resolveAgentConfig', () => {
     const tools = capturedTools[0] ?? [];
     expect(tools).not.toContain('builtin_todo');
     expect(tools).toContain('builtin_datetime');
+  });
+
+  it('声明式 guardrail 阻断工具调用（resolve 装配进循环）', async () => {
+    const config = baseConfig();
+    config.guardrails = [{ id: 'deny-todo', denyTools: ['builtin.todo'] }];
+
+    let calls = 0;
+    const provider: LLMProvider = {
+      name: 'mock',
+      async chatCompletion() {
+        calls += 1;
+        if (calls === 1) {
+          return {
+            message: {
+              role: 'assistant',
+              content: '',
+              toolCalls: [
+                {
+                  id: 'call_1',
+                  type: 'function',
+                  function: { name: 'builtin_todo', arguments: '{}' },
+                },
+              ],
+            },
+          };
+        }
+        return { message: { role: 'assistant', content: 'done' } };
+      },
+    };
+
+    const resolved = await resolveAgentConfig(config, { providerFactory: () => provider });
+    const result = await resolved.agent.run('hi');
+    await resolved.dispose();
+
+    const toolMsg = result.messages.find((m) => m.role === 'tool');
+    expect(toolMsg?.content).toContain('Blocked:');
+    expect(result.finalMessage.content).toBe('done');
   });
 });

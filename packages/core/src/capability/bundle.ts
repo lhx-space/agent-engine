@@ -8,6 +8,7 @@ import type { MemoryBackend } from '../memory/memory-backend';
 import type { Reranker } from '../retrieval/reranker';
 import type { Retriever } from '../retrieval/retriever';
 import type { VectorStore } from '../retrieval/vector-store';
+import type { GuardrailRule } from '../rules/types';
 import type { Skill } from '../skills/types';
 import type { Tool } from '../tools/types';
 import type { CapabilityBundle } from './types';
@@ -18,6 +19,7 @@ export interface MergedBundles {
   skills: Skill[];
   hooks: Hook[];
   rules: Rule[];
+  guardrails: GuardrailRule[];
   promptFragments: string[];
   memoryBackends: MemoryBackend[];
   cacheBackends: CacheBackend[];
@@ -41,6 +43,7 @@ export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
   const skills: Skill[] = [];
   const hooks: Hook[] = [];
   const rules: Rule[] = [];
+  const guardrails: GuardrailRule[] = [];
   const promptFragments: string[] = [];
   const memoryBackends: MemoryBackend[] = [];
   const cacheBackends: CacheBackend[] = [];
@@ -57,6 +60,7 @@ export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
     skills.push(...bundle.skills);
     hooks.push(...bundle.hooks);
     rules.push(...bundle.rules);
+    guardrails.push(...bundle.guardrails);
     promptFragments.push(...bundle.promptFragments);
     memoryBackends.push(...bundle.memoryBackends);
     cacheBackends.push(...bundle.cacheBackends);
@@ -74,6 +78,7 @@ export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
     skills,
     hooks,
     rules,
+    guardrails,
     promptFragments,
     memoryBackends,
     cacheBackends,

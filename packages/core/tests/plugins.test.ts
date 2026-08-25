@@ -26,6 +26,11 @@ describe('PluginManager', () => {
           content: '规则内容',
           tags: [],
         });
+        ctx.registerGuardrail({
+          id: 'g1',
+          on: 'beforeToolCall',
+          validate: async () => ({ allowed: true }),
+        });
         ctx.provideSystemPrompt('插件提示片段');
       },
     };
@@ -40,6 +45,7 @@ describe('PluginManager', () => {
         {
           tools: a.tools.map((t) => t.name),
           rules: a.rules.map((r) => r.id),
+          guardrails: a.guardrails.map((g) => g.id),
           promptFragments: a.promptFragments,
         },
         null,
@@ -49,6 +55,7 @@ describe('PluginManager', () => {
 
     expect(a.tools).toHaveLength(1);
     expect(a.rules).toHaveLength(1);
+    expect(a.guardrails.map((g) => g.id)).toEqual(['g1']);
     expect(a.promptFragments).toEqual(['插件提示片段']);
   });
 });

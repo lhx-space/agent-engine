@@ -1,0 +1,9 @@
+- [x] `config/src/schema/index.ts`：`GuardrailRuleConfigSchema` / `GuardrailConfigSchema` + 顶层 `guardrails` 字段
+- [x] `core/src/rules/declarative.ts`：`createDeclarativeGuardrail` + `compileGuardrails`（deny → allow → pattern）
+- [x] `core/src/rules/index.ts` + `core/src/index.ts`：导出 `compileGuardrails` / `GuardrailRule`
+- [x] `plugins/types.ts` + `manager.ts`：`registerGuardrail` + assembly.guardrails
+- [x] `capability/{types,bundle}.ts`：`guardrails: GuardrailRule[]` 汇聚
+- [x] `agent/assemble.ts`：构建 `RuleRegistry`（预置 + 插件 + 声明式），注入 `AgentLoop`；`AssembleAgentLoopOptions` 增 `guardrailConfig`
+- [x] `resolve/resolve.ts`：把 `config.guardrails` 传给装配层
+- [x] 测试：config schema / compileGuardrails 语义 / plugin registerGuardrail / resolve 装配阻断
+- [x] 全量校验：`pnpm build` / `typecheck` / `test` / web build / `lint` / `spell` / `format:check` / `lint:md` / `openspec validate --strict`

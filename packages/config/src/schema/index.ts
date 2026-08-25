@@ -262,6 +262,27 @@ export type SecurityConfig = z.infer<typeof SecurityConfigSchema>;
 /** 完整默认安全配置（security 未声明或需兜底时使用）。 */
 export const defaultSecurityConfig = SecurityConfigSchema.parse({});
 
+// ============ guardrails ============
+
+/**
+ * 声明式 guardrail 规则（安全拦截，独立于上下文规则 `rules`）：
+ * - `denyTools` 黑名单：命中工具语义名即阻断；
+ * - `allowTools` 白名单：非空时仅允许名单内工具；
+ * - `denyPatterns` 正则黑名单：命中工具入参（beforeToolCall）或结果（afterToolCall）即阻断。
+ * 判定优先级：deny → allow → pattern；缺省全部空 = 放行。
+ */
+export const GuardrailRuleConfigSchema = z.object({
+  id: z.string(),
+  on: z.enum(['beforeToolCall', 'afterToolCall']).default('beforeToolCall'),
+  allowTools: z.array(z.string()).default([]),
+  denyTools: z.array(z.string()).default([]),
+  denyPatterns: z.array(z.string()).default([]),
+});
+export type GuardrailRuleConfig = z.infer<typeof GuardrailRuleConfigSchema>;
+
+export const GuardrailConfigSchema = z.array(GuardrailRuleConfigSchema).default([]);
+export type GuardrailConfig = z.infer<typeof GuardrailConfigSchema>;
+
 // ============ AgentConfig ============
 
 export const AgentConfigSchema = z.object({
@@ -279,6 +300,7 @@ export const AgentConfigSchema = z.object({
   embedding: EmbeddingConfigSchema.optional(),
   hooks: z.array(HookConfigSchema).default([]),
   plugins: z.array(z.string()).default([]),
+  guardrails: GuardrailConfigSchema,
   orchestration: OrchestrationSchema.optional(),
   execution: ExecutionConfigSchema.optional(),
   security: SecurityConfigSchema.default(defaultSecurityConfig),

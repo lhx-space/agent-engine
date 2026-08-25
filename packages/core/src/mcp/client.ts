@@ -89,6 +89,7 @@ export async function connectMcpServers(
     skills: [],
     hooks: [],
     rules: [],
+    guardrails: [],
     promptFragments: [],
     memoryBackends: [],
     cacheBackends: [],
