@@ -1,5 +1,6 @@
 import type { Rule } from '@agent-engine/config';
 import { buildSystemPrompt } from '../context/build-system-prompt';
+import type { EventBus } from '../events/event-bus';
 import type { HookPipeline } from '../hooks/pipeline';
 import {
   AbortError,
@@ -22,6 +23,7 @@ import type {
   AgentRunEvent,
   AgentRunOptions,
   SystemPromptInput,
+  ToolApproval,
 } from './types';
 
 /** 指数退避睡眠（毫秒）。 */
@@ -45,6 +47,7 @@ export class AgentLoop {
   private readonly ruleLoader: CapabilityLoader<Rule> | undefined;
   private readonly skillLoader: CapabilityLoader<Skill> | undefined;
   private readonly memory: ConversationMemory | undefined;
+  private readonly eventBus: EventBus | undefined;
   private sessionStarted = false;
   private sessionEnded = false;
 
@@ -70,6 +73,7 @@ export class AgentLoop {
         ? new CapabilityLoader<Skill>('skill', options.skills)
         : undefined;
     this.memory = options.memory;
+    this.eventBus = options.eventBus;
   }
 
   async run(userInput: string, options?: AgentRunOptions): Promise<AgentLoopResult> {
@@ -77,9 +81,16 @@ export class AgentLoop {
     const signal = options?.signal;
     // 转发 hook trace 到事件流（可观测：哪一步做了什么、是否改写、耗时）。
     const offTrace = this.hooks?.onTrace((trace) => emit?.({ type: 'hook', trace }));
+    // 转发事件总线 custom 事件到事件流（用户/插件自定义事件）。
+    const offCustom = this.eventBus?.on((event) => {
+      if (event.type === 'custom') {
+        emit?.({ type: 'custom', name: event.name, data: event.data });
+      }
+    });
     // 入口即检查取消信号。
     if (signal?.aborted) {
       offTrace?.();
+      offCustom?.();
       throw new AbortError();
     }
 
@@ -184,7 +195,9 @@ export class AgentLoop {
         }
 
         if (executable.length > 0) {
-          messages.push(...(await this.executeToolCalls(executable, emit)));
+          messages.push(
+            ...(await this.executeToolCalls(executable, emit, options?.approveToolCall)),
+          );
           toolCallsCount += executable.length;
         }
         for (const toolCall of skipped) {
@@ -237,6 +250,7 @@ export class AgentLoop {
       throw err;
     } finally {
       offTrace?.();
+      offCustom?.();
       // 清理本轮注册的 skill 工具：覆盖过同名工具则还原，否则移除。
       for (const { name, prior } of registeredSkillTools) {
         if (prior) {
@@ -270,6 +284,7 @@ export class AgentLoop {
   private async executeToolCalls(
     toolCalls: ToolCall[],
     emit: ((event: AgentRunEvent) => void) | undefined,
+    approveToolCall?: (name: string, args: string) => Promise<ToolApproval>,
   ): Promise<ChatMessage[]> {
     // Phase 1：顺序做名字反查 / 入参规范化 / beforeToolCall / guardrail 校验，收集执行计划。
     const plans: {
@@ -297,6 +312,14 @@ export class AgentLoop {
           blocked = true;
           blockedReason = verdict.reason;
           break;
+        }
+      }
+      // Human-in-the-loop：guardrail 放行后、执行前，await 人类审批；拒绝则阻断并回填原因。
+      if (!blocked && approveToolCall) {
+        const decision = await approveToolCall(name, args);
+        if (!decision.approved) {
+          blocked = true;
+          blockedReason = decision.reason ?? 'Rejected by human';
         }
       }
       plans.push({ toolCall, name, args, blocked, blockedReason });

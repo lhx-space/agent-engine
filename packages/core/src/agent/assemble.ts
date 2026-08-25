@@ -172,6 +172,7 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     memory: options.memory,
     maxSteps: options.maxSteps,
     execution: options.execution,
+    eventBus,
   });
 
   // 6. 可插拔存储后端：按名解析（内置 in-memory + 插件注册），随 ResolvedAgent 暴露供上层/hooks 消费。

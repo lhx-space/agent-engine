@@ -1,0 +1,5 @@
+- [x] `agent/types.ts`：`AgentRunEvent.custom` 变体 + `ToolApproval` + `AgentRunOptions.approveToolCall` + `AgentLoopOptions.eventBus`
+- [x] `agent/loop.ts`：run 期间订阅总线转发 custom；`executeToolCalls` 加 `approveToolCall` 审批门
+- [x] `agent/assemble.ts`：把 `eventBus` 传给 `AgentLoop`
+- [x] 测试：`agent-interaction.test.ts`（custom 转发 + Human-in-the-loop 拒绝/放行）
+- [x] 全量校验：`pnpm build` / `typecheck` / `test` / web build / `lint` / `spell` / `format:check` / `lint:md` / `openspec validate --strict`

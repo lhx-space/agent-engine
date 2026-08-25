@@ -1,4 +1,5 @@
 import type { Rule, SystemPrompt } from '@agent-engine/config';
+import type { EventBus } from '../events/event-bus';
 import type { HookPipeline } from '../hooks/pipeline';
 import type { HookTrace } from '../hooks/types';
 import type { ChatMessage, DeltaKind, LLMProvider } from '../llm/types';
@@ -49,6 +50,8 @@ export interface AgentLoopOptions {
   memory?: ConversationMemory;
   /** 可复用能力包（可选），按 query 检索命中后注入指令 + 注册捆绑工具。 */
   skills?: Skill[];
+  /** 事件总线（可选）：run 期间把总线 `custom` 事件转发到 `onEvent`。 */
+  eventBus?: EventBus;
 }
 
 export interface AgentLoopResult {
@@ -62,7 +65,7 @@ export interface AgentLoopResult {
   finishReason?: string;
 }
 
-/** 运行时事件（可观测）：step / 文本增量 / 工具调用 / 工具结果 / hook trace / 结束 / 错误。 */
+/** 运行时事件（可观测）：step / 文本增量 / 工具调用 / 工具结果 / hook trace / 结束 / 错误 / 自定义。 */
 export type AgentRunEvent =
   | { type: 'step_start'; step: number }
   | { type: 'llm_delta'; delta: string; kind?: DeltaKind }
@@ -70,7 +73,16 @@ export type AgentRunEvent =
   | { type: 'tool_result'; name: string; result: string }
   | { type: 'hook'; trace: HookTrace }
   | { type: 'done'; finalMessage: ChatMessage; steps: number }
-  | { type: 'error'; error: string };
+  | { type: 'error'; error: string }
+  /** 自定义事件（经事件总线 `custom` 转发或用户直接 emit）。 */
+  | { type: 'custom'; name: string; data?: unknown };
+
+/** Human-in-the-loop 工具审批决定。 */
+export interface ToolApproval {
+  approved: boolean;
+  /** 拒绝原因（approved=false 时回填给模型）。 */
+  reason?: string;
+}
 
 /** `run` 的可选参数。 */
 export interface AgentRunOptions {
@@ -78,4 +90,6 @@ export interface AgentRunOptions {
   onEvent?: (event: AgentRunEvent) => void;
   /** 取消信号；中止时抛出 `AbortError`，不回写会话记忆。 */
   signal?: AbortSignal;
+  /** Human-in-the-loop：工具执行前 await 审批；`false` 阻断（结果回填「Rejected by human」）。 */
+  approveToolCall?: (name: string, args: string) => Promise<ToolApproval>;
 }
