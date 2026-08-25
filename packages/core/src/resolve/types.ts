@@ -1,6 +1,7 @@
 import type { AgentLoop } from '../agent/loop';
 import type { CacheBackend } from '../cache/cache-backend';
 import type { EmbeddingProvider } from '../embedding/embedding';
+import type { EventBus } from '../events/event-bus';
 import type { ProviderFactory } from '../llm/provider';
 import type { MemoryBackend } from '../memory/memory-backend';
 import type { Plugin } from '../plugins/types';
@@ -31,5 +32,7 @@ export interface ResolvedAgent {
   vectorStore: VectorStore;
   /** 语义召回 embedding 提供商（需真实向量模型，插件注册；缺省 undefined）。 */
   embeddingProvider?: EmbeddingProvider;
+  /** 事件总线（模块业务事件发布/订阅，含 `custom` 逃生舱）。 */
+  eventBus: EventBus;
   dispose(): Promise<void>;
 }

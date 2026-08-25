@@ -5,6 +5,7 @@ import { mergeBundles } from '../capability/bundle';
 import type { ResolvedMcpServer } from '../capability-source/types';
 import type { CapabilityBundle } from '../capability/types';
 import type { EmbeddingProvider } from '../embedding/embedding';
+import { EventBus } from '../events/event-bus';
 import type { HookPipeline } from '../hooks/pipeline';
 import type { LLMProvider } from '../llm/types';
 import { connectMcpServers } from '../mcp/client';
@@ -52,6 +53,8 @@ export interface AssembleAgentLoopOptions {
   cacheBackend?: string;
   /** 预置 embedding provider（按 `embedding` 配置解析；插件注册的优先）。 */
   embeddingProvider?: EmbeddingProvider;
+  /** 预置事件总线（缺省新建；测试可注入以断言事件）。 */
+  eventBus?: EventBus;
 }
 
 /** 把 prompt 片段追加到 system prompt（string 追加文本 / 模板对象追加到 template；函数式跳过）。 */
@@ -90,9 +93,14 @@ function resolveBackendByName<T extends { readonly name: string }>(
  * 注册 tools / hooks、合并 skills·rules、注入 prompt 片段 → 构造 AgentLoop + 聚合 dispose。
  */
 export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Promise<ResolvedAgent> {
-  // 1. plugin 能力束
+  const eventBus = options.eventBus ?? new EventBus();
+
+  // 1. plugin 能力束（逐个安装并发 plugin.installed 事件）。
   const manager = new PluginManager();
-  await manager.installAll(options.plugins ?? []);
+  for (const plugin of options.plugins ?? []) {
+    await manager.install(plugin);
+    eventBus.emit({ type: 'plugin.installed', name: plugin.name });
+  }
   const bundles: CapabilityBundle[] = [manager.getAssembly()];
 
   // 2. 内置工具直接写 registry（无 dispose）。
@@ -100,12 +108,19 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     registerBuiltinTools(options.registry, options.security);
   }
 
-  // 3. MCP 能力束（tools + dispose 关闭连接）；单个失败不阻断整体（错误隔离，warn 报告）。
+  // 3. MCP 能力束（tools + dispose 关闭连接）；单个失败不阻断整体（错误隔离 + 事件报告）。
   if (options.mcp && options.mcp.length > 0) {
     const { bundle, errors } = await connectMcpServers(options.mcp);
     bundles.push(bundle);
+    const failedNames = new Set(errors.map(({ name }) => name));
+    for (const server of options.mcp) {
+      if (!failedNames.has(server.name)) {
+        eventBus.emit({ type: 'mcp.connected', name: server.name });
+      }
+    }
     for (const { name, error } of errors) {
       console.warn(`[assembleAgentLoop] MCP server "${name}" 连接失败，已跳过：${error.message}`);
+      eventBus.emit({ type: 'mcp.failed', name, error: error.message });
     }
   }
 
@@ -124,6 +139,11 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     options.registry.unregister(name);
   }
 
+  // 4.6 发 tool.registered 事件（最终仍注册进 registry 的工具）。
+  for (const tool of options.registry.list()) {
+    eventBus.emit({ type: 'tool.registered', name: tool.name });
+  }
+
   // 5. todo 规划引导：仅在 todo 最终仍注册时注入（被 `tools.disabled` 禁用则不再引导）。
   const derivedFragments: string[] = [];
   if (options.registry.has('builtin.todo')) {
@@ -132,6 +152,12 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
 
   const skills = [...(options.skills ?? []), ...merged.skills];
   const rules = [...(options.rules ?? []), ...merged.rules];
+  for (const rule of rules) {
+    eventBus.emit({ type: 'rule.loaded', id: rule.id });
+  }
+  for (const skill of skills) {
+    eventBus.emit({ type: 'skill.loaded', id: skill.id });
+  }
   const promptText = [...merged.promptFragments, ...derivedFragments].join('\n\n');
   const systemPrompt = injectPromptText(options.systemPrompt, promptText);
 
@@ -174,5 +200,13 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     await merged.dispose();
   };
 
-  return { agent, memoryBackend, cacheBackend, vectorStore, embeddingProvider, dispose };
+  return {
+    agent,
+    memoryBackend,
+    cacheBackend,
+    vectorStore,
+    embeddingProvider,
+    eventBus,
+    dispose,
+  };
 }

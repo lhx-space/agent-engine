@@ -78,6 +78,16 @@
         "default": "./dist/embedding.cjs"
       }
     },
+    "./events": {
+      "import": {
+        "types": "./dist/events.d.mts",
+        "default": "./dist/events.mjs"
+      },
+      "require": {
+        "types": "./dist/events.d.cts",
+        "default": "./dist/events.cjs"
+      }
+    },
     "./hooks": {
       "import": {
         "types": "./dist/hooks.d.mts",

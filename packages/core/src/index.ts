@@ -55,6 +55,8 @@ export { InMemoryVectorStore } from './retrieval/vector-store';
 export type { VectorStore, VectorRecord, VectorMatch } from './retrieval/vector-store';
 export type { EmbeddingProvider } from './embedding/embedding';
 export { createEmbeddingProvider } from './embedding/openai';
+export { EventBus } from './events';
+export type { AgentEngineEvent, EventListener } from './events';
 export { loadSkillFromPath } from './skills';
 export { PluginManager } from './plugins';
 export { AgentLoop } from './agent/loop';

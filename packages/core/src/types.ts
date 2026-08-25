@@ -51,6 +51,8 @@ export type { CapabilityRecord, CapabilityRecordHit } from './retrieval/loader';
 export type { VectorStore, VectorRecord, VectorMatch } from './retrieval/vector-store';
 // embedding
 export type { EmbeddingProvider } from './embedding/embedding';
+// events
+export type { AgentEngineEvent, EventListener } from './events/types';
 // skills
 export type { Skill } from './skills/types';
 // capability

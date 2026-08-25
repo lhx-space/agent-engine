@@ -80,6 +80,7 @@ export async function resolveAgentConfig(
     cacheBackend: resolved.cacheBackend,
     vectorStore: resolved.vectorStore,
     embeddingProvider: resolved.embeddingProvider,
+    eventBus: resolved.eventBus,
     dispose: async () => {
       await disposeAgent();
       await disposeSkills();

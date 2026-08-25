@@ -41,11 +41,36 @@
 
 据此分三档：
 
-| 状态                                   | 能力                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 说明                                                                                                                   |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| ✅ 已达标（有接口 + 有默认 + 可注入）  | LLM（`LLMProvider` + openai/anthropic + `providerFactory`）、搜索（`SearchProvider` + searxng/ddg/tavily/serper + fallback）、沙箱（`SandboxBackend` + docker/nsjail/auto）、MCP（`connectMcpServer`）、Skills（path/npm/git）、**长期记忆 `MemoryBackend` + `InMemoryMemoryBackend`**（`memory.longTerm.backend` 按名解析）、**缓存 `CacheBackend` + `InMemoryCacheBackend`**（`cache.backend` 按名解析）、**向量库 `VectorStore` + `InMemoryVectorStore`**（余弦默认）、**`EmbeddingProvider`**（接口，无默认需真实模型） | 用户按接口接入自己的实现即可；Memory/Cache/VectorStore/Embedding 的消费逻辑（三层记忆 / LLM·检索缓存 / 语义召回）属 M3 |
-| ⚠️ 接口尚未定义（文档/配置却声称存在） | **`events/` 事件总线**（目录未建）                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | M3 剩余：core 先补接口 + 默认实现                                                                                      |
-| ⏳ 未落地                              | 多 Agent 编排（`orchestration` 仅 `single`，`spawn` 未实现）、FunctionSandbox（WASM/WASI）                                                                                                                                                                                                                                                                                                                                                                                                                                  | M3 剩余                                                                                                                |
+| 状态                                  | 能力                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 说明                                                                                                                   |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| ✅ 已达标（有接口 + 有默认 + 可注入） | LLM（`LLMProvider` + openai/anthropic + `providerFactory`）、搜索（`SearchProvider` + searxng/ddg/tavily/serper + fallback）、沙箱（`SandboxBackend` + docker/nsjail/auto）、MCP（`connectMcpServer`）、Skills（path/npm/git）、**长期记忆 `MemoryBackend` + `InMemoryMemoryBackend`**（`memory.longTerm.backend` 按名解析）、**缓存 `CacheBackend` + `InMemoryCacheBackend`**（`cache.backend` 按名解析）、**向量库 `VectorStore` + `InMemoryVectorStore`**（余弦默认）、**`EmbeddingProvider`**（接口，无默认需真实模型） | 用户按接口接入自己的实现即可；Memory/Cache/VectorStore/Embedding 的消费逻辑（三层记忆 / LLM·检索缓存 / 语义召回）属 M3 |
+| ⏳ 进行中                             | **`events/` 事件总线**（`EventBus` + `AgentEngineEvent`，含 `custom` 逃生舱）                                                                                                                                                                                                                                                                                                                                                                                                                                               | 批 A，见 §2.2                                                                                                          |
+| ⏳ 未落地                             | 多 Agent 编排（`orchestration` 仅 `single`，`spawn` 未实现）、FunctionSandbox（WASM/WASI）、其余待扩展项                                                                                                                                                                                                                                                                                                                                                                                                                    | 见 §2.2 清单                                                                                                           |
+
+### 2.2 动态扩展面：四个扩展出口 + 待扩展清单
+
+内核对外扩展的出口只有四个，任何「用户可动态扩展」的能力/后端都必须落到其中之一：
+
+1. **`PluginContext`（注入点）**：registerTool / registerSkill / registerHook / registerRule / provideSystemPrompt / registerMemoryBackend / registerCacheBackend / registerVectorStore / registerEmbeddingProvider。
+2. **`CapabilityBundle`（能力汇聚）**：tools / skills / hooks / rules / promptFragments / 各后端，经 `mergeBundles` 单一汇聚。
+3. **`ResolveDeps`（装配依赖）**：providerFactory / pluginFactories / sandbox 等。
+4. **`ResolvedAgent`（运行时产物）**：agent / memoryBackend / cacheBackend / vectorStore / embeddingProvider / eventBus / dispose。
+
+**已可插拔**：LLM / 搜索 / 沙箱 / MCP / Skills / Tools / Plugin / MemoryBackend / CacheBackend / VectorStore / EmbeddingProvider / events 总线（进行中）。
+
+**待扩展清单（按价值优先级）**：
+
+| 优先级 | 缺口                    | 应暴露成                                                              | 批次 |
+| ------ | ----------------------- | --------------------------------------------------------------------- | ---- |
+| P0     | Human-in-the-loop       | 循环级「挂起 → 人类决策」审批原语（`beforeToolCall` 可暂停等确认）    | A    |
+| P0     | 流式事件可扩展          | `AgentRunEvent` 加 `{ type:'custom'; name; data? }` + emit 通道       | A    |
+| P1     | Token 预算 / 上下文裁剪 | `TokenCounter` + `ContextCompactor` 接口（三层记忆①②地基）            | B    |
+| P1     | 检索策略                | `Retriever` / `Reranker` 接口（BM25 默认；RRF / 向量融合 / 重排可插） | B    |
+| P2     | Guardrail 配置轴        | 声明式安全拦截（危险操作白/黑名单，配置可热更）                       | C    |
+| P2     | SessionStore 可插拔     | 接口 + in-memory 默认 + redis 等可接（server 层）                     | C    |
+| P3     | 重试策略 / 结果归一化   | 自定义重试熔断 / 工具错误降级                                         | 缓   |
+
+**分批**：A（可观测 + 控制流：events 总线 + 流式 custom + Human-in-the-loop）→ B（上下文接口层：TokenCounter / Compactor / Retriever / Reranker）→ C（会话 / 安全：SessionStore / guardrail 配置）。
 
 ---
 
@@ -357,7 +382,7 @@ Task Planner 不是内核的一等公民，而是「工具 + 编排」的自然�
 hooks 是内核执行流程的**有限生命周期锚点**，不会随模块膨胀：
 
 - **模块复用而非新增**：guardrail（走 beforeToolCall）、skill（触发走 beforeLLM）、memory（写入走 afterLLM / afterToolCall）、plugin（日志走任意锚点）都**复用**现有钩子点，不各自发明「rule hook」「skill hook」。
-- **模块特定事件走 events 总线**：需要「规则命中」「plugin 已装」「mcp 已连」等业务事件时，用 `events/` 事件总线（发布/订阅，见目录结构）而非扩充 hooks；`events/` 目录尚未建立（M3）。加载了哪些能力（plugins/rules/skills/mcp）的可观测同样走 events 总线 + pino 结构化日志，**不新增 per-module loading hook**。
+- **模块特定事件走 events 总线**：需要「规则命中」「plugin 已装」「mcp 已连」等业务事件时，用 `events/` 事件总线（`EventBus` + `AgentEngineEvent`，发布/订阅，含 `custom` 逃生舱）而非扩充 hooks；加载了哪些能力（plugins/rules/skills/mcp）的可观测同样走 events 总线 + pino 结构化日志，**不新增 per-module loading hook**。
 - **分层钩子**：装配级（onInit）/ 会话级（onSessionStart/End）/ 循环级（beforeLLM…onStepEnd）/ 错误级（onError）；多 Agent 编排（M3）会有独立的**编排级钩子**（如 onSubagentStart/End），不与单 Agent 循环钩子混用。
 - **职责边界**：hooks 负责「观察 + 改写（增强）」，**不做阻断**；阻断是 guardrail 的职责。
 

@@ -1,0 +1,7 @@
+- [x] `core/src/events/{types.ts,event-bus.ts,index.ts}`：`EventBus` + `AgentEngineEvent`（含 `custom` 逃生舱）
+- [x] `agent/assemble.ts`：建 bus + 装配期发事件（plugin.installed / mcp.connected / mcp.failed / tool.registered / rule.loaded / skill.loaded）
+- [x] `resolve/types.ts`：`ResolvedAgent` 增 `eventBus`
+- [x] `core/src/{index,types}.ts` + `tsdown.config.ts` + `package.json`：导出 + `./events` 子路径
+- [x] 测试：`events.test.ts`（on/emit + 取消订阅 + 装配期事件 + custom）
+- [x] AGENTS.md：§2.1 移出 ⚠️ + §6.4 标注 events 总线已落地
+- [x] 全量校验：`pnpm build` / `typecheck` / `test` / web build / `lint` / `spell` / `format:check` / `lint:md` / `openspec validate --strict`
