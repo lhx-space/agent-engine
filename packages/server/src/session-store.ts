@@ -14,14 +14,25 @@ export interface SessionStoreOptions {
   maxSessions?: number;
 }
 
+/**
+ * 会话存储后端接口（server 层，可插拔）：`sessionId → 已装配 Agent` 的保存 / 复用 / 淘汰。
+ * 方法均为异步，承接 in-memory / redis 等实现；`delete` / `clear` 负责结束会话并释放资源。
+ */
+export interface SessionStoreBackend {
+  get(id: string): Promise<StoredSession | undefined>;
+  set(id: string, session: StoredSession): Promise<void>;
+  delete(id: string): Promise<void>;
+  clear(): Promise<void>;
+}
+
 const DEFAULT_TTL_MS = 30 * 60 * 1000;
 const DEFAULT_MAX_SESSIONS = 1000;
 
 /**
  * 会话存储（in-memory）：`sessionId → 已装配 Agent` 复用，跨请求累积 memory。
- * 预留分布式接入点——替换本类为 redis 实现即可（接口保持一致）。
+ * 是 `SessionStoreBackend` 的默认实现；分布式后端（redis 等）实现同接口即可替换。
  */
-export class SessionStore {
+export class InMemorySessionStore implements SessionStoreBackend {
   private readonly sessions = new Map<string, StoredSession>();
   private readonly ttlMs: number;
   private readonly maxSessions: number;
@@ -36,18 +47,18 @@ export class SessionStore {
   }
 
   /** 命中且未过期返回会话（刷新 lastActive）；过期则异步淘汰并返回 undefined。 */
-  get(id: string): StoredSession | undefined {
+  async get(id: string): Promise<StoredSession | undefined> {
     const session = this.sessions.get(id);
     if (!session) return undefined;
     if (Date.now() - session.lastActive > this.ttlMs) {
-      void this.delete(id);
+      await this.delete(id);
       return undefined;
     }
     session.lastActive = Date.now();
     return session;
   }
 
-  set(id: string, session: StoredSession): void {
+  async set(id: string, session: StoredSession): Promise<void> {
     this.evictExpired();
     if (this.sessions.size >= this.maxSessions && !this.sessions.has(id)) {
       this.evictOldest();

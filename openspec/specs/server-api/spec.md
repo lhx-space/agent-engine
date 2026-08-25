@@ -77,7 +77,7 @@ server SHALL 使用 pino 记录每次运行的关键事件（启动、step、too
 
 ### Requirement: 会话复用与淘汰
 
-系统 SHALL 提供 `SessionStore`：以 `sessionId` 保存已装配 Agent（含 `dispose` / `lastActive`），支持按空闲 TTL（默认 30 分钟）与数量上限（默认 1000，LRU）淘汰；淘汰 SHALL 触发 `endSession` 并 `dispose`。系统 SHALL 提供 `DELETE /api/agent/sessions/:id` 显式结束会话（触发 `endSession` + `dispose`）。
+系统 SHALL 提供 `SessionStoreBackend` 接口（`get(id)` / `set(id, session)` / `delete(id)` / `clear()`，均为异步），与 `InMemorySessionStore` 默认实现（以 `sessionId` 保存已装配 Agent，含 `dispose` / `lastActive`，空闲 TTL 默认 30 分钟、数量上限默认 1000 LRU 淘汰；淘汰触发 `endSession` + `dispose`）。`createApp` 的 `options.sessionStore` SHALL 接受任意 `SessionStoreBackend` 实现（缺省 `new InMemorySessionStore()`），使会话后端可插拔。系统 SHALL 提供 `DELETE /api/agent/sessions/:id` 显式结束会话（触发 `endSession` + `dispose`）。
 
 #### Scenario: TTL 淘汰
 
@@ -93,6 +93,11 @@ server SHALL 使用 pino 记录每次运行的关键事件（启动、step、too
 
 - **WHEN** 传入不存在的 sessionId
 - **THEN** 按无 sessionId 处理：新建 session 并返回新 sessionId
+
+#### Scenario: 注入自定义后端
+
+- **WHEN** `createApp({ sessionStore: 自定义 SessionStoreBackend 实现 })`
+- **THEN** 会话的保存/复用/删除走该后端（缺省则走 in-memory）
 
 ### Requirement: 内置 plugin 工厂注入
 

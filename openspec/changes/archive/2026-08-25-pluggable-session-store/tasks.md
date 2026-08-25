@@ -1,0 +1,6 @@
+- [x] `server/src/session-store.ts`：`SessionStoreBackend` 接口 + `InMemorySessionStore`（异步 get/set，保留 TTL/LRU + 生命周期）
+- [x] `server/src/app.ts`：`getOrCreateSession` await `get`/`set`，`createApp` 缺省 `new InMemorySessionStore()`
+- [x] `server/src/types.ts`：`ServerOptions.sessionStore?: SessionStoreBackend`
+- [x] `server/src/index.ts`：导出 `InMemorySessionStore` / `SessionStoreBackend`，移除旧名 `SessionStore`
+- [x] 测试：session 复用/淘汰/DELETE 通过 + 注入自定义后端断言
+- [x] 全量校验：`pnpm build` / `typecheck` / `test` / web build / `lint` / `spell` / `format:check` / `lint:md` / `openspec validate --strict`

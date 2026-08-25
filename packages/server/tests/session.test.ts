@@ -2,6 +2,7 @@ import { describe, expect, it } from '@rstest/core';
 import { AgentConfigSchema } from '@agent-engine/config';
 import type { ChatMessage, LLMProvider, ProviderFactory } from '@agent-engine/core';
 import { createApp } from '../src/app';
+import type { SessionStoreBackend } from '../src/session-store';
 
 function makeConfig() {
   return AgentConfigSchema.parse({
@@ -101,6 +102,44 @@ describe('server session', () => {
     const del = await app.request(`/api/agent/sessions/${body.sessionId}`, { method: 'DELETE' });
     expect(del.status).toBe(200);
     expect(await del.json()).toEqual({ ok: true });
+  });
+
+  it('注入自定义 SessionStoreBackend 生效', async () => {
+    const ops: string[] = [];
+    const custom: SessionStoreBackend = {
+      async get(id) {
+        ops.push(`get:${id}`);
+        return undefined;
+      },
+      async set(id) {
+        ops.push(`set:${id}`);
+      },
+      async delete(id) {
+        ops.push(`delete:${id}`);
+      },
+      async clear() {
+        ops.push('clear');
+      },
+    };
+
+    const app = createApp({
+      providerFactory: () => ({
+        name: 'mock',
+        async chatCompletion() {
+          return { message: { role: 'assistant', content: 'ok' } };
+        },
+      }),
+      sessionStore: custom,
+    });
+
+    const res = await app.request('/api/agent/run', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ config: makeConfig(), input: 'hi', sessionId: 'custom-1' }),
+    });
+    expect(res.status).toBe(200);
+    expect(ops.some((op) => op.startsWith('get:'))).toBe(true);
+    expect(ops.some((op) => op.startsWith('set:'))).toBe(true);
   });
 
   it('stream 响应带 x-session-id 头', async () => {

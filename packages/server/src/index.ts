@@ -6,6 +6,6 @@ export { createApp } from './app';
 export { serve } from './serve';
 export { envProviderFactory, resolveEnvApiKey } from './provider';
 export { logger } from './logger';
-export { SessionStore } from './session-store';
-export type { StoredSession, SessionStoreOptions } from './session-store';
+export { InMemorySessionStore } from './session-store';
+export type { SessionStoreBackend, StoredSession, SessionStoreOptions } from './session-store';
 export type { ServerOptions } from './types';

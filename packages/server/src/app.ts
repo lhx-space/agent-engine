@@ -7,7 +7,8 @@ import { Hono } from 'hono';
 import { createBuiltinPluginFactories } from './builtin-plugins';
 import { logger } from './logger';
 import { envProviderFactory } from './provider';
-import { SessionStore } from './session-store';
+import { InMemorySessionStore } from './session-store';
+import type { SessionStoreBackend } from './session-store';
 import type { ServerOptions } from './types';
 
 interface ParsedRequest {
@@ -48,11 +49,11 @@ function parseRunRequest(
 async function getOrCreateSession(
   config: AgentConfig,
   sessionId: string | undefined,
-  store: SessionStore,
+  store: SessionStoreBackend,
   options: ServerOptions,
 ): Promise<{ id: string; agent: AgentLoop }> {
   if (sessionId) {
-    const existing = store.get(sessionId);
+    const existing = await store.get(sessionId);
     if (existing) return { id: sessionId, agent: existing.agent };
   }
 
@@ -64,14 +65,14 @@ async function getOrCreateSession(
     },
     providerFactory: options.providerFactory ?? envProviderFactory,
   });
-  store.set(id, { agent: resolved.agent, dispose: resolved.dispose, lastActive: Date.now() });
+  await store.set(id, { agent: resolved.agent, dispose: resolved.dispose, lastActive: Date.now() });
   return { id, agent: resolved.agent };
 }
 
 /** 创建 HTTP 应用：`GET /health` + `POST /api/agent/run`（非流式）+ `POST /api/agent/run/stream`（NDJSON）+ `DELETE /api/agent/sessions/:id`。 */
 export function createApp(options: ServerOptions = {}): Hono {
   const app = new Hono();
-  const store = options.sessionStore ?? new SessionStore();
+  const store = options.sessionStore ?? new InMemorySessionStore();
 
   app.get('/health', (c) => c.json({ ok: true }));
 
