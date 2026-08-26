@@ -70,29 +70,29 @@
 
 ## 3. 技术栈选型
 
-| 维度        | 选型                                          | 说明                                                                              |
-| ----------- | --------------------------------------------- | --------------------------------------------------------------------------------- |
-| 语言        | TypeScript 5.x（strict）                      | 全链路类型安全                                                                    |
-| 运行时      | Node.js >= 20 LTS                             | ESM 优先（`"type": "module"`）                                                    |
-| 包管理      | pnpm >= 9 + workspace                         | monorepo                                                                          |
-| 构建        | tsdown + Turborepo                            | tsdown 出 ESM/CJS + d.ts；Turborepo 编排 + 本地缓存（turbo.json）                 |
-| 代码检查    | Rslint（Go 引擎，兼容 ESLint/TS-ESLint 规则） | 快，内置 TypeScript-ESLint 规则                                                   |
-| 格式化      | Prettier                                      | 统一代码风格                                                                      |
-| 拼写检查    | cspell                                        | 术语一致性                                                                        |
-| Markdown    | markdownlint-cli2                             | 与 Prettier 互补（Prettier 排版 / markdownlint 规则）                             |
-| 类型检查    | tsc --noEmit                                  | 全仓类型检查                                                                      |
-| Git hooks   | husky + lint-staged + commitlint              | 提交前自动检查 + 提交信息校验                                                     |
-| 测试        | Rstest                                        | web-infra-dev 生态，API 兼容 Vitest（`vi`→`rs`）                                  |
-| Schema 校验 | Zod                                           | 配置统一校验，衍生 TS 类型                                                        |
-| 配置加载    | `yaml` + `json5` + `jiti`                     | YAML/JSON(带注释)/TS 三种格式                                                     |
-| LLM SDK     | `openai` + `@anthropic-ai/sdk`                | 统一 `Provider` 接口，**默认 DeepSeek**（OpenAI 兼容），Anthropic/ollama 等可插拔 |
-| MCP         | `@modelcontextprotocol/sdk`                   | client 模式接入外部 server                                                        |
-| 日志        | pino                                          | 结构化日志，可接 OpenTelemetry                                                    |
-| CLI         | commander                                     | harness 命令行入口                                                                |
-| 服务        | 内置轻量 HTTP Server                          | 供 Docker 化后对外提供 API                                                        |
-| Web 前端    | React 19 + Rsbuild + 生态库                   | apps/web 一体化平台（React Router/Query/Zustand 等）                              |
-| 文档站点    | Rspress                                       | docs 目录，Rspack 生态文档站                                                      |
-| 容器        | 多阶段 Dockerfile                             | 配置以卷挂载，支持热更新                                                          |
+| 维度        | 选型                                                       | 说明                                                                              |
+| ----------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| 语言        | TypeScript 5.x（strict）                                   | 全链路类型安全                                                                    |
+| 运行时      | Node.js >= 20 LTS                                          | ESM 优先（`"type": "module"`）                                                    |
+| 包管理      | pnpm >= 9 + workspace                                      | monorepo                                                                          |
+| 构建        | tsdown + Turborepo                                         | tsdown 出 ESM/CJS + d.ts；Turborepo 编排 + 本地缓存（turbo.json）                 |
+| 代码检查    | Rslint（Go 引擎，兼容 ESLint/TS-ESLint 规则）              | 快，内置 TypeScript-ESLint 规则                                                   |
+| 格式化      | Prettier                                                   | 统一代码风格                                                                      |
+| 拼写检查    | cspell                                                     | 术语一致性                                                                        |
+| Markdown    | markdownlint-cli2                                          | 与 Prettier 互补（Prettier 排版 / markdownlint 规则）                             |
+| 类型检查    | tsc --noEmit                                               | 全仓类型检查                                                                      |
+| Git hooks   | husky + lint-staged + commitlint                           | 提交前自动检查 + 提交信息校验                                                     |
+| 测试        | Rstest                                                     | web-infra-dev 生态，API 兼容 Vitest（`vi`→`rs`）                                  |
+| Schema 校验 | Zod                                                        | 配置统一校验，衍生 TS 类型                                                        |
+| 配置加载    | `yaml` + `json5` + `jiti`                                  | YAML/JSON(带注释)/TS 三种格式                                                     |
+| LLM SDK     | `openai` + `@anthropic-ai/sdk`                             | 统一 `Provider` 接口，**默认 DeepSeek**（OpenAI 兼容），Anthropic/ollama 等可插拔 |
+| MCP         | `@modelcontextprotocol/sdk`                                | client 模式接入外部 server                                                        |
+| 日志        | 可插拔 `Logger`（默认 console；pino/OTel 经 options 注入） | 日志非内核必备，可观测真相源在 events 总线 + hooks；结构化后端按需接入            |
+| CLI         | commander                                                  | harness 命令行入口                                                                |
+| 服务        | 内置轻量 HTTP Server                                       | 供 Docker 化后对外提供 API                                                        |
+| Web 前端    | React 19 + Rsbuild + 生态库                                | apps/web 一体化平台（React Router/Query/Zustand 等）                              |
+| 文档站点    | Rspress                                                    | docs 目录，Rspack 生态文档站                                                      |
+| 容器        | 多阶段 Dockerfile                                          | 配置以卷挂载，支持热更新                                                          |
 
 > 说明：长期记忆/向量库不锁定具体产品，内核只定义 `MemoryBackend` / `VectorStore` 抽象接口。开发默认 `in-memory`，生产默认 `pgvector`（本地已有 `pgvector/pgvector:pg16` 镜像），`chroma` / `lanceDB` / `meilisearch` 等以插件形式接入。
 >
@@ -117,7 +117,7 @@
 | `zod` / `yaml` / `json5` / `jiti`（配置）            | Plugin 系统、Hook 管线、Rule 引擎 |
 | `pgvector` / `ioredis` / `minio`（后端）             | system-prompt 组装、memory 薄层   |
 | `@mozilla/readability` + `linkedom`（HTML 正文提取） | ——                                |
-| `pino` / OTel（可观测）                              | 配置归一化 resolve                |
+| pino / OTel（可选，经 `Logger` 注入）                | 配置归一化 resolve                |
 | `rtk`（命令输出压缩，沙箱镜像内二进制）              | ——                                |
 | React 生态 / Monaco / React Flow（Web）              | ——                                |
 
@@ -376,7 +376,7 @@ Task Planner 不是内核的一等公民，而是「工具 + 编排」的自然�
 hooks 是内核执行流程的**有限生命周期锚点**，不会随模块膨胀：
 
 - **模块复用而非新增**：guardrail（走 beforeToolCall）、skill（触发走 beforeLLM）、memory（写入走 afterLLM / afterToolCall）、plugin（日志走任意锚点）都**复用**现有钩子点，不各自发明「rule hook」「skill hook」。
-- **模块特定事件走 events 总线**：需要「规则命中」「plugin 已装」「mcp 已连」等业务事件时，用 `events/` 事件总线（`EventBus` + `AgentEngineEvent`，发布/订阅，含 `custom` 逃生舱）而非扩充 hooks；加载了哪些能力（plugins/rules/skills/mcp）的可观测同样走 events 总线 + pino 结构化日志，**不新增 per-module loading hook**。
+- **模块特定事件走 events 总线**：需要「规则命中」「plugin 已装」「mcp 已连」等业务事件时，用 `events/` 事件总线（`EventBus` + `AgentEngineEvent`，发布/订阅，含 `custom` 逃生舱）而非扩充 hooks；加载了哪些能力（plugins/rules/skills/mcp）的可观测同样走 events 总线 + 可插拔 `Logger`（pino 等），**不新增 per-module loading hook**。
 - **分层钩子**：装配级（onInit）/ 会话级（onSessionStart/End）/ 循环级（beforeLLM…onStepEnd）/ 错误级（onError）；多 Agent 编排（M3）会有独立的**编排级钩子**（如 onSubagentStart/End），不与单 Agent 循环钩子混用。
 - **职责边界**：hooks 负责「观察 + 改写（增强）」，**不做阻断**；阻断是 guardrail 的职责。
 
@@ -677,7 +677,7 @@ pnpm --filter @agent-engine/cli run agent run \
 | `redis:7-alpine`                                | 通用 CacheBackend / 会话缓存 / 消息队列 / 分布式锁 |
 | `minio/minio:latest`                            | 对象存储（文件、artifact 持久化）                  |
 | `getmeili/meilisearch:latest`                   | 全文 / 语义检索（可选）                            |
-| `prom/prometheus` + `grafana/grafana`           | 可观测性（pino/OTel → Prometheus → Grafana）       |
+| `prom/prometheus` + `grafana/grafana`           | 可观测性（Logger/OTel → Prometheus → Grafana）     |
 | `nginx` / `caddy:2-alpine`                      | 反向代理网关（webApp + server）                    |
 
 > 其余本地镜像（`infra-*`、`sandbox-*`、`yjs-docs-*`、`nacos`、`envoy`、`kindest` 等）属于其他项目，本仓库不纳入。
@@ -725,8 +725,8 @@ services:
 
 1. **M1 内核骨架**（✅ 已完成）：monorepo 搭建（tsdown 构建）+ `config` 包（Schema + 三格式加载）+ `core` 包（LLM Provider 抽象——**默认接 DeepSeek**、Tool 注册表、单 Agent Loop）。
 2. **M2 配置化能力**（✅ 已完成）：hooks、rules、skills、plugins 系统 + system-prompt 组装 + 会话 memory + 内置通用原语工具（`todo` / `datetime` / `web_search` / `web_fetch`）+ 执行沙箱（`SandboxBackend`：docker / nsjail 双后端，bash 默认禁用，rtk 输出压缩）+ 内置 plugin（`@agent-engine/plugin-files` / `@agent-engine/plugin-bash` / `@agent-engine/plugin-git`）。
-3. **M3 扩展接入**（**进行中**）：✅ ① MCP client（`connectMcpServer`/`connectMcpServers`，stdio transport）；✅ ④ config resolve 层（`resolveAgentConfig`：AgentConfig→AgentLoop 一键装配 + `CapabilityBundle` 统一）；✅ 流式输出（`chatCompletionStream` + NDJSON 端点）；✅ `onInit`/`onSessionStart`/`onSessionEnd` 三个 hook；✅ 会话生命周期（server `SessionStoreBackend` + `sessionId` 复用 + `DELETE /sessions/:id`）；✅ ReAct loop 强化（并行 tool_calls、工具重试+退避、`AbortSignal` 取消、`finishReason` 续写、`execution` 预算配置）；✅ 真思考透传（DeepSeek R1 `reasoning_content` → `ChatMessage.reasoning` + 前端「思考/回复」分开）；✅ ② 长期记忆（三层记忆：token 预算整轮裁剪 + 滚动摘要 + embedding 语义召回）；✅ ⑤ FunctionSandbox（`FunctionSandbox` + `WasiFunctionSandbox`，WASI）；✅ guardrail 声明式配置轴（`guardrails` + `compileGuardrails`）；✅ SessionStore 可插拔（`SessionStoreBackend` + `InMemorySessionStore`）。剩余：③ 多 Agent 编排（独立 `@agent-engine/orchestration` 包）；events 总线接 pino（events 总线已建，server 层接线待做）。
-4. **M4 服务化**（**部分完成**）：✅ server HTTP API（`/api/agent/run` 非流式 + `/api/agent/run/stream` NDJSON + `DELETE /api/agent/sessions/:id`，pino 日志、session 复用、`SessionStoreBackend`）。剩余：CLI（`packages/cli` 仍是 stub）。
+3. **M3 扩展接入**（**进行中**）：✅ ① MCP client（`connectMcpServer`/`connectMcpServers`，stdio transport）；✅ ④ config resolve 层（`resolveAgentConfig`：AgentConfig→AgentLoop 一键装配 + `CapabilityBundle` 统一）；✅ 流式输出（`chatCompletionStream` + NDJSON 端点）；✅ `onInit`/`onSessionStart`/`onSessionEnd` 三个 hook；✅ 会话生命周期（server `SessionStoreBackend` + `sessionId` 复用 + `DELETE /sessions/:id`）；✅ ReAct loop 强化（并行 tool_calls、工具重试+退避、`AbortSignal` 取消、`finishReason` 续写、`execution` 预算配置）；✅ 真思考透传（DeepSeek R1 `reasoning_content` → `ChatMessage.reasoning` + 前端「思考/回复」分开）；✅ ② 长期记忆（三层记忆：token 预算整轮裁剪 + 滚动摘要 + embedding 语义召回）；✅ ⑤ FunctionSandbox（`FunctionSandbox` + `WasiFunctionSandbox`，WASI）；✅ guardrail 声明式配置轴（`guardrails` + `compileGuardrails`）；✅ SessionStore 可插拔（`SessionStoreBackend` + `InMemorySessionStore`）；✅ 日志可插拔（`Logger` + `consoleLogger` 默认，移除 pino）。剩余：③ 多 Agent 编排（独立 `@agent-engine/orchestration` 包）。
+4. **M4 服务化**（**部分完成**）：✅ server HTTP API（`/api/agent/run` 非流式 + `/api/agent/run/stream` NDJSON + `DELETE /api/agent/sessions/:id`，可插拔 `Logger`（默认 console）、session 复用、`SessionStoreBackend`）。剩余：CLI（`packages/cli` 仍是 stub）。
 5. **M5 平台与文档**（**部分完成**）：✅ apps/web 三栏编辑器 + 流式 chat + 模型供应商预设 + security preset + 配置导出（省略默认值减负）。剩余：docs（Rspress）、Docker 编排、示例垂直领域 Agent。
 
 ### 复盘纪要（截至 M3 中期）
