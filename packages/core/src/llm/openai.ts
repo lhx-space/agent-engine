@@ -5,6 +5,7 @@ import type {
   ChatCompletionResult,
   ChatMessage,
   DeltaKind,
+  FinishReason,
   LLMProvider,
   ToolCall,
   ToolDefinition,
@@ -106,6 +107,22 @@ class StreamToolCallAccumulator {
   }
 }
 
+/** openai `finish_reason` → 归一化 `FinishReason`。 */
+function normalizeOpenAIFinishReason(reason: string | null | undefined): FinishReason | undefined {
+  switch (reason) {
+    case 'stop':
+    case 'length':
+    case 'tool_calls':
+    case 'content_filter':
+      return reason;
+    case null:
+    case undefined:
+      return undefined;
+    default:
+      return 'unknown';
+  }
+}
+
 export function createOpenAIProvider(config: ModelConfig): LLMProvider {
   const apiKey = resolveApiKey(config);
   if (!apiKey) {
@@ -126,6 +143,7 @@ export function createOpenAIProvider(config: ModelConfig): LLMProvider {
     temperature: params.temperature,
     max_tokens: params.maxTokens,
     ...(params.signal ? { signal: params.signal } : {}),
+    ...(params.responseFormat ? { response_format: params.responseFormat } : {}),
   });
 
   return {
@@ -153,7 +171,7 @@ export function createOpenAIProvider(config: ModelConfig): LLMProvider {
               totalTokens: response.usage.total_tokens,
             }
           : undefined,
-        finishReason: choice?.finish_reason ?? undefined,
+        finishReason: normalizeOpenAIFinishReason(choice?.finish_reason),
       };
     },
 
@@ -168,7 +186,7 @@ export function createOpenAIProvider(config: ModelConfig): LLMProvider {
 
       let content = '';
       let reasoning = '';
-      let finishReason: string | undefined;
+      let finishReason: FinishReason | undefined;
       const toolCalls = new StreamToolCallAccumulator();
 
       for await (const chunk of stream) {
@@ -192,7 +210,7 @@ export function createOpenAIProvider(config: ModelConfig): LLMProvider {
           toolCalls.add(part.index, part);
         }
         if (choice?.finish_reason) {
-          finishReason = choice.finish_reason;
+          finishReason = normalizeOpenAIFinishReason(choice.finish_reason);
         }
       }
 

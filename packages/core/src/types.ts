@@ -6,11 +6,15 @@ export type {
   ChatRole,
   ChatCompletionParams,
   ChatCompletionResult,
+  FinishReason,
   LLMProvider,
+  ResponseFormat,
   TokenUsage,
   ToolCall,
   ToolDefinition,
 } from './llm/types';
+// structured-output
+export type { ExtractStructuredInput } from './structured-output/extract';
 // tools
 export type { Tool } from './tools/types';
 export type { TodoInput, TodoResult } from './tools/builtin/todo';
@@ -83,4 +87,9 @@ export type { BuildSystemPromptOptions } from './context/types';
 export type { TokenCounter } from './context/token-counter';
 export type { ContextCompactor } from './context/compactor';
 // agent
-export type { AgentLoopOptions, AgentLoopResult, SystemPromptInput } from './agent/types';
+export type {
+  AgentLoopOptions,
+  AgentLoopResult,
+  AgentRunOutcome,
+  SystemPromptInput,
+} from './agent/types';

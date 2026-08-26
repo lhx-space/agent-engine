@@ -188,6 +188,16 @@
         "default": "./dist/skills.cjs"
       }
     },
+    "./structured-output": {
+      "import": {
+        "types": "./dist/structured-output.d.mts",
+        "default": "./dist/structured-output.mjs"
+      },
+      "require": {
+        "types": "./dist/structured-output.d.cts",
+        "default": "./dist/structured-output.cjs"
+      }
+    },
     "./tools": {
       "import": {
         "types": "./dist/tools.d.mts",

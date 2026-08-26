@@ -1,0 +1,6 @@
+- [x] `llm/types.ts`：`FinishReason` + `CompletionError` + `ChatCompletionResult.finishReason` 改类型
+- [x] `llm/openai.ts` / `anthropic.ts`：finish_reason / stop_reason 归一化（流式 + 非流式）
+- [x] `agent/types.ts`：`AgentRunOutcome` + `AgentLoopResult.outcome` + finishReason 改类型
+- [x] `agent/loop.ts`：跟踪 outcome + CompletionError 包装
+- [x] 导出：`core/src/{index,types}.ts`
+- [x] 测试 + 全量校验（test / typecheck / lint / spell / format / lint:md / build）

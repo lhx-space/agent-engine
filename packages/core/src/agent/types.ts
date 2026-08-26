@@ -3,7 +3,7 @@ import type { SystemPromptInput } from '../context/types';
 import type { EventBus } from '../events/event-bus';
 import type { HookPipeline } from '../hooks/pipeline';
 import type { HookTrace } from '../hooks/types';
-import type { ChatMessage, DeltaKind, LLMProvider } from '../llm/types';
+import type { ChatMessage, DeltaKind, FinishReason, LLMProvider } from '../llm/types';
 import type { ConversationMemory } from '../memory/conversation-memory';
 import type { LongTermMemory } from '../memory/long-term-memory';
 import type { RuleRegistry } from '../rules/registry';
@@ -51,6 +51,9 @@ export interface AgentLoopOptions {
   eventBus?: EventBus;
 }
 
+/** run 的结束方式（结果归一化）：自然结束 / 达到 maxSteps / 超时。 */
+export type AgentRunOutcome = { kind: 'completed' } | { kind: 'max_steps' } | { kind: 'timeout' };
+
 export interface AgentLoopResult {
   /** 最终 assistant 消息。 */
   finalMessage: ChatMessage;
@@ -58,8 +61,10 @@ export interface AgentLoopResult {
   messages: ChatMessage[];
   /** 实际执行的 LLM 调用步数。 */
   steps: number;
-  /** 最终模型返回的 finishReason（stop / length / 其他）。 */
-  finishReason?: string;
+  /** 跨 provider 归一化的结束原因（stop / length / tool_calls / content_filter / unknown）。 */
+  finishReason?: FinishReason;
+  /** run 的结束方式（completed / max_steps / timeout）。 */
+  outcome: AgentRunOutcome;
 }
 
 /** 运行时事件（可观测）：step / 文本增量 / 工具调用 / 工具结果 / hook trace / 结束 / 错误 / 自定义。 */

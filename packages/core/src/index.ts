@@ -4,9 +4,10 @@ export * from './types';
 // 值导出。
 export { createProvider } from './llm/provider';
 export type { ProviderFactory } from './llm/provider';
-export { AbortError } from './llm/types';
+export { AbortError, CompletionError } from './llm/types';
 export { createOpenAIProvider } from './llm/openai';
 export { createAnthropicProvider } from './llm/anthropic';
+export { extractStructured } from './structured-output';
 export { ToolRegistry } from './tools/registry';
 export {
   TodoStore,

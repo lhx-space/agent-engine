@@ -5,6 +5,7 @@ import {
   type ChatCompletionParams,
   type ChatCompletionResult,
   type ChatMessage,
+  type FinishReason,
   type LLMProvider,
   type ToolCall,
   type ToolDefinition,
@@ -92,6 +93,24 @@ function buildAnthropicMessages(messages: ChatMessage[]): AnthropicMessage[] {
   return result;
 }
 
+/** anthropic `stop_reason` → 归一化 `FinishReason`。 */
+function normalizeAnthropicStopReason(reason: string | null | undefined): FinishReason | undefined {
+  switch (reason) {
+    case 'end_turn':
+    case 'stop_sequence':
+      return 'stop';
+    case 'max_tokens':
+      return 'length';
+    case 'tool_use':
+      return 'tool_calls';
+    case null:
+    case undefined:
+      return undefined;
+    default:
+      return 'unknown';
+  }
+}
+
 export function createAnthropicProvider(config: ModelConfig): LLMProvider {
   // 内核只消费配置里显式提供的 apiKey；环境变量兜底由上层（server/cli）的 providerFactory 注入。
   const apiKey = config.apiKey ?? '';
@@ -158,7 +177,7 @@ export function createAnthropicProvider(config: ModelConfig): LLMProvider {
           promptTokens: response.usage.input_tokens,
           completionTokens: response.usage.output_tokens,
         },
-        finishReason: response.stop_reason ?? undefined,
+        finishReason: normalizeAnthropicStopReason(response.stop_reason),
       };
     },
 
@@ -170,7 +189,7 @@ export function createAnthropicProvider(config: ModelConfig): LLMProvider {
       const stream = await client.messages.create({ ...buildRequest(params), stream: true });
 
       let text = '';
-      let finishReason: string | undefined;
+      let finishReason: FinishReason | undefined;
       // 流式下 tool_use 的 input 是分片 JSON，按 content_block index 累积（key 对齐 block index）。
       const toolCalls = new Map<number, ToolCall>();
       const toolInputJson = new Map<number, string>();
@@ -196,7 +215,7 @@ export function createAnthropicProvider(config: ModelConfig): LLMProvider {
             });
           }
         } else if (event.type === 'message_delta') {
-          finishReason = event.delta.stop_reason ?? finishReason;
+          finishReason = normalizeAnthropicStopReason(event.delta.stop_reason) ?? finishReason;
         }
       }
 

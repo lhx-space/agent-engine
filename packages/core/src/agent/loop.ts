@@ -4,8 +4,12 @@ import type { EventBus } from '../events/event-bus';
 import type { HookPipeline } from '../hooks/pipeline';
 import {
   AbortError,
+  CompletionError,
+  type ChatCompletionParams,
   type ChatCompletionResult,
   type ChatMessage,
+  type DeltaKind,
+  type FinishReason,
   type LLMProvider,
   type ToolCall,
 } from '../llm/types';
@@ -22,6 +26,7 @@ import type {
   AgentLoopResult,
   AgentRunEvent,
   AgentRunOptions,
+  AgentRunOutcome,
   ToolApproval,
 } from './types';
 
@@ -84,6 +89,22 @@ export class AgentLoop {
     });
   }
 
+  /** 调用 provider 并把失败包成 `CompletionError`（AbortError 原样透传）。 */
+  private async callCompletion(
+    params: ChatCompletionParams,
+    onDelta: (delta: string, kind?: DeltaKind) => void,
+  ): Promise<ChatCompletionResult> {
+    try {
+      if (this.provider.chatCompletionStream) {
+        return await this.provider.chatCompletionStream(params, onDelta);
+      }
+      return await this.provider.chatCompletion(params);
+    } catch (error) {
+      if (error instanceof AbortError || error instanceof CompletionError) throw error;
+      throw new CompletionError(error);
+    }
+  }
+
   async run(userInput: string, options?: AgentRunOptions): Promise<AgentLoopResult> {
     const emit = options?.onEvent;
     const signal = options?.signal;
@@ -121,7 +142,8 @@ export class AgentLoop {
     let steps = 0;
     let toolCallsCount = 0;
     let continuations = 0;
-    let finishReason: string | undefined;
+    let finishReason: FinishReason | undefined;
+    let outcome: AgentRunOutcome = { kind: 'max_steps' };
     const deadline = this.timeoutMs !== undefined ? Date.now() + this.timeoutMs : undefined;
 
     try {
@@ -135,7 +157,10 @@ export class AgentLoop {
         // 协作式取消：入口检查，中止抛出 AbortError。
         if (signal?.aborted) throw new AbortError();
         // 超时预算：整体耗时超限则优雅终止。
-        if (deadline !== undefined && Date.now() > deadline) break;
+        if (deadline !== undefined && Date.now() > deadline) {
+          outcome = { kind: 'timeout' };
+          break;
+        }
 
         steps += 1;
         emit?.({ type: 'step_start', step: steps });
@@ -149,14 +174,9 @@ export class AgentLoop {
           ...(tools.length > 0 ? { tools } : {}),
           ...(signal ? { signal } : {}),
         };
-        let result: ChatCompletionResult;
-        if (this.provider.chatCompletionStream) {
-          result = await this.provider.chatCompletionStream(completionParams, (delta, kind) =>
-            emit?.({ type: 'llm_delta', delta, kind }),
-          );
-        } else {
-          result = await this.provider.chatCompletion(completionParams);
-        }
+        let result = await this.callCompletion(completionParams, (delta, kind) =>
+          emit?.({ type: 'llm_delta', delta, kind }),
+        );
 
         result = (await this.hooks?.afterLLM(result)) ?? result;
 
@@ -175,6 +195,7 @@ export class AgentLoop {
             continue;
           }
           await this.hooks?.onStepEnd(steps);
+          outcome = { kind: 'completed' };
           break;
         }
 
@@ -218,14 +239,9 @@ export class AgentLoop {
         emit?.({ type: 'step_start', step: steps });
         messages.push({ role: 'user', content: '请直接给出最终结论，不要再调用任何工具。' });
         const summaryParams = { messages, ...(signal ? { signal } : {}) };
-        let summaryResult: ChatCompletionResult;
-        if (this.provider.chatCompletionStream) {
-          summaryResult = await this.provider.chatCompletionStream(summaryParams, (delta, kind) =>
-            emit?.({ type: 'llm_delta', delta, kind }),
-          );
-        } else {
-          summaryResult = await this.provider.chatCompletion(summaryParams);
-        }
+        let summaryResult = await this.callCompletion(summaryParams, (delta, kind) =>
+          emit?.({ type: 'llm_delta', delta, kind }),
+        );
         summaryResult = (await this.hooks?.afterLLM(summaryResult)) ?? summaryResult;
         finalMessage = summaryResult.message;
         messages.push(finalMessage);
@@ -274,7 +290,7 @@ export class AgentLoop {
     }
 
     emit?.({ type: 'done', finalMessage, steps });
-    return { finalMessage, messages, steps, finishReason };
+    return { finalMessage, messages, steps, finishReason, outcome };
   }
 
   /** 结束会话：触发 `onSessionEnd`（幂等）并清空会话记忆。 */

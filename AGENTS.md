@@ -167,6 +167,7 @@ agent-engine/
 │   │       ├── hooks/         #   生命周期钩子管线
 │   │       ├── rules/         #   上下文规则加载/检索 + guardrail 拦截
 │   │       ├── context/       #   system-prompt 组装、ContextComposer、上下文窗口管理
+│   │       ├── structured-output/ #  结构化输出原语（extractStructured：JSON 模式 + Zod 校验 + 重试）
 │   │       ├── retrieval/     #   统一能力检索（CapabilityRegistry / CapabilityLoader，BM25）
 │   │       ├── mcp/           #   MCP client 接入（stdio transport）
 │   │       ├── events/        #   事件总线、可观测（M3 规划）

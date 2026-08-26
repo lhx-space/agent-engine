@@ -44,12 +44,19 @@ export interface ToolDefinition {
   };
 }
 
+/** 结构化输出格式（首版仅 JSON 对象）。 */
+export interface ResponseFormat {
+  type: 'json_object';
+}
+
 export interface ChatCompletionParams {
   messages: ChatMessage[];
   tools?: ToolDefinition[];
   temperature?: number;
   maxTokens?: number;
   signal?: AbortSignal;
+  /** 请求结构化输出（openai-compatible 透传为 response_format）。 */
+  responseFormat?: ResponseFormat;
 }
 
 export interface TokenUsage {
@@ -58,10 +65,24 @@ export interface TokenUsage {
   totalTokens?: number;
 }
 
+/** 跨 provider 归一化的结束原因。 */
+export type FinishReason = 'stop' | 'length' | 'tool_calls' | 'content_filter' | 'unknown';
+
+/** 模型调用失败的类型化封装（`cause` 保留原错误）。 */
+export class CompletionError extends Error {
+  constructor(cause?: unknown) {
+    super(
+      `model completion failed: ${cause instanceof Error ? cause.message : String(cause ?? 'unknown error')}`,
+      { cause },
+    );
+    this.name = 'CompletionError';
+  }
+}
+
 export interface ChatCompletionResult {
   message: ChatMessage;
   usage?: TokenUsage;
-  finishReason?: string;
+  finishReason?: FinishReason;
 }
 
 export interface LLMProvider {

@@ -242,7 +242,7 @@ describe('Anthropic 实现', () => {
       id: 'toolu_1',
       function: { name: 'get_weather', arguments: '{"city":"beijing"}' },
     });
-    expect(result.finishReason).toBe('tool_use');
+    expect(result.finishReason).toBe('tool_calls');
   });
 
   it('多个连续 tool 结果合并进单个 user 消息（Anthropic 协议要求）', async () => {

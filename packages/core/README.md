@@ -25,27 +25,28 @@ await resolved.dispose();
 
 ## Subpath exports
 
-| Subpath                 | Module     | Contents                                                                                                                            |
-| ----------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `@agent-engine/core`    | —          | `AgentLoop`, `assembleAgentLoop`, `resolveAgentConfig`, `RuleRegistry`, `EventBus`, all backends and types                          |
-| `.../llm`               | LLM        | `ProviderFactory`, `createProvider`, `createOpenAIProvider`, `createAnthropicProvider`, normalized message/result types             |
-| `.../tools`             | Tools      | `Tool`, `ToolRegistry`, builtin primitives (`todo` / `datetime` / `web_search` / `web_fetch`), `createBashTool` / `createFileTool`s |
-| `.../agent`             | Agent      | `AgentLoop`, `assembleAgentLoop`, run events, `ToolApproval` (Human-in-the-loop)                                                    |
-| `.../hooks`             | Hooks      | `Hook` interface + `HookPipeline` (10 lifecycle points; observe/rewrite, never block)                                               |
-| `.../rules`             | Rules      | `RuleRegistry`, `GuardrailRule`, `compileGuardrails` (declarative guardrail axis)                                                   |
-| `.../context`           | Context    | `ContextComposer`, `buildSystemPrompt`, `renderTemplate`, `TokenCounter`, `ContextCompactor`, `SystemPromptInput`                   |
-| `.../memory`            | Memory     | `ConversationMemory` (3-tier window), `MemoryBackend`, `Summarizer`, `LongTermMemory`                                               |
-| `.../retrieval`         | Retrieval  | `CapabilityRegistry` (BM25), `CapabilityLoader`, `Retriever`, `Reranker`, `VectorStore`                                             |
-| `.../embedding`         | Embedding  | `EmbeddingProvider`, `createEmbeddingProvider` (OpenAI-compatible)                                                                  |
-| `.../mcp`               | MCP        | `connectMcpServer` / `connectMcpServers`, `toTool`, `normalizeCallToolResult`                                                       |
-| `.../plugins`           | Plugins    | `Plugin`, `PluginContext`, `PluginManager`                                                                                          |
-| `.../capability`        | Capability | `CapabilityBundle`, `mergeBundles`                                                                                                  |
-| `.../capability-source` | Sources    | `resolveSkill` / `resolveSkills`, `resolveMcpServer` / `resolveMcpServers`                                                          |
-| `.../resolve`           | Resolve    | `resolveAgentConfig` (config → `ResolvedAgent`)                                                                                     |
-| `.../sandbox`           | Sandbox    | `SandboxBackend` (docker/nsjail), `FunctionSandbox` (`WasiFunctionSandbox`)                                                         |
-| `.../events`            | Events     | `EventBus`, `AgentEngineEvent`                                                                                                      |
-| `.../skills`            | Skills     | `Skill`, `loadSkillFromPath`                                                                                                        |
-| `.../cache`             | Cache      | `CacheBackend`, `InMemoryCacheBackend`                                                                                              |
+| Subpath                 | Module     | Contents                                                                                                                                                   |
+| ----------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@agent-engine/core`    | —          | `AgentLoop`, `assembleAgentLoop`, `resolveAgentConfig`, `RuleRegistry`, `EventBus`, all backends and types                                                 |
+| `.../llm`               | LLM        | `ProviderFactory`, `createProvider`, `createOpenAIProvider`, `createAnthropicProvider`, normalized message/result types, `FinishReason`, `CompletionError` |
+| `.../tools`             | Tools      | `Tool`, `ToolRegistry`, builtin primitives (`todo` / `datetime` / `web_search` / `web_fetch`), `createBashTool` / `createFileTool`s                        |
+| `.../agent`             | Agent      | `AgentLoop`, `assembleAgentLoop`, run events, `ToolApproval` (Human-in-the-loop), `AgentRunOutcome`                                                        |
+| `.../hooks`             | Hooks      | `Hook` interface + `HookPipeline` (10 lifecycle points; observe/rewrite, never block)                                                                      |
+| `.../rules`             | Rules      | `RuleRegistry`, `GuardrailRule`, `compileGuardrails` (declarative guardrail axis)                                                                          |
+| `.../context`           | Context    | `ContextComposer`, `buildSystemPrompt`, `renderTemplate`, `TokenCounter`, `ContextCompactor`, `SystemPromptInput`                                          |
+| `.../memory`            | Memory     | `ConversationMemory` (3-tier window), `MemoryBackend`, `Summarizer`, `LongTermMemory`                                                                      |
+| `.../retrieval`         | Retrieval  | `CapabilityRegistry` (BM25), `CapabilityLoader`, `Retriever`, `Reranker`, `VectorStore`                                                                    |
+| `.../embedding`         | Embedding  | `EmbeddingProvider`, `createEmbeddingProvider` (OpenAI-compatible)                                                                                         |
+| `.../mcp`               | MCP        | `connectMcpServer` / `connectMcpServers`, `toTool`, `normalizeCallToolResult`                                                                              |
+| `.../plugins`           | Plugins    | `Plugin`, `PluginContext`, `PluginManager`                                                                                                                 |
+| `.../capability`        | Capability | `CapabilityBundle`, `mergeBundles`                                                                                                                         |
+| `.../capability-source` | Sources    | `resolveSkill` / `resolveSkills`, `resolveMcpServer` / `resolveMcpServers`                                                                                 |
+| `.../resolve`           | Resolve    | `resolveAgentConfig` (config → `ResolvedAgent`)                                                                                                            |
+| `.../sandbox`           | Sandbox    | `SandboxBackend` (docker/nsjail), `FunctionSandbox` (`WasiFunctionSandbox`)                                                                                |
+| `.../events`            | Events     | `EventBus`, `AgentEngineEvent`                                                                                                                             |
+| `.../skills`            | Skills     | `Skill`, `loadSkillFromPath`                                                                                                                               |
+| `.../structured-output` | Structured | `extractStructured` (JSON mode + Zod validate + retry), `ExtractStructuredInput`                                                                           |
+| `.../cache`             | Cache      | `CacheBackend`, `InMemoryCacheBackend`                                                                                                                     |
 
 ## Highlights
 

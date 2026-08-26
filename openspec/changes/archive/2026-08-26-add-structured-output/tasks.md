@@ -1,0 +1,5 @@
+- [x] `llm/types.ts`：`ChatCompletionParams` 增 `responseFormat` 字段
+- [x] `llm/openai.ts`：`baseRequest` 透传 `response_format`
+- [x] `structured-output/{extract.ts,index.ts}`：`extractStructured`
+- [x] 导出：`core/src/{index,types}.ts` + `core/package.json` subpath
+- [x] 测试 + 全量校验（test / typecheck / lint / spell / format / lint:md / build）

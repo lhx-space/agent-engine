@@ -20,6 +20,7 @@ export default defineConfig({
     rules: 'src/rules/index.ts',
     sandbox: 'src/sandbox/index.ts',
     skills: 'src/skills/index.ts',
+    'structured-output': 'src/structured-output/index.ts',
     tools: 'src/tools/index.ts',
   },
   format: ['esm', 'cjs'],
