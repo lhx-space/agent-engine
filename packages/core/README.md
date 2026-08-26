@@ -72,6 +72,40 @@ await resolved.dispose();
 
 Declarative `guardrails` config compiles into executable `GuardrailRule`s (deny/allow tools + deny patterns) via `compileGuardrails`; plugins can also `registerGuardrail`.
 
+## Execution flow
+
+```mermaid
+flowchart TD
+    A["loadAgentConfig(path)<br/>YAML / JSON5 / TS → AgentConfig<br/>(Zod + deepFreeze)"] --> B["resolveAgentConfig(config, deps)"]
+    B --> C["createProvider(model) — DeepSeek by default"]
+    B --> D["instantiate plugins"]
+    B --> E["resolveSkills"]
+    C --> F["assembleAgentLoop(...)"]
+    D --> F
+    E --> F
+    F --> G["install plugins → CapabilityBundle<br/>register builtin tools + connect MCP + mergeBundles"]
+    F --> H["resolve strategies + backends<br/>tokenCounter / compactor / ... + memory / cache / vector / embedding"]
+    G --> I["build SemanticMemory + ConversationMemory"]
+    H --> I
+    I --> J["build RuleRegistry + AgentLoop"]
+    J --> K["hooks.onInit() → ResolvedAgent"]
+
+    K --> R["run(userInput)"]
+    R --> S["retrieve rules / skills"]
+    R --> T["assemble system prompt"]
+    R --> U["memory: recall (long-term) + getWindow (session)"]
+    S --> V["build messages = system + history + user"]
+    T --> V
+    U --> V
+    V --> W{"steps within maxSteps?"}
+    W -- yes --> X["beforeLLM → LLM → afterLLM"]
+    X --> Y{"has tool_calls?"}
+    Y -- no --> Z["natural end"]
+    Y -- yes --> AA["guardrail + human approval + parallel exec + feedback"]
+    AA --> W
+    Z --> AB["finalize + write back memory + emit done"]
+```
+
 ## Design notes
 
 - **Self-built kernel + SDK reuse**: loop / plugins / hooks / rules / guardrails are self-built; LLM / MCP / vectors reuse official SDKs. No LangChain.

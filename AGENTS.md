@@ -59,10 +59,11 @@
 
 **待扩展清单（按价值优先级）**：
 
-| 优先级 | 缺口                  | 应暴露成                        | 批次 |
-| ------ | --------------------- | ------------------------------- | ---- |
-| P3     | 重试策略 / 结果归一化 | 自定义重试熔断 / 工具错误降级   | 缓   |
-| P3     | LLM·检索缓存 / RRF    | 缓存复用检索结果 / 混合召回融合 | 缓   |
+| 优先级 | 缺口                  | 应暴露成                                                                                            | 批次 |
+| ------ | --------------------- | --------------------------------------------------------------------------------------------------- | ---- |
+| P2     | ContextComposer 抽离  | 上下文组装（rules/skills/memory/history → messages）从 AgentLoop 抽出 + `beforeContextCompose` 钩子 | 缓   |
+| P3     | 重试策略 / 结果归一化 | 自定义重试熔断 / 工具错误降级                                                                       | 缓   |
+| P3     | LLM·检索缓存 / RRF    | 缓存复用检索结果 / 混合召回融合                                                                     | 缓   |
 
 **分批**：A（✅ 可观测 + 控制流：events 总线 + 流式 custom + Human-in-the-loop）→ B（✅ 上下文接口层：TokenCounter / Compactor / Retriever / Reranker）→ C（✅ 会话 / 安全：SessionStore / guardrail 配置）。三层记忆消费（①②③）与 FunctionSandbox（WASI）已随批 B/C 落地。
 
@@ -248,6 +249,10 @@ docs/（Rspress）为独立站点，无运行时依赖
   - **长期记忆**：跨会话持久化 + 语义召回。已落地 `LongTermMemory` / `SemanticMemory`（三层记忆③：`EmbeddingProvider` 向量化 + `VectorStore.query` 召回 + `MemoryBackend` 持久化；无 embedding 时优雅 no-op）；`AgentLoop.longTermMemory` 注入后 run 开始召回注入、正常结束写回。
 
   > **三层记忆已落地**：① 正确截取（token 预算 + 整轮边界淘汰，绝不拆散配对，`ContextCompactor`）→ ② 压缩层（滚动摘要，`Summarizer` 摘要旧轮）→ ③ 语义层（embedding 向量化 + 向量召回 + 持久化，`SemanticMemory`）。剩余演进：记忆去重/遗忘、LLM·检索缓存、RRF 融合（见 §2.2 待扩展 P3）。
+  >
+  > **context vs memory 职责边界**：`context` = 「加载策略 / 装载」——决定把哪些来源、以什么顺序、多大预算装进发给 LLM 的窗口（`buildSystemPrompt` 组装 + `TokenCounter`/`ContextCompactor` 窗口预算原语）；`memory` = 「记忆状态 / 数据源」——会话窗口（`ConversationMemory`）+ 长期持久化（`MemoryBackend`）+ 摘要策略（`Summarizer`）+ 语义召回（`SemanticMemory`）的持有/裁剪/持久化。**memory 是 context 的数据源之一，不是 context 的子集**：`run` 时 `memory.getWindow()` / `longTermMemory.recall()` 产出的数据，由 context 组装进最终 messages。存储默认全内存——会话窗口是进程级「热工作区」；长期记忆接口面向持久化（pgvector/redis 插件接入），开发默认 in-memory。
+  >
+  > **已知缺口（ContextComposer 待抽离）**：当前「检索 rules/skills → 召回记忆 → 取窗口 → 拼 messages」的编排散在 `AgentLoop.run()` + `resolveSystemPrompt()` 内部，无独立组装器。后续宜抽 `ContextComposer`（输入静态配置 + 记忆产出 + tools → 输出 `Message[]`），让 `AgentLoop` 只做 ReAct 循环，并补 `beforeContextCompose` 钩子（外部素材注入锚点）。见 §2.2。
 
 ### 关系速记
 
@@ -320,27 +325,59 @@ rules / skills / mcp tools / plugins 共享「**meta + 按需加载**」的机�
 
 ### 6.1 单 Agent 执行循环（ReAct）
 
+全链路分两阶段：**装配**（一次，配置 → `ResolvedAgent`）与 **run**（每次调用）。
+
 ```text
-启动
- └─ 加载配置 → 归一化 AgentConfig → 校验
-      └─ 装配：注册 plugins / tools / skills / mcp
-            └─ 组装 system-prompt 与 rules
-                  └─ 进入 Agent Loop：
+【阶段 A：装配】 loadAgentConfig → resolveAgentConfig → assembleAgentLoop
+loadAgentConfig(path)                        # YAML/JSON5/TS → AgentConfig（Zod 校验 + deepFreeze）
+resolveAgentConfig(config, deps)
+ ├─ createProvider(model)                    # LLM Provider（默认 DeepSeek）
+ ├─ 实例化 plugins（config.plugins → deps.pluginFactories）
+ ├─ resolveSkills(path/npm/git)
+ └─ assembleAgentLoop(...)                   # 装配工厂（核心）
+      ├─ EventBus 新建
+      ├─ 安装 plugins → CapabilityBundle
+      ├─ 注册内置工具（todo/datetime/web_search/web_fetch）
+      ├─ 连接 MCP servers → 工具归一化（单 server 失败隔离，不阻断整体）
+      ├─ mergeBundles → 扁平化；注册 tools/hooks；应用 tools.disabled
+      ├─ 解析策略（tokenCounter/compactor/retriever/reranker/summarizer：插件优先→默认）
+      ├─ 解析后端（memory/cache/vector/embedding：按名）
+      ├─ 构造 SemanticMemory（长期记忆③）+ ConversationMemory（会话窗口①②）
+      ├─ 构造 RuleRegistry（插件 guardrail + 声明式 compileGuardrails）
+      └─ 构造 AgentLoop（注入以上全部）
+hooks.onInit()                               # 装配完成触发一次
+返回 ResolvedAgent（agent + 各后端 + dispose）
 
- while (未终止 && 未超限):
-   ├─ hooks.beforeLLM
-   ├─ LLM 调用（messages + 可用 tools）
-   ├─ hooks.afterLLM
-   ├─ 若返回 tool_calls：
-   │    ├─ guardrail 动态校验
-   │    ├─ hooks.beforeToolCall
-   │    ├─ 执行 tools（含 MCP 归一化工具）
-   │    ├─ hooks.afterToolCall
-   │    └─ 结果回填 messages，进入下一轮
-   └─ 否则：
-        └─ 产出最终结果，退出循环
+【阶段 B：run】 agent.run(userInput)
+ ├─ 1. 检索（加载策略）：rules（always 全量 + on-demand BM25）/ skills（BM25 top-k + 注册捆绑工具）
+ ├─ 2. 组装 system prompt：resolveSystemPrompt → buildSystemPrompt（模板渲染 + rules/skills 注入）
+ ├─ 3. 记忆（三层）：③ longTermMemory.recall → 「[长期记忆]」；①② memory.getWindow → 裁剪+摘要后的历史
+ ├─ 4. 拼 messages = [system, ...history, user]
+ └─ 5. 循环（steps < maxSteps）：
+       ├─ 检查 abort / 超时
+       ├─ hooks.beforeLLM(messages)          # 可改写
+       ├─ LLM 调用（流式则 emit llm_delta）
+       ├─ hooks.afterLLM(result)             # 可改写
+       ├─ push assistant 消息
+       ├─ 无 tool_calls？
+       │    ├─ finishReason='length' 且未超续写上限 → 补「请继续」→ 下一轮
+       │    └─ 否则 → onStepEnd → break（自然结束）
+       └─ 有 tool_calls？
+            ├─ maxToolCalls 预算 → 拆 executable / skipped
+            ├─ executeToolCalls（一批并发）：
+            │     Phase1 顺序：resolveName → normalizeArgs → beforeToolCall
+            │              → guardrail(beforeToolCall) 校验（可阻断）→ Human-in-the-loop approveToolCall（可阻断）
+            │     Phase2 并发：executeWithRetry（失败退避重试）
+            │     Phase3 顺序：guardrail(afterToolCall) → afterToolCall → 回填 tool 消息
+            ├─ 回填 messages；skipped 占位「已达上限」
+            └─ hooks.onStepEnd → 下一轮
+ ├─ 6. 兜底收尾：最后消息仍带 tool_calls → 追加一轮「不带工具」总结调用
+ ├─ 7. 回写记忆（仅正常结束）：memory.append(本轮) + longTermMemory.remember(userInput + 最终答案)
+ └─ 8. emit done → 返回 { finalMessage, messages, steps, finishReason }
 
- └─ hooks.onSessionEnd
+异常路径：AbortError → emit error + 直接 throw（不回写 memory、不触发 onError hook）；
+          其他错误 → emit error + hooks.onError → throw；finally 卸载订阅 + 还原 skill 工具。
+endSession()：hooks.onSessionEnd() → memory.clear()。
 ```
 
 ### 6.2 任务规划（Task Planner）

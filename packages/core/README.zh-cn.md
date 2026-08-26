@@ -72,6 +72,40 @@ await resolved.dispose();
 
 声明式 `guardrails` 配置经 `compileGuardrails` 编译为可执行的 `GuardrailRule`（工具白/黑名单 + 入参/结果正则）；插件也可 `registerGuardrail`。
 
+## 执行流程
+
+```mermaid
+flowchart TD
+    A["loadAgentConfig(path)<br/>YAML / JSON5 / TS → AgentConfig<br/>(Zod + deepFreeze)"] --> B["resolveAgentConfig(config, deps)"]
+    B --> C["createProvider(model) — 默认 DeepSeek"]
+    B --> D["实例化 plugins"]
+    B --> E["resolveSkills"]
+    C --> F["assembleAgentLoop(...)"]
+    D --> F
+    E --> F
+    F --> G["安装 plugins → CapabilityBundle<br/>注册内置工具 + 连接 MCP + mergeBundles"]
+    F --> H["解析策略 + 后端<br/>tokenCounter / compactor / ... + memory / cache / vector / embedding"]
+    G --> I["构造 SemanticMemory + ConversationMemory"]
+    H --> I
+    I --> J["构造 RuleRegistry + AgentLoop"]
+    J --> K["hooks.onInit() → ResolvedAgent"]
+
+    K --> R["run(userInput)"]
+    R --> S["检索 rules / skills"]
+    R --> T["组装 system prompt"]
+    R --> U["记忆：recall(长期) + getWindow(会话)"]
+    S --> V["拼 messages = system + history + user"]
+    T --> V
+    U --> V
+    V --> W{"steps 未超 maxSteps?"}
+    W -- 是 --> X["beforeLLM → LLM → afterLLM"]
+    X --> Y{"有 tool_calls?"}
+    Y -- 否 --> Z["自然结束"]
+    Y -- 是 --> AA["guardrail + 人工审批 + 并发执行 + 回填"]
+    AA --> W
+    Z --> AB["兜底收尾 + 回写记忆 + emit done"]
+```
+
 ## 设计要点
 
 - **内核自研 + SDK 复用**：循环 / 插件 / hooks / rules / guardrails 自研；LLM / MCP / 向量复用官方 SDK。不引入 LangChain。
