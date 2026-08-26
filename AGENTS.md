@@ -59,13 +59,12 @@
 
 **待扩展清单（按价值优先级）**：
 
-| 优先级 | 缺口                  | 应暴露成                                                                                            | 批次 |
-| ------ | --------------------- | --------------------------------------------------------------------------------------------------- | ---- |
-| P2     | ContextComposer 抽离  | 上下文组装（rules/skills/memory/history → messages）从 AgentLoop 抽出 + `beforeContextCompose` 钩子 | 缓   |
-| P3     | 重试策略 / 结果归一化 | 自定义重试熔断 / 工具错误降级                                                                       | 缓   |
-| P3     | LLM·检索缓存 / RRF    | 缓存复用检索结果 / 混合召回融合                                                                     | 缓   |
+| 优先级 | 缺口                  | 应暴露成                        | 批次 |
+| ------ | --------------------- | ------------------------------- | ---- |
+| P3     | 重试策略 / 结果归一化 | 自定义重试熔断 / 工具错误降级   | 缓   |
+| P3     | LLM·检索缓存 / RRF    | 缓存复用检索结果 / 混合召回融合 | 缓   |
 
-**分批**：A（✅ 可观测 + 控制流：events 总线 + 流式 custom + Human-in-the-loop）→ B（✅ 上下文接口层：TokenCounter / Compactor / Retriever / Reranker）→ C（✅ 会话 / 安全：SessionStore / guardrail 配置）。三层记忆消费（①②③）与 FunctionSandbox（WASI）已随批 B/C 落地。
+**分批**：A（✅ 可观测 + 控制流：events 总线 + 流式 custom + Human-in-the-loop）→ B（✅ 上下文接口层：TokenCounter / Compactor / Retriever / Reranker）→ C（✅ 会话 / 安全：SessionStore / guardrail 配置）。三层记忆消费（①②③）、FunctionSandbox（WASI）、ContextComposer 抽离 + `beforeContextCompose` 钩子（原 P2）均已随批 B/C 及后续落地。
 
 ---
 
@@ -167,7 +166,7 @@ agent-engine/
 │   │       ├── plugins/       #   插件系统与 PluginContext
 │   │       ├── hooks/         #   生命周期钩子管线
 │   │       ├── rules/         #   上下文规则加载/检索 + guardrail 拦截
-│   │       ├── context/       #   system-prompt 组装、上下文窗口管理
+│   │       ├── context/       #   system-prompt 组装、ContextComposer、上下文窗口管理
 │   │       ├── retrieval/     #   统一能力检索（CapabilityRegistry / CapabilityLoader，BM25）
 │   │       ├── mcp/           #   MCP client 接入（stdio transport）
 │   │       ├── events/        #   事件总线、可观测（M3 规划）
@@ -214,14 +213,14 @@ docs/（Rspress）为独立站点，无运行时依赖
 
 依赖方向：**上层依赖下层，反向禁止**（包级已锁 `config ← core ← cli/server`）。
 
-| 层                         | 模块（`core/src/`）                                 | 职责                             |
-| -------------------------- | --------------------------------------------------- | -------------------------------- |
-| 引擎层                     | `agent/`（loop / assemble）、`llm/`                 | 执行循环 + 模型接入              |
-| 能力层（横向拓展）         | `tools/`、`skills/`、`mcp/`                         | 原子能力 / 能力包 / 外部能力来源 |
-| 扩展层                     | `plugins/`                                          | 能力的打包与分发                 |
-| 控制层                     | `hooks/`、`rules/`（guardrail）                     | 生命周期拦截 + 规则约束          |
-| 上下文层                   | `context/`（system-prompt）、`memory/`              | 提示词组装 + 会话/长期记忆       |
-| 基建层（leaf，被上层依赖） | `sandbox/`、`retrieval/`、`capability/`、`resolve/` | 隔离 / 检索 / 能力束 / 装配      |
+| 层                         | 模块（`core/src/`）                                      | 职责                             |
+| -------------------------- | -------------------------------------------------------- | -------------------------------- |
+| 引擎层                     | `agent/`（loop / assemble）、`llm/`                      | 执行循环 + 模型接入              |
+| 能力层（横向拓展）         | `tools/`、`skills/`、`mcp/`                              | 原子能力 / 能力包 / 外部能力来源 |
+| 扩展层                     | `plugins/`                                               | 能力的打包与分发                 |
+| 控制层                     | `hooks/`、`rules/`（guardrail）                          | 生命周期拦截 + 规则约束          |
+| 上下文层                   | `context/`（system-prompt / ContextComposer）、`memory/` | 提示词组装 + 会话/长期记忆       |
+| 基建层（leaf，被上层依赖） | `sandbox/`、`retrieval/`、`capability/`、`resolve/`      | 隔离 / 检索 / 能力束 / 装配      |
 
 > 目录是「呈现」不是「约束」：真正的分层靠依赖方向与未来的 import 边界 lint，而非目录嵌套深度。
 
@@ -243,7 +242,7 @@ docs/（Rspress）为独立站点，无运行时依赖
 
 ### 5.4 上下文层（Agent「知道什么」）
 
-- **system-prompt**：系统提示词，由「模板 + 变量 + 各模块（skills/rules/plugins）注入的片段」组装而成。组装已落地 `context` 模块：`buildSystemPrompt({ systemPrompt, rulesText, skillsText })` 做模板渲染（`renderTemplate`，`{{var}}` 正则替换、未提供变量保留原样、null/undefined 空串）+ rules / skills 注入（`rules` / `skills` 为内置变量，模板用 `{{rules}}` / `{{skills}}` 占位符声明注入点，未声明时兜底追加）；检索由 AgentLoop 用统一 `CapabilityLoader` 完成。`AgentLoop.systemPrompt` 支持三种形态——静态字符串 / `SystemPrompt` 模板对象（配 `rules` 每次 `run` 内建检索注入）/ 函数式（完全自定义），每次 `run` 动态解析，使 rules 按需检索结果真正进入 system prompt。
+- **system-prompt**：系统提示词，由「模板 + 变量 + 各模块（skills/rules/plugins）注入的片段」组装而成。组装已落地 `context` 模块：`buildSystemPrompt({ systemPrompt, rulesText, skillsText })` 做模板渲染（`renderTemplate`，`{{var}}` 正则替换、未提供变量保留原样、null/undefined 空串）+ rules / skills 注入（`rules` / `skills` 为内置变量，模板用 `{{rules}}` / `{{skills}}` 占位符声明注入点，未声明时兜底追加）；检索 + 组装统一由 `ContextComposer` 完成（`AgentLoop` 只做 ReAct 循环）。`systemPrompt` 支持三种形态——静态字符串 / `SystemPrompt` 模板对象（配 `rules` 每次 `run` 内建检索注入）/ 函数式（完全自定义），每次 `run` 动态解析，使 rules 按需检索结果真正进入 system prompt。
 - **memory**：记忆管理，分两层：
   - **会话上下文**：单次会话的 message 窗口管理（含窗口裁剪）。已落地 `ConversationMemory`（不存 system——system 每次 run 动态组装）+ `getWindow()`：`maxMessages` 条数裁剪 / `maxTokens` token 预算整轮裁剪（三层记忆①，`ContextCompactor`）/ `summary` 滚动摘要（三层记忆②，`Summarizer`，默认 `LLMSummarizer`）；`AgentLoop.memory` 注入后跨 run 累积历史（异常不回写）。
   - **长期记忆**：跨会话持久化 + 语义召回。已落地 `LongTermMemory` / `SemanticMemory`（三层记忆③：`EmbeddingProvider` 向量化 + `VectorStore.query` 召回 + `MemoryBackend` 持久化；无 embedding 时优雅 no-op）；`AgentLoop.longTermMemory` 注入后 run 开始召回注入、正常结束写回。
@@ -252,7 +251,7 @@ docs/（Rspress）为独立站点，无运行时依赖
   >
   > **context vs memory 职责边界**：`context` = 「加载策略 / 装载」——决定把哪些来源、以什么顺序、多大预算装进发给 LLM 的窗口（`buildSystemPrompt` 组装 + `TokenCounter`/`ContextCompactor` 窗口预算原语）；`memory` = 「记忆状态 / 数据源」——会话窗口（`ConversationMemory`）+ 长期持久化（`MemoryBackend`）+ 摘要策略（`Summarizer`）+ 语义召回（`SemanticMemory`）的持有/裁剪/持久化。**memory 是 context 的数据源之一，不是 context 的子集**：`run` 时 `memory.getWindow()` / `longTermMemory.recall()` 产出的数据，由 context 组装进最终 messages。存储默认全内存——会话窗口是进程级「热工作区」；长期记忆接口面向持久化（pgvector/redis 插件接入），开发默认 in-memory。
   >
-  > **已知缺口（ContextComposer 待抽离）**：当前「检索 rules/skills → 召回记忆 → 取窗口 → 拼 messages」的编排散在 `AgentLoop.run()` + `resolveSystemPrompt()` 内部，无独立组装器。后续宜抽 `ContextComposer`（输入静态配置 + 记忆产出 + tools → 输出 `Message[]`），让 `AgentLoop` 只做 ReAct 循环，并补 `beforeContextCompose` 钩子（外部素材注入锚点）。见 §2.2。
+  > **ContextComposer 已落地**：「检索 rules/skills → 召回记忆 → 取窗口 → 拼 messages」的编排已抽为独立 `ContextComposer`（`context/context-composer.ts`），`AgentLoop` 只做 ReAct 循环。`compose(userInput, injectedFragment)` 返回 `{ messages, skillHits, rulesText, skillsText, memories, systemPrompt }`；命中 skill 的捆绑工具由 `AgentLoop` 拿到 `skillHits` 后注册（run 结束还原）。新增 `beforeContextCompose` 钩子（外部素材注入锚点，返回字符串即追加进 system prompt）。
 
 ### 关系速记
 
@@ -349,11 +348,14 @@ hooks.onInit()                               # 装配完成触发一次
 返回 ResolvedAgent（agent + 各后端 + dispose）
 
 【阶段 B：run】 agent.run(userInput)
- ├─ 1. 检索（加载策略）：rules（always 全量 + on-demand BM25）/ skills（BM25 top-k + 注册捆绑工具）
- ├─ 2. 组装 system prompt：resolveSystemPrompt → buildSystemPrompt（模板渲染 + rules/skills 注入）
- ├─ 3. 记忆（三层）：③ longTermMemory.recall → 「[长期记忆]」；①② memory.getWindow → 裁剪+摘要后的历史
- ├─ 4. 拼 messages = [system, ...history, user]
- └─ 5. 循环（steps < maxSteps）：
+ ├─ 1. 外部素材注入：hooks.beforeContextCompose(userInput) → 返回字符串则追加进 system prompt
+ ├─ 2. 上下文组装：ContextComposer.compose(userInput, 素材) → { messages, skillHits, ... }
+ │      ├─ 检索：rules（always 全量 + on-demand BM25）/ skills（BM25 top-k）
+ │      ├─ 组装 system prompt：buildSystemPrompt（模板渲染 + rules/skills 注入）+ 素材片段（injected + 「[长期记忆]」）
+ │      ├─ 记忆：③ longTermMemory.recall → 「[长期记忆]」；①② memory.getWindow → 裁剪+摘要后的历史
+ │      └─ 拼 messages = [system, ...history, user]
+ ├─ 3. 注册命中 skill 的捆绑工具（run 结束还原，防跨 run 残留）
+ └─ 4. 循环（steps < maxSteps）：
        ├─ 检查 abort / 超时
        ├─ hooks.beforeLLM(messages)          # 可改写
        ├─ LLM 调用（流式则 emit llm_delta）
@@ -371,9 +373,9 @@ hooks.onInit()                               # 装配完成触发一次
             │     Phase3 顺序：guardrail(afterToolCall) → afterToolCall → 回填 tool 消息
             ├─ 回填 messages；skipped 占位「已达上限」
             └─ hooks.onStepEnd → 下一轮
- ├─ 6. 兜底收尾：最后消息仍带 tool_calls → 追加一轮「不带工具」总结调用
- ├─ 7. 回写记忆（仅正常结束）：memory.append(本轮) + longTermMemory.remember(userInput + 最终答案)
- └─ 8. emit done → 返回 { finalMessage, messages, steps, finishReason }
+ ├─ 5. 兜底收尾：最后消息仍带 tool_calls → 追加一轮「不带工具」总结调用
+ ├─ 6. 回写记忆（仅正常结束）：memory.append(本轮) + longTermMemory.remember(userInput + 最终答案)
+ └─ 7. emit done → 返回 { finalMessage, messages, steps, finishReason }
 
 异常路径：AbortError → emit error + 直接 throw（不回写 memory、不触发 onError hook）；
           其他错误 → emit error + hooks.onError → throw；finally 卸载订阅 + 还原 skill 工具。
@@ -396,19 +398,20 @@ Task Planner 不是内核的一等公民，而是「工具 + 编排」的自然�
 
 ### 6.4 生命周期钩子（hooks）清单
 
-| 钩子             | 触发时机                                 |
-| ---------------- | ---------------------------------------- |
-| `onInit`         | 配置加载、装配开始                       |
-| `onSessionStart` | 会话开始                                 |
-| `beforeLLM`      | 调用模型前（可改写 prompt / 注入上下文） |
-| `afterLLM`       | 模型返回后（可改写结果 / 记录）          |
-| `beforeToolCall` | 工具执行前（可拦截 / 改写参数）          |
-| `afterToolCall`  | 工具执行后（可改写结果 / 审计）          |
-| `onStepEnd`      | 单轮循环结束                             |
-| `onSessionEnd`   | 会话结束                                 |
-| `onError`        | 任何错误                                 |
+| 钩子                   | 触发时机                                         |
+| ---------------------- | ------------------------------------------------ |
+| `onInit`               | 配置加载、装配开始                               |
+| `onSessionStart`       | 会话开始                                         |
+| `beforeContextCompose` | 组装上下文前（返回字符串则追加进 system prompt） |
+| `beforeLLM`            | 调用模型前（可改写 prompt / 注入上下文）         |
+| `afterLLM`             | 模型返回后（可改写结果 / 记录）                  |
+| `beforeToolCall`       | 工具执行前（可拦截 / 改写参数）                  |
+| `afterToolCall`        | 工具执行后（可改写结果 / 审计）                  |
+| `onStepEnd`            | 单轮循环结束                                     |
+| `onSessionEnd`         | 会话结束                                         |
+| `onError`              | 任何错误                                         |
 
-> 落地状态：9 个 hook 已全部实现——装配级 `onInit`、会话级 `onSessionStart` / `onSessionEnd`、循环级 `beforeLLM` / `afterLLM` / `beforeToolCall` / `afterToolCall` / `onStepEnd`、错误级 `onError`。
+> 落地状态：10 个 hook 已全部实现——装配级 `onInit`、会话级 `onSessionStart` / `onSessionEnd`、组装级 `beforeContextCompose`、循环级 `beforeLLM` / `afterLLM` / `beforeToolCall` / `afterToolCall` / `onStepEnd`、错误级 `onError`。
 
 hooks 是内核执行流程的**有限生命周期锚点**，不会随模块膨胀：
 

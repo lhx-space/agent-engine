@@ -31,9 +31,9 @@ await resolved.dispose();
 | `.../llm`               | LLM        | `ProviderFactory`、`createProvider`、`createOpenAIProvider`、`createAnthropicProvider`、归一化消息/结果类型                |
 | `.../tools`             | Tools      | `Tool`、`ToolRegistry`、内置原语（`todo` / `datetime` / `web_search` / `web_fetch`）、`createBashTool` / `createFileTool`s |
 | `.../agent`             | Agent      | `AgentLoop`、`assembleAgentLoop`、运行时事件、`ToolApproval`（Human-in-the-loop）                                          |
-| `.../hooks`             | Hooks      | `Hook` 接口 + `HookPipeline`（9 个生命周期点；只观察/改写，不阻断）                                                        |
+| `.../hooks`             | Hooks      | `Hook` 接口 + `HookPipeline`（10 个生命周期点；只观察/改写，不阻断）                                                       |
 | `.../rules`             | Rules      | `RuleRegistry`、`GuardrailRule`、`compileGuardrails`（声明式 guardrail 配置轴）                                            |
-| `.../context`           | Context    | `buildSystemPrompt`、`renderTemplate`、`TokenCounter`、`ContextCompactor`                                                  |
+| `.../context`           | Context    | `ContextComposer`、`buildSystemPrompt`、`renderTemplate`、`TokenCounter`、`ContextCompactor`、`SystemPromptInput`          |
 | `.../memory`            | Memory     | `ConversationMemory`（三层窗口）、`MemoryBackend`、`Summarizer`、`LongTermMemory`                                          |
 | `.../retrieval`         | Retrieval  | `CapabilityRegistry`（BM25）、`CapabilityLoader`、`Retriever`、`Reranker`、`VectorStore`                                   |
 | `.../embedding`         | Embedding  | `EmbeddingProvider`、`createEmbeddingProvider`（OpenAI 兼容）                                                              |
@@ -72,6 +72,10 @@ await resolved.dispose();
 
 声明式 `guardrails` 配置经 `compileGuardrails` 编译为可执行的 `GuardrailRule`（工具白/黑名单 + 入参/结果正则）；插件也可 `registerGuardrail`。
 
+### 上下文组装（ContextComposer）
+
+`ContextComposer`（`.../context`）负责「装载」侧：检索 rules/skills（BM25）→ 组装 system prompt（模板渲染 + rules/skills 注入 + 注入片段 + `[长期记忆]` 召回）→ 追加会话窗口 → 产出最终 `messages`。`AgentLoop` 只做 ReAct 循环——命中 skill 的捆绑工具经 `compose(...).skillHits` 交回注册。`beforeContextCompose` 钩子用于在组装前注入外部素材（如 `claude.md` / 项目摘要）。
+
 ## 执行流程
 
 ```mermaid
@@ -91,12 +95,9 @@ flowchart TD
     J --> K["hooks.onInit() → ResolvedAgent"]
 
     K --> R["run(userInput)"]
-    R --> S["检索 rules / skills"]
-    R --> T["组装 system prompt"]
-    R --> U["记忆：recall(长期) + getWindow(会话)"]
-    S --> V["拼 messages = system + history + user"]
-    T --> V
-    U --> V
+    R --> S["hooks.beforeContextCompose → 素材片段"]
+    S --> T["ContextComposer.compose<br/>检索 rules/skills + 组装 system prompt<br/>+ recall/getWindow → messages"]
+    T --> V["注册命中 skill 的捆绑工具"]
     V --> W{"steps 未超 maxSteps?"}
     W -- 是 --> X["beforeLLM → LLM → afterLLM"]
     X --> Y{"有 tool_calls?"}

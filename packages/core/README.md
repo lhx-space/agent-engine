@@ -31,9 +31,9 @@ await resolved.dispose();
 | `.../llm`               | LLM        | `ProviderFactory`, `createProvider`, `createOpenAIProvider`, `createAnthropicProvider`, normalized message/result types             |
 | `.../tools`             | Tools      | `Tool`, `ToolRegistry`, builtin primitives (`todo` / `datetime` / `web_search` / `web_fetch`), `createBashTool` / `createFileTool`s |
 | `.../agent`             | Agent      | `AgentLoop`, `assembleAgentLoop`, run events, `ToolApproval` (Human-in-the-loop)                                                    |
-| `.../hooks`             | Hooks      | `Hook` interface + `HookPipeline` (9 lifecycle points; observe/rewrite, never block)                                                |
+| `.../hooks`             | Hooks      | `Hook` interface + `HookPipeline` (10 lifecycle points; observe/rewrite, never block)                                               |
 | `.../rules`             | Rules      | `RuleRegistry`, `GuardrailRule`, `compileGuardrails` (declarative guardrail axis)                                                   |
-| `.../context`           | Context    | `buildSystemPrompt`, `renderTemplate`, `TokenCounter`, `ContextCompactor`                                                           |
+| `.../context`           | Context    | `ContextComposer`, `buildSystemPrompt`, `renderTemplate`, `TokenCounter`, `ContextCompactor`, `SystemPromptInput`                   |
 | `.../memory`            | Memory     | `ConversationMemory` (3-tier window), `MemoryBackend`, `Summarizer`, `LongTermMemory`                                               |
 | `.../retrieval`         | Retrieval  | `CapabilityRegistry` (BM25), `CapabilityLoader`, `Retriever`, `Reranker`, `VectorStore`                                             |
 | `.../embedding`         | Embedding  | `EmbeddingProvider`, `createEmbeddingProvider` (OpenAI-compatible)                                                                  |
@@ -72,6 +72,10 @@ await resolved.dispose();
 
 Declarative `guardrails` config compiles into executable `GuardrailRule`s (deny/allow tools + deny patterns) via `compileGuardrails`; plugins can also `registerGuardrail`.
 
+### Context assembly (ContextComposer)
+
+`ContextComposer` (`.../context`) owns the "loading / assembly" side of context: it retrieves rules/skills (BM25), assembles the system prompt (template render + rules/skills injection + injected fragments + `[长期记忆]` recall), then appends the session window and emits the final `messages`. `AgentLoop` stays a pure ReAct loop — skill tool registration is delegated back via `compose(...).skillHits`. The `beforeContextCompose` hook is the anchor for injecting external fragments (e.g. `claude.md` / project summaries) before assembly.
+
 ## Execution flow
 
 ```mermaid
@@ -91,12 +95,9 @@ flowchart TD
     J --> K["hooks.onInit() → ResolvedAgent"]
 
     K --> R["run(userInput)"]
-    R --> S["retrieve rules / skills"]
-    R --> T["assemble system prompt"]
-    R --> U["memory: recall (long-term) + getWindow (session)"]
-    S --> V["build messages = system + history + user"]
-    T --> V
-    U --> V
+    R --> S["hooks.beforeContextCompose → fragment"]
+    S --> T["ContextComposer.compose<br/>retrieve rules/skills + assemble system prompt<br/>+ recall/getWindow → messages"]
+    T --> V["register hit skills' bundled tools"]
     V --> W{"steps within maxSteps?"}
     W -- yes --> X["beforeLLM → LLM → afterLLM"]
     X --> Y{"has tool_calls?"}
