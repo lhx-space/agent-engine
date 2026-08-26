@@ -48,6 +48,7 @@
     "rstest",
     "rstack",
     "searxng",
+    "sandboxed",
     "sitesearch",
     "serp",
     "serpapi",

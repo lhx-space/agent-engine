@@ -29,18 +29,8 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "files.eol": "\n",
   "cSpell.enableFiletypes": ["markdown", "yaml"],
-  "mdk.defaultEditor": "Text Editor",
-  "workbench.editorAssociations": {
-    "*.app": "default",
-    "*.global": "default",
-    "*.action": "default",
-    "*.extension": "default",
-    "*.page": "default",
-    "*.service": "default",
-    "*.cim": "default",
-    "*.rule": "default",
-    "*.properties": "default",
-    "*.fragment": "default"
-  },
-  "mdk.showBase": true
+  "mdk.defaultEditor": "MDK Editor",
+  "workbench.editorAssociations": {},
+  "mdk.showBase": true,
+  "mdk.platform": "iOS & Android & Web"
 }

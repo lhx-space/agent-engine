@@ -1,23 +1,32 @@
 # @agent-engine/plugin-git
 
-Git 工具套件插件：注册单个 `git` 工具，默认只读子命令（status / diff / log / show / branch / remote / rev-parse / ls-files / blame），破坏性子命令（commit / push / checkout / reset / clean / merge / rebase …）阻断；经 `SandboxBackend` 隔离执行，并可经 rtk 压缩输出。
+Git tool-suite plugin: registers a single `git` tool, read-only subcommands by default (`status` / `diff` / `log` / `show` / `branch` / `remote` / `rev-parse` / `ls-files` / `blame`), destructive subcommands (`commit` / `push` / `checkout` / `reset` / `clean` / `merge` / `rebase` …) blocked; runs through `SandboxBackend` with optional rtk output compaction.
 
-## 用法
+## Install
+
+```bash
+pnpm add @agent-engine/plugin-git
+```
+
+## Usage
 
 ```ts
 import { createGitPlugin } from '@agent-engine/plugin-git';
 import { resolveSandboxBackend } from '@agent-engine/core';
 
 const resolution = resolveSandboxBackend('auto', { compact: true });
-if (!resolution.available) throw new Error('no sandbox');
+if (!resolution.available) throw new Error('no sandbox available');
 
-const gitPlugin = createGitPlugin({ sandbox: resolution.backend });
+const gitPlugin = createGitPlugin({
+  sandbox: resolution.backend,
+  // policy / compact are optional
+});
 
-// 装配时传入 plugins: [gitPlugin]
+// then assemble with plugins: [gitPlugin]
 ```
 
-## 安全
+## Security
 
-- 默认只读白名单，破坏性子命令黑名单阻断。
-- 经沙箱隔离执行（workspaceRoot 挂载、资源限制、网络默认关闭）。
-- `compact: true` 时以 rtk 包装命令压缩输出，需沙箱镜像安装 rtk。
+- Read-only allowlist by default; destructive subcommands are blocked.
+- Runs inside the sandbox (`workspaceRoot` mount, resource limits, network off by default).
+- `compact: true` wraps the command with `rtk` to compress output (the sandbox image must ship `rtk`).

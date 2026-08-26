@@ -1,12 +1,47 @@
 # @agent-engine/server
 
-Agent Engine HTTP server (Docker deployment).
+Agent Engine HTTP server (Docker deployment). Exposes REST + streaming APIs over Hono, driving `@agent-engine/core`.
 
-## Plan
+## Install
 
-- Expose REST and streaming APIs for `apps/web` and external systems.
-- Built on `hono`, driving `@agent-engine/core`.
+```bash
+pnpm add @agent-engine/server
+```
+
+## Endpoints
+
+| Method   | Path                      | Description                                                                     |
+| -------- | ------------------------- | ------------------------------------------------------------------------------- |
+| `GET`    | `/health`                 | Liveness probe → `{ ok: true }`                                                 |
+| `POST`   | `/api/agent/run`          | Non-streaming run: `{ config, input, sessionId? }` → `{ sessionId, ...result }` |
+| `POST`   | `/api/agent/run/stream`   | NDJSON streaming run (`application/x-ndjson`), header `x-session-id`            |
+| `DELETE` | `/api/agent/sessions/:id` | End and dispose a session → `{ ok: true }`                                      |
+
+## Usage
+
+```ts
+import { createApp, serve } from '@agent-engine/server';
+import { pino } from 'pino'; // optional
+
+const app = createApp({
+  // pluginFactories / providerFactory are injected here if not using built-ins
+  sessionStore: mySessionStore, // SessionStoreBackend (default InMemorySessionStore)
+  logger: pino(), // Logger (default consoleLogger)
+});
+
+serve({/* ServerOptions */}, 8080);
+```
+
+## Pluggable
+
+- **`SessionStoreBackend`** — session lifecycle (reuse / TTL / LRU eviction). Default `InMemorySessionStore`; redis etc. implement the same interface.
+- **`Logger`** — info/warn/error/debug. Default `consoleLogger`; pino / winston / OTel are injected via `options.logger` (logging is not a kernel concern — observability lives in the events bus + hooks).
+
+## Notes
+
+- `createBuiltinPluginFactories(config)` wires `@agent-engine/plugin-files` / `plugin-bash` / `plugin-git` without external factories.
+- `envProviderFactory` resolves the LLM provider from environment variables (DeepSeek default).
 
 ## Status
 
-📦 Scaffold (to be implemented in M4).
+✅ Implemented (REST + streaming + session lifecycle + pluggable store/logger).

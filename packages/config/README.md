@@ -1,11 +1,25 @@
 # @agent-engine/config
 
-Config loading and schema. Normalizes YAML / JSON5 / TypeScript into a single `AgentConfig` (Zod-validated).
+Config loading and schema. Normalizes YAML / JSON5 / TypeScript into a single `AgentConfig` (Zod-validated, deep-frozen).
+
+## Install
+
+```bash
+pnpm add @agent-engine/config
+```
 
 ## Capabilities
 
-- **`AgentConfigSchema`**: Zod schemas for the eight configurable axes (model / systemPrompt / rules / tools / mcp / skills / memory / hooks / plugins / orchestration), with TS types derived via `z.infer`.
+- **`AgentConfigSchema`**: Zod schemas for every config axis — `model` / `systemPrompt` / `rules` / `guardrails` / `tools` / `mcp` / `skills` / `memory` / `cache` / `embedding` / `hooks` / `plugins` / `orchestration` / `execution` / `security`, with TS types derived via `z.infer`.
 - **`loadAgentConfig(path, options?)`**: selects a parser by extension, validates via Zod, and throws readable errors on failure.
+- **`deepFreeze` / `sanitizeConfigValue`**: reuse for defense-in-depth at any config boundary.
+
+## Subpath exports
+
+| Subpath                       | Contents                                                                    |
+| ----------------------------- | --------------------------------------------------------------------------- |
+| `@agent-engine/config`        | `AgentConfigSchema`, `loadAgentConfig`, `deepFreeze`, `sanitizeConfigValue` |
+| `@agent-engine/config/schema` | All Zod schemas + inferred types                                            |
 
 ## API
 
@@ -30,13 +44,13 @@ const tsConfig = await loadAgentConfig('./agents/local.ts', { allowTsConfig: tru
 
 - **Zod 4 single source of truth**: all schemas defined in Zod, types derived via `z.infer`; frontend forms/editors reuse the same schema.
 - **Three-format normalization**: `.yaml` → `yaml`, `.json`/`.json5` → `json5` (comment-tolerant), `.ts` → `jiti`; all three produce an equivalent `AgentConfig`.
-- **Multi-model design (capability split + per-instance override)**: default `model` (chat); embedding uses a separate field (capability axis); subagent models override per-subagent (role axis). See `AGENTS.md` 7.3.
+- **Multi-model design (capability split + per-instance override)**: default `model` (chat); `embedding` is a separate field (capability axis); subagent models override per-subagent (role axis). See `AGENTS.md` 7.3.
 
 ## Dependencies
 
-- `zod` (schema validation + `toJSONSchema`)
+- `zod` (schema validation)
 - `yaml` / `json5` / `jiti` (three-format parsing)
 
 ## Status
 
-✅ Implemented (M1).
+✅ Implemented.
