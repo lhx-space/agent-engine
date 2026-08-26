@@ -86,6 +86,7 @@ export class AgentLoop {
       skillLoader: this.skillLoader,
       memory: this.memory,
       longTermMemory: this.longTermMemory,
+      documentIndex: options.documentIndex,
     });
   }
 

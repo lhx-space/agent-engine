@@ -161,6 +161,27 @@ export const EmbeddingConfigSchema = z.object({
 });
 export type EmbeddingConfig = z.infer<typeof EmbeddingConfigSchema>;
 
+// ============ documents ============
+
+export const DocumentChunkingStrategySchema = z.enum(['fixed', 'heading']);
+export type DocumentChunkingStrategy = z.infer<typeof DocumentChunkingStrategySchema>;
+
+export const DocumentChunkingSchema = z.object({
+  strategy: DocumentChunkingStrategySchema.default('heading'),
+  size: z.number().int().positive().default(1000),
+  overlap: z.number().int().nonnegative().default(0),
+});
+export type DocumentChunking = z.infer<typeof DocumentChunkingSchema>;
+
+export const DocumentsConfigSchema = z.object({
+  /** 文档源路径数组（文件或目录，目录递归）。 */
+  sources: z.array(z.string()).default([]),
+  chunking: DocumentChunkingSchema.default(DocumentChunkingSchema.parse({})),
+  /** 每次 run 检索注入的 top-k 数量，默认 4。 */
+  topK: z.number().int().positive().default(4),
+});
+export type DocumentsConfig = z.infer<typeof DocumentsConfigSchema>;
+
 // ============ orchestration ============
 
 export const OrchestrationModeSchema = z.enum(['single', 'sequential', 'parallel', 'graph']);
@@ -303,6 +324,7 @@ export const AgentConfigSchema = z.object({
   memory: MemoryConfigSchema.optional(),
   cache: CacheConfigSchema.optional(),
   embedding: EmbeddingConfigSchema.optional(),
+  documents: DocumentsConfigSchema.optional(),
   hooks: z.array(HookConfigSchema).default([]),
   plugins: z.array(z.string()).default([]),
   guardrails: GuardrailConfigSchema,

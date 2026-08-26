@@ -2,6 +2,7 @@ import type { AgentConfig } from '@agent-engine/config';
 import { assembleAgentLoop } from '../agent/assemble';
 import { resolveMcpServers } from '../capability-source/mcp';
 import { resolveSkills } from '../capability-source/skill';
+import { loadDocuments } from '../documents';
 import { createEmbeddingProvider } from '../embedding/openai';
 import { HookPipeline } from '../hooks/pipeline';
 import { createProvider } from '../llm/provider';
@@ -38,6 +39,12 @@ export async function resolveAgentConfig(
   // skills：按来源（path / npm / git）解析加载，并聚合临时资源清理。
   const { skills, dispose: disposeSkills } = await resolveSkills(config.skills);
 
+  // documents：装配时装载文档（归一化 → 分块 → 索引），run 时检索注入。
+  const documentIndex =
+    config.documents && config.documents.sources.length > 0
+      ? await loadDocuments(config.documents)
+      : undefined;
+
   const resolved = await assembleAgentLoop({
     provider,
     registry,
@@ -56,6 +63,7 @@ export async function resolveAgentConfig(
     longTermBackend: config.memory?.longTerm?.backend,
     cacheBackend: config.cache?.backend,
     embeddingProvider: config.embedding ? createEmbeddingProvider(config.embedding) : undefined,
+    documentIndex,
   });
 
   const { dispose: disposeAgent } = resolved;

@@ -25,29 +25,29 @@ await resolved.dispose();
 
 ## 子路径导出
 
-| 子路径                  | 模块       | 内容                                                                                                                                           |
-| ----------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@agent-engine/core`    | —          | `AgentLoop`、`assembleAgentLoop`、`resolveAgentConfig`、`RuleRegistry`、`EventBus`、各后端与类型                                               |
-| `.../llm`               | LLM        | `ProviderFactory`、`createProvider`、`createOpenAIProvider`、`createAnthropicProvider`、归一化消息/结果类型、`FinishReason`、`CompletionError` |
-| `.../tools`             | Tools      | `Tool`、`ToolRegistry`、内置原语（`todo` / `datetime` / `web_search` / `web_fetch`）、`createBashTool` / `createFileTool`s                     |
-| `.../agent`             | Agent      | `AgentLoop`、`assembleAgentLoop`、运行时事件、`ToolApproval`（Human-in-the-loop）、`AgentRunOutcome`                                           |
-| `.../hooks`             | Hooks      | `Hook` 接口 + `HookPipeline`（10 个生命周期点；只观察/改写，不阻断）                                                                           |
-| `.../rules`             | Rules      | `RuleRegistry`、`GuardrailRule`、`compileGuardrails`（声明式 guardrail 配置轴）                                                                |
-| `.../context`           | Context    | `ContextComposer`、`buildSystemPrompt`、`renderTemplate`、`TokenCounter`、`ContextCompactor`、`SystemPromptInput`                              |
-| `.../documents`         | Documents  | `DocumentNormalizer`、`Chunker`、`TextNormalizer`、`HtmlNormalizer`、`FixedSizeChunker`、`MarkdownHeadingChunker`                              |
-| `.../memory`            | Memory     | `ConversationMemory`（三层窗口）、`MemoryBackend`、`Summarizer`、`LongTermMemory`                                                              |
-| `.../retrieval`         | Retrieval  | `CapabilityRegistry`（BM25）、`CapabilityLoader`、`Retriever`、`Reranker`、`VectorStore`                                                       |
-| `.../embedding`         | Embedding  | `EmbeddingProvider`、`createEmbeddingProvider`（OpenAI 兼容）                                                                                  |
-| `.../mcp`               | MCP        | `connectMcpServer` / `connectMcpServers`、`toTool`、`normalizeCallToolResult`                                                                  |
-| `.../plugins`           | Plugins    | `Plugin`、`PluginContext`、`PluginManager`                                                                                                     |
-| `.../capability`        | Capability | `CapabilityBundle`、`mergeBundles`                                                                                                             |
-| `.../capability-source` | Sources    | `resolveSkill` / `resolveSkills`、`resolveMcpServer` / `resolveMcpServers`                                                                     |
-| `.../resolve`           | Resolve    | `resolveAgentConfig`（配置 → `ResolvedAgent`）                                                                                                 |
-| `.../sandbox`           | Sandbox    | `SandboxBackend`（docker/nsjail）、`FunctionSandbox`（`WasiFunctionSandbox`）                                                                  |
-| `.../events`            | Events     | `EventBus`、`AgentEngineEvent`                                                                                                                 |
-| `.../skills`            | Skills     | `Skill`、`loadSkillFromPath`                                                                                                                   |
-| `.../structured-output` | Structured | `extractStructured`（JSON 模式 + Zod 校验 + 重试）、`ExtractStructuredInput`                                                                   |
-| `.../cache`             | Cache      | `CacheBackend`、`InMemoryCacheBackend`                                                                                                         |
+| 子路径                  | 模块       | 内容                                                                                                                                                |
+| ----------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@agent-engine/core`    | —          | `AgentLoop`、`assembleAgentLoop`、`resolveAgentConfig`、`RuleRegistry`、`EventBus`、各后端与类型                                                    |
+| `.../llm`               | LLM        | `ProviderFactory`、`createProvider`、`createOpenAIProvider`、`createAnthropicProvider`、归一化消息/结果类型、`FinishReason`、`CompletionError`      |
+| `.../tools`             | Tools      | `Tool`、`ToolRegistry`、内置原语（`todo` / `datetime` / `web_search` / `web_fetch`）、`createBashTool` / `createFileTool`s                          |
+| `.../agent`             | Agent      | `AgentLoop`、`assembleAgentLoop`、运行时事件、`ToolApproval`（Human-in-the-loop）、`AgentRunOutcome`                                                |
+| `.../hooks`             | Hooks      | `Hook` 接口 + `HookPipeline`（10 个生命周期点；只观察/改写，不阻断）                                                                                |
+| `.../rules`             | Rules      | `RuleRegistry`、`GuardrailRule`、`compileGuardrails`（声明式 guardrail 配置轴）                                                                     |
+| `.../context`           | Context    | `ContextComposer`、`buildSystemPrompt`、`renderTemplate`、`TokenCounter`、`ContextCompactor`、`SystemPromptInput`                                   |
+| `.../documents`         | Documents  | `DocumentNormalizer`、`Chunker`、`TextNormalizer`、`HtmlNormalizer`、`FixedSizeChunker`、`MarkdownHeadingChunker`、`DocumentIndex`、`loadDocuments` |
+| `.../memory`            | Memory     | `ConversationMemory`（三层窗口）、`MemoryBackend`、`Summarizer`、`LongTermMemory`                                                                   |
+| `.../retrieval`         | Retrieval  | `CapabilityRegistry`（BM25）、`CapabilityLoader`、`Retriever`、`Reranker`、`VectorStore`                                                            |
+| `.../embedding`         | Embedding  | `EmbeddingProvider`、`createEmbeddingProvider`（OpenAI 兼容）                                                                                       |
+| `.../mcp`               | MCP        | `connectMcpServer` / `connectMcpServers`、`toTool`、`normalizeCallToolResult`                                                                       |
+| `.../plugins`           | Plugins    | `Plugin`、`PluginContext`、`PluginManager`                                                                                                          |
+| `.../capability`        | Capability | `CapabilityBundle`、`mergeBundles`                                                                                                                  |
+| `.../capability-source` | Sources    | `resolveSkill` / `resolveSkills`、`resolveMcpServer` / `resolveMcpServers`                                                                          |
+| `.../resolve`           | Resolve    | `resolveAgentConfig`（配置 → `ResolvedAgent`）                                                                                                      |
+| `.../sandbox`           | Sandbox    | `SandboxBackend`（docker/nsjail）、`FunctionSandbox`（`WasiFunctionSandbox`）                                                                       |
+| `.../events`            | Events     | `EventBus`、`AgentEngineEvent`                                                                                                                      |
+| `.../skills`            | Skills     | `Skill`、`loadSkillFromPath`                                                                                                                        |
+| `.../structured-output` | Structured | `extractStructured`（JSON 模式 + Zod 校验 + 重试）、`ExtractStructuredInput`                                                                        |
+| `.../cache`             | Cache      | `CacheBackend`、`InMemoryCacheBackend`                                                                                                              |
 
 ## 亮点
 

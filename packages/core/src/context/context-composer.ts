@@ -1,4 +1,5 @@
 import type { Rule } from '@agent-engine/config';
+import type { DocumentIndex } from '../documents/document-index';
 import type { ChatMessage } from '../llm/types';
 import type { ConversationMemory } from '../memory/conversation-memory';
 import type { LongTermMemory } from '../memory/long-term-memory';
@@ -16,6 +17,8 @@ export interface ComposeContextInput {
   skillLoader?: CapabilityLoader<Skill>;
   memory?: ConversationMemory;
   longTermMemory?: LongTermMemory;
+  /** 文档检索索引（可选）；run 时按 userInput 检索 top-k 注入 `[文档]`。 */
+  documentIndex?: DocumentIndex;
 }
 
 /** 上下文组装结果：完整 messages + 各中间产物（供调用方注册 skill 工具 / 观测）。 */
@@ -40,6 +43,7 @@ export class ContextComposer {
   private readonly skillLoader: CapabilityLoader<Skill> | undefined;
   private readonly memory: ConversationMemory | undefined;
   private readonly longTermMemory: LongTermMemory | undefined;
+  private readonly documentIndex: DocumentIndex | undefined;
 
   constructor(input: ComposeContextInput) {
     this.systemPrompt = input.systemPrompt;
@@ -48,6 +52,7 @@ export class ContextComposer {
     this.skillLoader = input.skillLoader;
     this.memory = input.memory;
     this.longTermMemory = input.longTermMemory;
+    this.documentIndex = input.documentIndex;
   }
 
   async compose(userInput: string, injectedFragment = ''): Promise<ComposeContextResult> {
@@ -59,9 +64,12 @@ export class ContextComposer {
 
     const baseSystem = await this.resolveSystemPrompt(userInput, rulesText, skillsText);
     const memories = (await this.longTermMemory?.recall(userInput)) ?? [];
+    const docChunks = this.documentIndex ? this.documentIndex.retrieve(userInput) : [];
+    const docText = docChunks.map((chunk) => chunk.text).join('\n\n');
     const fragments = [
       injectedFragment,
       memories.length > 0 ? `[长期记忆]\n${memories.join('\n')}` : '',
+      docText.length > 0 ? `[文档]\n${docText}` : '',
     ].filter((text) => text.length > 0);
     const systemPrompt =
       fragments.length > 0 ? `${baseSystem}\n\n${fragments.join('\n\n')}` : baseSystem;

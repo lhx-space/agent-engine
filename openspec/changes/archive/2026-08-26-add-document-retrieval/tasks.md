@@ -1,0 +1,5 @@
+- [x] `config/schema`：`documents` 配置轴（sources / chunking / topK）
+- [x] `retrieval/registry.ts`：导出 `segment`
+- [x] `documents/document-index.ts`：`DocumentIndex` + `loadDocuments`
+- [x] 接线：resolve → assemble → AgentLoop → ContextComposer
+- [x] 测试 + 全量校验（test / typecheck / lint / spell / format / lint:md / build）

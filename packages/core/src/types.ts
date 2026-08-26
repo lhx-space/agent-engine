@@ -24,6 +24,7 @@ export type {
   DocumentNormalizer,
   NormalizeInput,
 } from './documents/types';
+export type { DocumentIndex } from './documents/document-index';
 // tools
 export type { Tool } from './tools/types';
 export type { TodoInput, TodoResult } from './tools/builtin/todo';

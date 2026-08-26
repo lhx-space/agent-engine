@@ -13,6 +13,8 @@ export {
   HtmlNormalizer,
   FixedSizeChunker,
   MarkdownHeadingChunker,
+  DocumentIndex,
+  loadDocuments,
 } from './documents';
 export { ToolRegistry } from './tools/registry';
 export {

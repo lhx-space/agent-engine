@@ -1,4 +1,5 @@
 import type { Rule } from '@agent-engine/config';
+import type { DocumentIndex } from '../documents/document-index';
 import type { SystemPromptInput } from '../context/types';
 import type { EventBus } from '../events/event-bus';
 import type { HookPipeline } from '../hooks/pipeline';
@@ -45,6 +46,8 @@ export interface AgentLoopOptions {
   memory?: ConversationMemory;
   /** 长期记忆（可选），run 开始召回注入、正常结束写回（三层记忆③）。 */
   longTermMemory?: LongTermMemory;
+  /** 文档检索索引（可选），run 时检索 top-k 注入 `[文档]`。 */
+  documentIndex?: DocumentIndex;
   /** 可复用能力包（可选），按 query 检索命中后注入指令 + 注册捆绑工具。 */
   skills?: Skill[];
   /** 事件总线（可选）：run 期间把总线 `custom` 事件转发到 `onEvent`。 */

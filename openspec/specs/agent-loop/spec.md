@@ -354,3 +354,12 @@ Agent Loop SHALL 支持注入 `longTermMemory`（可选）；每次 `run` 开始
 
 - **WHEN** 以含静态 system prompt、会话历史、长期记忆召回的输入调用 `compose`
 - **THEN** 返回 messages 依次为 system（含规则/技能/长期记忆片段）、历史、当前 user
+
+### Requirement: 文档检索注入
+
+系统 SHALL 在 run 时用 userInput 从 `DocumentIndex` 检索 top-k 文档片段，并以 `[文档]` 片段注入 system prompt（与 `[长期记忆]` 同级）。
+
+#### Scenario: 注入命中片段
+
+- **WHEN** Agent 装配了含相关文档的 `DocumentIndex` 且 userInput 命中
+- **THEN** system prompt 含 `[文档]` 片段与命中文本

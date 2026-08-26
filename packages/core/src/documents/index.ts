@@ -1,6 +1,7 @@
 export { TextNormalizer } from './text-normalizer';
 export { HtmlNormalizer } from './html-normalizer';
 export { FixedSizeChunker, MarkdownHeadingChunker } from './chunker';
+export { DocumentIndex, loadDocuments } from './document-index';
 export type {
   Chunk,
   Chunker,

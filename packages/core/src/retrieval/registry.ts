@@ -2,7 +2,7 @@ import MiniSearch from 'minisearch';
 import type { CapabilityHit, CapabilityMeta, CapabilityType } from './types';
 
 /** 中文分词（Node 内置 Intl.Segmenter，word 粒度，零依赖）。 */
-function segment(text: string): string[] {
+export function segment(text: string): string[] {
   const segmenter = new Intl.Segmenter('zh', { granularity: 'word' });
   return [...segmenter.segment(text)].map((s) => s.segment).filter((s) => s.trim() !== '');
 }
