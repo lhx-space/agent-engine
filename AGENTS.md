@@ -41,31 +41,30 @@
 
 据此分三档：
 
-| 状态                                  | 能力                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 说明                                                                                                                                              |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ✅ 已达标（有接口 + 有默认 + 可注入） | LLM（`LLMProvider` + openai/anthropic + `providerFactory`）、搜索（`SearchProvider` + searxng/ddg/tavily/serper + fallback）、沙箱（`SandboxBackend` + docker/nsjail/auto）、MCP（`connectMcpServer`）、Skills（path/npm/git）、**长期记忆 `MemoryBackend` + `InMemoryMemoryBackend`**（`memory.longTerm.backend` 按名解析）、**缓存 `CacheBackend` + `InMemoryCacheBackend`**（`cache.backend` 按名解析）、**向量库 `VectorStore` + `InMemoryVectorStore`**（余弦默认）、**`EmbeddingProvider`**（接口，无默认需真实模型）、**events 总线（`EventBus` + `AgentEngineEvent`）**、**流式 `custom` 事件**、**Human-in-the-loop 审批（`approveToolCall`）**、**`TokenCounter` / `ContextCompactor`**（token 预算整轮裁剪）、**`Retriever` / `Reranker`**（BM25 默认） | 用户按接口接入自己的实现即可；Memory/Cache/VectorStore/Embedding/上下文裁剪/检索 的消费逻辑（三层记忆 / LLM·检索缓存 / 语义召回 / RRF 融合）属 M3 |
-| ⏳ 未落地                             | 多 Agent 编排（`orchestration` 仅 `single`，`spawn` 未实现）、FunctionSandbox（WASM/WASI）、其余待扩展项                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | 见 §2.2 清单                                                                                                                                      |
+| 状态                                  | 能力                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 说明                                                                                                                 |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| ✅ 已达标（有接口 + 有默认 + 可注入） | LLM（`LLMProvider` + openai/anthropic + `providerFactory`）、搜索（`SearchProvider` + searxng/ddg/tavily/serper + fallback）、沙箱（`SandboxBackend` + docker/nsjail/auto）、MCP（`connectMcpServer`）、Skills（path/npm/git）、**长期记忆 `MemoryBackend` + `InMemoryMemoryBackend`**（`memory.longTerm.backend` 按名解析）、**缓存 `CacheBackend` + `InMemoryCacheBackend`**（`cache.backend` 按名解析）、**向量库 `VectorStore` + `InMemoryVectorStore`**（余弦默认）、**`EmbeddingProvider`**（接口，无默认需真实模型）、**events 总线（`EventBus` + `AgentEngineEvent`）**、**流式 `custom` 事件**、**Human-in-the-loop 审批（`approveToolCall`）**、**`TokenCounter` / `ContextCompactor`**（token 预算整轮裁剪）、**`Retriever` / `Reranker`**（BM25 默认）、**guardrail 声明式配置轴**（`guardrails` + `compileGuardrails` + `registerGuardrail`）、**SessionStore 可插拔**（`SessionStoreBackend` + `InMemorySessionStore`，server 层）、**三层记忆消费**（token 预算整轮裁剪 + 滚动摘要 `Summarizer` + 语义召回 `SemanticMemory`）、**`FunctionSandbox` + `WasiFunctionSandbox`**（WASI 隔离不可信代码） | 用户按接口接入自己的实现即可；三层记忆消费已落地（token 预算 / 滚动摘要 / 语义召回）；LLM·检索缓存 / RRF 融合 属后续 |
+| ⏳ 未落地                             | 多 Agent 编排（`orchestration` 仅 `single`，`spawn` 未实现）、其余待扩展项                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | 见 §2.2 清单                                                                                                         |
 
 ### 2.2 动态扩展面：四个扩展出口 + 待扩展清单
 
 内核对外扩展的出口只有四个，任何「用户可动态扩展」的能力/后端都必须落到其中之一：
 
-1. **`PluginContext`（注入点）**：registerTool / registerSkill / registerHook / registerRule / provideSystemPrompt / registerMemoryBackend / registerCacheBackend / registerVectorStore / registerEmbeddingProvider。
-2. **`CapabilityBundle`（能力汇聚）**：tools / skills / hooks / rules / promptFragments / 各后端，经 `mergeBundles` 单一汇聚。
+1. **`PluginContext`（注入点）**：registerTool / registerSkill / registerHook / registerRule / registerGuardrail / provideSystemPrompt / registerMemoryBackend / registerCacheBackend / registerVectorStore / registerEmbeddingProvider / registerTokenCounter / registerContextCompactor / registerRetriever / registerReranker / registerSummarizer。
+2. **`CapabilityBundle`（能力汇聚）**：tools / skills / hooks / rules / guardrails / promptFragments / 各后端 / 各策略（tokenCounter / contextCompactor / retriever / reranker / summarizer），经 `mergeBundles` 单一汇聚。
 3. **`ResolveDeps`（装配依赖）**：providerFactory / pluginFactories / sandbox 等。
-4. **`ResolvedAgent`（运行时产物）**：agent / memoryBackend / cacheBackend / vectorStore / embeddingProvider / eventBus / dispose。
+4. **`ResolvedAgent`（运行时产物）**：agent / memoryBackend / cacheBackend / vectorStore / embeddingProvider / longTermMemory / tokenCounter / contextCompactor / retriever / reranker / eventBus / dispose。
 
-**已可插拔**：LLM / 搜索 / 沙箱 / MCP / Skills / Tools / Plugin / MemoryBackend / CacheBackend / VectorStore / EmbeddingProvider / events 总线 / 流式 `custom` 事件 / Human-in-the-loop 审批 / `TokenCounter` / `ContextCompactor` / `Retriever` / `Reranker`。
+**已可插拔**：LLM / 搜索 / 沙箱（bash）/ FunctionSandbox（WASI）/ MCP / Skills / Tools / Plugin / MemoryBackend / CacheBackend / VectorStore / EmbeddingProvider / SessionStoreBackend / events 总线 / 流式 `custom` 事件 / Human-in-the-loop 审批 / guardrail 声明式配置轴 / `TokenCounter` / `ContextCompactor` / `Retriever` / `Reranker` / `Summarizer` / `SemanticMemory`。
 
 **待扩展清单（按价值优先级）**：
 
-| 优先级 | 缺口                  | 应暴露成                                          | 批次 |
-| ------ | --------------------- | ------------------------------------------------- | ---- |
-| P2     | Guardrail 配置轴      | 声明式安全拦截（危险操作白/黑名单，配置可热更）   | C    |
-| P2     | SessionStore 可插拔   | 接口 + in-memory 默认 + redis 等可接（server 层） | C    |
-| P3     | 重试策略 / 结果归一化 | 自定义重试熔断 / 工具错误降级                     | 缓   |
+| 优先级 | 缺口                  | 应暴露成                        | 批次 |
+| ------ | --------------------- | ------------------------------- | ---- |
+| P3     | 重试策略 / 结果归一化 | 自定义重试熔断 / 工具错误降级   | 缓   |
+| P3     | LLM·检索缓存 / RRF    | 缓存复用检索结果 / 混合召回融合 | 缓   |
 
-**分批**：A（✅ 可观测 + 控制流：events 总线 + 流式 custom + Human-in-the-loop）→ B（✅ 上下文接口层：TokenCounter / Compactor / Retriever / Reranker）→ C（会话 / 安全：SessionStore / guardrail 配置）。
+**分批**：A（✅ 可观测 + 控制流：events 总线 + 流式 custom + Human-in-the-loop）→ B（✅ 上下文接口层：TokenCounter / Compactor / Retriever / Reranker）→ C（✅ 会话 / 安全：SessionStore / guardrail 配置）。三层记忆消费（①②③）与 FunctionSandbox（WASI）已随批 B/C 落地。
 
 ---
 
@@ -245,10 +244,10 @@ docs/（Rspress）为独立站点，无运行时依赖
 
 - **system-prompt**：系统提示词，由「模板 + 变量 + 各模块（skills/rules/plugins）注入的片段」组装而成。组装已落地 `context` 模块：`buildSystemPrompt({ systemPrompt, rulesText, skillsText })` 做模板渲染（`renderTemplate`，`{{var}}` 正则替换、未提供变量保留原样、null/undefined 空串）+ rules / skills 注入（`rules` / `skills` 为内置变量，模板用 `{{rules}}` / `{{skills}}` 占位符声明注入点，未声明时兜底追加）；检索由 AgentLoop 用统一 `CapabilityLoader` 完成。`AgentLoop.systemPrompt` 支持三种形态——静态字符串 / `SystemPrompt` 模板对象（配 `rules` 每次 `run` 内建检索注入）/ 函数式（完全自定义），每次 `run` 动态解析，使 rules 按需检索结果真正进入 system prompt。
 - **memory**：记忆管理，分两层：
-  - **会话上下文**：单次会话的 message 窗口管理（含窗口裁剪）。已落地 `ConversationMemory`（历史管理 + `maxMessages` 窗口裁剪，不存 system——system 每次 run 动态组装）；`AgentLoop.memory` 选项注入后跨 run 累积历史实现多轮对话（异常不回写）。
-  - **长期记忆**：跨会话的持久化 + 向量检索（可选，后端可插拔，M3）。
+  - **会话上下文**：单次会话的 message 窗口管理（含窗口裁剪）。已落地 `ConversationMemory`（不存 system——system 每次 run 动态组装）+ `getWindow()`：`maxMessages` 条数裁剪 / `maxTokens` token 预算整轮裁剪（三层记忆①，`ContextCompactor`）/ `summary` 滚动摘要（三层记忆②，`Summarizer`，默认 `LLMSummarizer`）；`AgentLoop.memory` 注入后跨 run 累积历史（异常不回写）。
+  - **长期记忆**：跨会话持久化 + 语义召回。已落地 `LongTermMemory` / `SemanticMemory`（三层记忆③：`EmbeddingProvider` 向量化 + `VectorStore.query` 召回 + `MemoryBackend` 持久化；无 embedding 时优雅 no-op）；`AgentLoop.longTermMemory` 注入后 run 开始召回注入、正常结束写回。
 
-  > **已知局限与演进方向（M3）**：当前窗口裁剪是「按条数从头丢弃」，两个问题——(1) 条数 ≠ token 预算，裁剪粒度失控；(2) 可能拆散 assistant `tool_call` 与后续 `tool` 结果的配对，导致下一轮请求非法。演进为**三层记忆**：① 正确截取（token 预算 + 整轮边界淘汰，绝不拆散配对）→ ② 压缩层（滚动摘要，LLM 摘要旧轮）→ ③ 语义层（embedding 向量化 + pgvector 召回，长期记忆）。
+  > **三层记忆已落地**：① 正确截取（token 预算 + 整轮边界淘汰，绝不拆散配对，`ContextCompactor`）→ ② 压缩层（滚动摘要，`Summarizer` 摘要旧轮）→ ③ 语义层（embedding 向量化 + 向量召回 + 持久化，`SemanticMemory`）。剩余演进：记忆去重/遗忘、LLM·检索缓存、RRF 融合（见 §2.2 待扩展 P3）。
 
 ### 关系速记
 
@@ -311,7 +310,7 @@ rules / skills / mcp tools / plugins 共享「**meta + 按需加载**」的机�
 - **安全默认**：`bash.enabled` 默认 `false`；**沙箱不可用即禁用，绝不回退宿主进程裸奔**。
 - **复用优先**：沙箱复用系统二进制 `docker` / `nsjail`（`node:child_process` 驱动），不引第三方 npm 沙箱库、不自研沙箱。
 - **输出压缩（rtk）**：`security.sandbox.compact`（默认 false）开启后，docker / nsjail 后端以 `rtk` 包装命令（`rtk <cmd>`）压缩输出省 token；rtk 是沙箱镜像内的系统二进制（复用 [Rust Token Killer](https://github.com/rtk-ai/rtk)，不自研）。
-- **WASM/WASI 边界（明确分离）**：WASI 沙箱的是「编译成 wasm 的代码」，**不能**沙箱原生 `bash`/`kubectl`/`git`。不可信**用户代码/工具函数**的沙箱是另一个正交需求，留 M3 立 `FunctionSandbox`（wasmtime/wasmer，零 Docker 依赖），**不要用 wasm 替代 bash 的沙箱**。
+- **WASM/WASI 边界（明确分离）**：WASI 沙箱的是「编译成 wasm 的代码」，**不能**沙箱原生 `bash`/`kubectl`/`git`。不可信**用户代码/工具函数**的沙箱是另一个正交需求——已落地 `FunctionSandbox` 接口 + `WasiFunctionSandbox` 默认（复用 Node 内置 `node:wasi`，子进程隔离 + 超时 + 输出截断，零 Docker 依赖），**不要用 wasm 替代 bash 的沙箱**。
 
 > 落地矩阵：`bash` 沙箱 = 有 Docker 用 docker；Linux 无 Docker 用 nsjail；macOS 无 Docker 则禁用 bash（只保留 read/write/web_search/todo）。
 
@@ -544,11 +543,17 @@ interface PluginContext {
   registerSkill(skill: Skill): void;
   registerHook(hook: Hook): void;
   registerRule(rule: Rule): void;
+  registerGuardrail(rule: GuardrailRule): void;
   provideSystemPrompt(fragment: string): void;
   registerMemoryBackend(backend: MemoryBackend): void;
   registerCacheBackend(backend: CacheBackend): void;
   registerVectorStore(store: VectorStore): void;
   registerEmbeddingProvider(provider: EmbeddingProvider): void;
+  registerTokenCounter(counter: TokenCounter): void;
+  registerContextCompactor(compactor: ContextCompactor): void;
+  registerRetriever(retriever: Retriever): void;
+  registerReranker(reranker: Reranker): void;
+  registerSummarizer(summarizer: Summarizer): void;
 }
 ```
 
@@ -720,8 +725,8 @@ services:
 
 1. **M1 内核骨架**（✅ 已完成）：monorepo 搭建（tsdown 构建）+ `config` 包（Schema + 三格式加载）+ `core` 包（LLM Provider 抽象——**默认接 DeepSeek**、Tool 注册表、单 Agent Loop）。
 2. **M2 配置化能力**（✅ 已完成）：hooks、rules、skills、plugins 系统 + system-prompt 组装 + 会话 memory + 内置通用原语工具（`todo` / `datetime` / `web_search` / `web_fetch`）+ 执行沙箱（`SandboxBackend`：docker / nsjail 双后端，bash 默认禁用，rtk 输出压缩）+ 内置 plugin（`@agent-engine/plugin-files` / `@agent-engine/plugin-bash` / `@agent-engine/plugin-git`）。
-3. **M3 扩展接入**（**进行中**）：✅ ① MCP client（`connectMcpServer`/`connectMcpServers`，stdio transport）；✅ ④ config resolve 层（`resolveAgentConfig`：AgentConfig→AgentLoop 一键装配 + `CapabilityBundle` 统一）；✅ 流式输出（`chatCompletionStream` + NDJSON 端点）；✅ `onInit`/`onSessionStart`/`onSessionEnd` 三个 hook；✅ 会话生命周期（server `SessionStore` + `sessionId` 复用 + `DELETE /sessions/:id`）；✅ ReAct loop 强化（并行 tool_calls、工具重试+退避、`AbortSignal` 取消、`finishReason` 续写、`execution` 预算配置）；✅ 真思考透传（DeepSeek R1 `reasoning_content` → `ChatMessage.reasoning` + 前端「思考/回复」分开）。剩余：② 长期记忆后端（pgvector，三层记忆）；③ 多 Agent 编排（独立 `@agent-engine/orchestration` 包）；⑤ FunctionSandbox（WASM/WASI）；`events/` 事件总线（pino 已接 server 层，events 总线未建）。
-4. **M4 服务化**（**部分完成**）：✅ server HTTP API（`/api/agent/run` 非流式 + `/api/agent/run/stream` NDJSON + `DELETE /api/agent/sessions/:id`，pino 日志、session 复用、`SessionStore`）。剩余：CLI（`packages/cli` 仍是 stub）。
+3. **M3 扩展接入**（**进行中**）：✅ ① MCP client（`connectMcpServer`/`connectMcpServers`，stdio transport）；✅ ④ config resolve 层（`resolveAgentConfig`：AgentConfig→AgentLoop 一键装配 + `CapabilityBundle` 统一）；✅ 流式输出（`chatCompletionStream` + NDJSON 端点）；✅ `onInit`/`onSessionStart`/`onSessionEnd` 三个 hook；✅ 会话生命周期（server `SessionStoreBackend` + `sessionId` 复用 + `DELETE /sessions/:id`）；✅ ReAct loop 强化（并行 tool_calls、工具重试+退避、`AbortSignal` 取消、`finishReason` 续写、`execution` 预算配置）；✅ 真思考透传（DeepSeek R1 `reasoning_content` → `ChatMessage.reasoning` + 前端「思考/回复」分开）；✅ ② 长期记忆（三层记忆：token 预算整轮裁剪 + 滚动摘要 + embedding 语义召回）；✅ ⑤ FunctionSandbox（`FunctionSandbox` + `WasiFunctionSandbox`，WASI）；✅ guardrail 声明式配置轴（`guardrails` + `compileGuardrails`）；✅ SessionStore 可插拔（`SessionStoreBackend` + `InMemorySessionStore`）。剩余：③ 多 Agent 编排（独立 `@agent-engine/orchestration` 包）；events 总线接 pino（events 总线已建，server 层接线待做）。
+4. **M4 服务化**（**部分完成**）：✅ server HTTP API（`/api/agent/run` 非流式 + `/api/agent/run/stream` NDJSON + `DELETE /api/agent/sessions/:id`，pino 日志、session 复用、`SessionStoreBackend`）。剩余：CLI（`packages/cli` 仍是 stub）。
 5. **M5 平台与文档**（**部分完成**）：✅ apps/web 三栏编辑器 + 流式 chat + 模型供应商预设 + security preset + 配置导出（省略默认值减负）。剩余：docs（Rspress）、Docker 编排、示例垂直领域 Agent。
 
 ### 复盘纪要（截至 M3 中期）
