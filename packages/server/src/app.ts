@@ -5,7 +5,7 @@ import type { AgentConfig } from '@agent-engine/config';
 import type { AgentLoop } from '@agent-engine/core';
 import { Hono } from 'hono';
 import { createBuiltinPluginFactories } from './builtin-plugins';
-import { logger } from './logger';
+import { consoleLogger } from './logger';
 import { envProviderFactory } from './provider';
 import { InMemorySessionStore } from './session-store';
 import type { SessionStoreBackend } from './session-store';
@@ -73,6 +73,7 @@ async function getOrCreateSession(
 export function createApp(options: ServerOptions = {}): Hono {
   const app = new Hono();
   const store = options.sessionStore ?? new InMemorySessionStore();
+  const logger = options.logger ?? consoleLogger;
 
   app.get('/health', (c) => c.json({ ok: true }));
 

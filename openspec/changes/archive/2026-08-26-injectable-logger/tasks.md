@@ -1,0 +1,8 @@
+- [x] `server/src/logger.ts`：`Logger` 接口 + `consoleLogger`（移除 pino）
+- [x] `server/src/types.ts`：`ServerOptions.logger?: Logger`
+- [x] `server/src/app.ts`：注入 logger（缺省 `consoleLogger`）
+- [x] `server/src/index.ts`：导出 `Logger` / `consoleLogger`，移除 `logger`
+- [x] `packages/core/package.json` + `packages/server/package.json`：移除 `pino`
+- [x] `pnpm install` 更新 lockfile
+- [x] 测试：注入自定义 Logger 断言被调用
+- [x] 全量校验：`pnpm build` / `typecheck` / `test` / web build / `lint` / `spell` / `format:check` / `lint:md` / `openspec validate --strict`

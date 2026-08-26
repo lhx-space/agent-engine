@@ -125,4 +125,33 @@ describe('server-api', () => {
     expect(capturedTools).toContain('builtin_read_file');
     expect(capturedTools).toContain('builtin_write_file');
   });
+
+  it('注入自定义 Logger：run 失败走 logger.error', async () => {
+    const errors: unknown[] = [];
+    const app = createApp({
+      providerFactory: () => ({
+        name: 'mock',
+        async chatCompletion() {
+          throw new Error('boom');
+        },
+      }),
+      logger: {
+        info: () => {},
+        warn: () => {},
+        debug: () => {},
+        error: (obj) => {
+          errors.push(obj);
+        },
+      },
+    });
+
+    const res = await app.request('/api/agent/run', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ config: makeConfig(), input: 'hi' }),
+    });
+
+    expect(res.status).toBe(500);
+    expect(errors.length).toBeGreaterThan(0);
+  });
 });
