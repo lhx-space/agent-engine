@@ -4,6 +4,7 @@ import type { ChatCompletionResult, ChatMessage } from '../llm/types';
 export type HookPoint =
   | 'onInit'
   | 'onSessionStart'
+  | 'beforeContextCompose'
   | 'beforeLLM'
   | 'afterLLM'
   | 'beforeToolCall'
@@ -34,6 +35,8 @@ export interface Hook {
   onSessionStart?(): Promise<void>;
   /** 会话结束时触发一次（观察类）。 */
   onSessionEnd?(): Promise<void>;
+  /** 组装上下文前触发一次；返回字符串则作为外部素材片段追加进 system prompt（如 claude.md / 项目摘要）。 */
+  beforeContextCompose?(userInput: string): Promise<string | void>;
   /** 调用模型前，可改写传给 LLM 的消息（如注入上下文）。 */
   beforeLLM?(messages: ChatMessage[]): Promise<ChatMessage[] | void>;
   /** 模型返回后，可改写结果或记录。 */

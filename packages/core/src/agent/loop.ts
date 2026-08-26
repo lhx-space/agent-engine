@@ -1,5 +1,5 @@
 import type { Rule } from '@agent-engine/config';
-import { buildSystemPrompt } from '../context/build-system-prompt';
+import { ContextComposer } from '../context/context-composer';
 import type { EventBus } from '../events/event-bus';
 import type { HookPipeline } from '../hooks/pipeline';
 import {
@@ -11,7 +11,6 @@ import {
 } from '../llm/types';
 import type { ConversationMemory } from '../memory/conversation-memory';
 import type { LongTermMemory } from '../memory/long-term-memory';
-import { loadRulesText } from '../rules/load';
 import type { RuleRegistry } from '../rules/registry';
 import { CapabilityLoader } from '../retrieval/loader';
 import type { Skill } from '../skills/types';
@@ -23,7 +22,6 @@ import type {
   AgentLoopResult,
   AgentRunEvent,
   AgentRunOptions,
-  SystemPromptInput,
   ToolApproval,
 } from './types';
 
@@ -36,7 +34,7 @@ function sleep(ms: number): Promise<void> {
 export class AgentLoop {
   private readonly provider: LLMProvider;
   private readonly registry: ToolRegistry;
-  private readonly systemPrompt: SystemPromptInput;
+  private readonly contextComposer: ContextComposer;
   private readonly maxSteps: number;
   private readonly maxToolCalls: number | undefined;
   private readonly timeoutMs: number | undefined;
@@ -56,7 +54,6 @@ export class AgentLoop {
   constructor(options: AgentLoopOptions) {
     this.provider = options.provider;
     this.registry = options.registry;
-    this.systemPrompt = options.systemPrompt;
     this.maxSteps = options.execution?.maxSteps ?? options.maxSteps ?? 10;
     this.maxToolCalls = options.execution?.maxToolCalls;
     this.timeoutMs = options.execution?.timeoutMs;
@@ -77,6 +74,14 @@ export class AgentLoop {
     this.memory = options.memory;
     this.longTermMemory = options.longTermMemory;
     this.eventBus = options.eventBus;
+    this.contextComposer = new ContextComposer({
+      systemPrompt: options.systemPrompt,
+      rules: this.rules,
+      ruleLoader: this.ruleLoader,
+      skillLoader: this.skillLoader,
+      memory: this.memory,
+      longTermMemory: this.longTermMemory,
+    });
   }
 
   async run(userInput: string, options?: AgentRunOptions): Promise<AgentLoopResult> {
@@ -97,34 +102,20 @@ export class AgentLoop {
       throw new AbortError();
     }
 
-    // 检索 rules（always + on-demand）与 skills（on-demand）。
-    const rulesText = this.ruleLoader ? loadRulesText(this.rules, this.ruleLoader, userInput) : '';
-    const skillHits = this.skillLoader?.loadForQuery(userInput) ?? [];
+    // 外部素材注入（beforeContextCompose）+ 上下文组装（ContextComposer）。
+    const injected = (await this.hooks?.beforeContextCompose(userInput)) ?? '';
+    const composed = await this.contextComposer.compose(userInput, injected);
     // 记录本轮注册的 skill 工具（含覆盖前的同名工具），run 结束（含异常）时还原/移除，避免跨 run 残留。
     const registeredSkillTools: { name: string; prior: Tool | undefined }[] = [];
-    for (const hit of skillHits) {
+    for (const hit of composed.skillHits) {
       for (const tool of hit.record.tools ?? []) {
         registeredSkillTools.push({ name: tool.name, prior: this.registry.get(tool.name) });
         this.registry.register(tool);
       }
     }
-    const skillsText = skillHits
-      .map((hit) => `## ${hit.record.id}\n${hit.record.instruction}`)
-      .join('\n\n');
-
-    const systemPrompt = await this.resolveSystemPrompt(userInput, rulesText, skillsText);
-    // 长期记忆召回（三层记忆③）：命中则作为背景知识注入 system prompt。
-    const memories = (await this.longTermMemory?.recall(userInput)) ?? [];
-    const systemWithMemory =
-      memories.length > 0 ? `${systemPrompt}\n\n[长期记忆]\n${memories.join('\n')}` : systemPrompt;
-    const history = (await this.memory?.getWindow()) ?? [];
-    const messages: ChatMessage[] = [
-      { role: 'system', content: systemWithMemory },
-      ...history,
-      { role: 'user', content: userInput },
-    ];
+    const messages = composed.messages;
     // 本轮新增消息的起始索引（system + 历史之后），正常结束时回写 memory。
-    const sessionStart = 1 + history.length;
+    const sessionStart = composed.messages.length - 1;
 
     let finalMessage: ChatMessage = { role: 'assistant', content: '' };
     let steps = 0;
@@ -400,27 +391,5 @@ export class AgentLoop {
         await sleep(this.toolRetry.baseDelayMs * 2 ** (attempt - 1));
       }
     }
-  }
-
-  /** 解析本次 system prompt：函数式动态生成 / 静态字符串原样返回 / 模板对象自动检索组装。 */
-  private async resolveSystemPrompt(
-    userInput: string,
-    rulesText: string,
-    skillsText: string,
-  ): Promise<string> {
-    if (typeof this.systemPrompt === 'function') {
-      return this.appendContext(await this.systemPrompt(userInput), rulesText, skillsText);
-    }
-    if (typeof this.systemPrompt === 'string') {
-      return this.appendContext(this.systemPrompt, rulesText, skillsText);
-    }
-    // SystemPrompt 模板对象：渲染变量 + 注入 rules / skills 文本（buildSystemPrompt 内部有兜底追加）。
-    return buildSystemPrompt({ systemPrompt: this.systemPrompt, rulesText, skillsText });
-  }
-
-  /** 把 rules/skills 文本兜底追加到基础 prompt 之后（string / 函数式形态同样生效）。 */
-  private appendContext(base: string, rulesText: string, skillsText: string): string {
-    const extra = [rulesText, skillsText].filter((text) => text).join('\n\n');
-    return extra ? `${base}\n\n${extra}` : base;
   }
 }

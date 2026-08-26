@@ -1,0 +1,8 @@
+- [x] `context/types.ts`：迁入 `SystemPromptInput`
+- [x] `context/context-composer.ts`：`ContextComposer` + `ComposeContextResult`
+- [x] `context/index.ts` / `core/src/{index,types}.ts`：导出
+- [x] `agent/types.ts`：re-export `SystemPromptInput`
+- [x] `hooks/types.ts` + `pipeline.ts`：`beforeContextCompose`
+- [x] `config/schema/index.ts`：`HookPointSchema` 增点
+- [x] `agent/loop.ts`：委托 `ContextComposer`，删私有方法
+- [x] 测试 + 全量校验

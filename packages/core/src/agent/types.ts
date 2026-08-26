@@ -1,4 +1,5 @@
-import type { Rule, SystemPrompt } from '@agent-engine/config';
+import type { Rule } from '@agent-engine/config';
+import type { SystemPromptInput } from '../context/types';
 import type { EventBus } from '../events/event-bus';
 import type { HookPipeline } from '../hooks/pipeline';
 import type { HookTrace } from '../hooks/types';
@@ -9,14 +10,7 @@ import type { RuleRegistry } from '../rules/registry';
 import type { Skill } from '../skills/types';
 import type { ToolRegistry } from '../tools/registry';
 
-/**
- * system prompt 三种形态：
- * - string：静态字符串；
- * - SystemPrompt：模板对象（配合 `rules` 每次 run 自动检索注入）；
- * - 函数：按 userInput 动态生成（完全自定义组装）。
- */
-export type SystemPromptInput =
-  string | SystemPrompt | ((userInput: string) => string | Promise<string>);
+export type { SystemPromptInput } from '../context/types';
 
 /**
  * AgentLoop 接受的执行参数（可省略任意字段，缺省对齐现状）。

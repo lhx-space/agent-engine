@@ -29,6 +29,7 @@ export type SystemPrompt = z.infer<typeof SystemPromptSchema>;
 export const HookPointSchema = z.enum([
   'onInit',
   'onSessionStart',
+  'beforeContextCompose',
   'beforeLLM',
   'afterLLM',
   'beforeToolCall',

@@ -98,3 +98,12 @@ hooks SHALL 不提供「阻断执行」的能力——阻断是 rules（guardrai
 
 - **WHEN** 某 hook 未实现 `onSessionStart`
 - **THEN** 触发该点时不调用该方法，无副作用
+
+### Requirement: beforeContextCompose 钩子
+
+系统 SHALL 提供 `beforeContextCompose(userInput): Promise<string | void>` 钩子，在每次 `run` 组装上下文前触发一次；返回字符串时 SHALL 作为外部素材片段追加进 system prompt（供 claude.md / 项目摘要等环境素材注入）。
+
+#### Scenario: 注入片段
+
+- **WHEN** 某 hook 的 `beforeContextCompose` 返回非空字符串
+- **THEN** 该字符串追加进最终 system prompt

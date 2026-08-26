@@ -53,9 +53,14 @@ export { loadRulesText } from './rules/load';
 export { compileGuardrails, createDeclarativeGuardrail } from './rules/declarative';
 export { CapabilityRegistry } from './retrieval/registry';
 export { CapabilityLoader } from './retrieval/loader';
-export { renderTemplate, buildSystemPrompt } from './context';
+export { renderTemplate, buildSystemPrompt, ContextComposer } from './context';
 export { ApproximateTokenCounter, TokenBudgetCompactor } from './context';
-export type { TokenCounter, ContextCompactor } from './context';
+export type {
+  TokenCounter,
+  ContextCompactor,
+  ComposeContextInput,
+  ComposeContextResult,
+} from './context';
 export { Bm25Retriever, IdentityReranker } from './retrieval';
 export type { Retriever, RetrievalCandidate, Reranker } from './retrieval';
 export { ConversationMemory, InMemoryMemoryBackend, LLMSummarizer, SemanticMemory } from './memory';

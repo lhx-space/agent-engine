@@ -41,6 +41,26 @@ export class HookPipeline {
     return changed ? (next as T) : current;
   }
 
+  /** 组装上下文前触发一次，收集各 hook 注入的外部素材片段（去空拼接）。 */
+  async beforeContextCompose(userInput: string): Promise<string> {
+    const fragments: string[] = [];
+    for (const hook of this.hooks) {
+      const start = performance.now();
+      const fragment = await hook.beforeContextCompose?.(userInput);
+      const durationMs = performance.now() - start;
+      for (const listener of this.listeners) {
+        listener({
+          hook: hook.name,
+          point: 'beforeContextCompose',
+          durationMs,
+          changed: Boolean(fragment),
+        });
+      }
+      if (fragment) fragments.push(fragment);
+    }
+    return fragments.join('\n\n');
+  }
+
   async beforeLLM(messages: ChatMessage[]): Promise<ChatMessage[]> {
     let current = messages;
     for (const hook of this.hooks) {
