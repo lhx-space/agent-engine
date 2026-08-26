@@ -1,0 +1,5 @@
+- [x] `documents/types.ts`：`Document` / `Chunk` / `DocumentNormalizer` / `Chunker` 接口
+- [x] `documents/text-normalizer.ts` + `html-normalizer.ts`
+- [x] `documents/chunker.ts`：`FixedSizeChunker` + `MarkdownHeadingChunker`
+- [x] `documents/index.ts` + 根 `index`/`types` + `tsdown.config` + `package.json` subpath + 依赖 `turndown`
+- [x] 测试 + 全量校验（test / typecheck / lint / spell / format / lint:md / build）

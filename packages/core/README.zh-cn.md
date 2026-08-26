@@ -34,6 +34,7 @@ await resolved.dispose();
 | `.../hooks`             | Hooks      | `Hook` 接口 + `HookPipeline`（10 个生命周期点；只观察/改写，不阻断）                                                                           |
 | `.../rules`             | Rules      | `RuleRegistry`、`GuardrailRule`、`compileGuardrails`（声明式 guardrail 配置轴）                                                                |
 | `.../context`           | Context    | `ContextComposer`、`buildSystemPrompt`、`renderTemplate`、`TokenCounter`、`ContextCompactor`、`SystemPromptInput`                              |
+| `.../documents`         | Documents  | `DocumentNormalizer`、`Chunker`、`TextNormalizer`、`HtmlNormalizer`、`FixedSizeChunker`、`MarkdownHeadingChunker`                              |
 | `.../memory`            | Memory     | `ConversationMemory`（三层窗口）、`MemoryBackend`、`Summarizer`、`LongTermMemory`                                                              |
 | `.../retrieval`         | Retrieval  | `CapabilityRegistry`（BM25）、`CapabilityLoader`、`Retriever`、`Reranker`、`VectorStore`                                                       |
 | `.../embedding`         | Embedding  | `EmbeddingProvider`、`createEmbeddingProvider`（OpenAI 兼容）                                                                                  |

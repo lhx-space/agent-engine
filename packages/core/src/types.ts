@@ -15,6 +15,15 @@ export type {
 } from './llm/types';
 // structured-output
 export type { ExtractStructuredInput } from './structured-output/extract';
+// documents
+export type {
+  Chunk,
+  Chunker,
+  ChunkerOptions,
+  Document,
+  DocumentNormalizer,
+  NormalizeInput,
+} from './documents/types';
 // tools
 export type { Tool } from './tools/types';
 export type { TodoInput, TodoResult } from './tools/builtin/todo';
