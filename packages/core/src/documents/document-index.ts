@@ -3,8 +3,8 @@ import { extname, join } from 'node:path';
 import type { DocumentsConfig } from '@agent-engine/config';
 import MiniSearch from 'minisearch';
 import type { EmbeddingProvider } from '../embedding/embedding';
+import { hybridRetrieve } from '../retrieval/hybrid-retriever';
 import { segment } from '../retrieval/registry';
-import { reciprocalRankFusion } from '../retrieval/rrf';
 import type { RankedCandidate } from '../retrieval/rrf';
 import { InMemoryVectorStore } from '../retrieval/vector-store';
 import type { VectorStore } from '../retrieval/vector-store';
@@ -61,21 +61,15 @@ export class DocumentIndex {
 
   /** 召回 top-k chunk：无 embedding 为 BM25；有 embedding 为 BM25 + 向量 RRF 融合。 */
   async retrieve(query: string, topK = this.topK): Promise<Chunk[]> {
-    const lexical = this.lexicalCandidates(query, topK * 2);
     if (!this.embedding || !this.vectorStore) {
-      return this.toChunks(lexical.slice(0, topK).map((candidate) => candidate.id));
+      return this.toChunks(this.lexicalCandidates(query, topK).map((candidate) => candidate.id));
     }
-
-    const [vector] = await this.embedding.embed([query]);
-    if (!vector) return this.toChunks(lexical.slice(0, topK).map((candidate) => candidate.id));
-    const matches = await this.vectorStore.query(vector, topK * 2);
-    const semantic: RankedCandidate[] = matches.map((match) => ({
-      id: match.id,
-      score: match.score,
-    }));
-
-    const fused = reciprocalRankFusion([lexical, semantic]);
-    return this.toChunks(fused.slice(0, topK).map((candidate) => candidate.id));
+    const fused = await hybridRetrieve(query, topK, {
+      embedding: this.embedding,
+      vectorStore: this.vectorStore,
+      lexical: (q, k) => this.lexicalCandidates(q, k),
+    });
+    return this.toChunks(fused.map((candidate) => candidate.id));
   }
 
   private lexicalCandidates(query: string, topK: number): RankedCandidate[] {

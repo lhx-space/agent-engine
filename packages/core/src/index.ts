@@ -73,8 +73,14 @@ export type {
   ComposeContextInput,
   ComposeContextResult,
 } from './context';
-export { Bm25Retriever, IdentityReranker, reciprocalRankFusion } from './retrieval';
-export type { Retriever, RetrievalCandidate, Reranker, RankedCandidate } from './retrieval';
+export { Bm25Retriever, IdentityReranker, reciprocalRankFusion, hybridRetrieve } from './retrieval';
+export type {
+  Retriever,
+  RetrievalCandidate,
+  Reranker,
+  RankedCandidate,
+  HybridRetrieveOptions,
+} from './retrieval';
 export { ConversationMemory, InMemoryMemoryBackend, LLMSummarizer, SemanticMemory } from './memory';
 export type { MemoryBackend, Summarizer, LongTermMemory } from './memory';
 export { InMemoryCacheBackend } from './cache';

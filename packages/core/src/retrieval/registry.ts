@@ -1,6 +1,6 @@
 import MiniSearch from 'minisearch';
 import type { EmbeddingProvider } from '../embedding/embedding';
-import { reciprocalRankFusion } from './rrf';
+import { hybridRetrieve } from './hybrid-retriever';
 import type { RankedCandidate } from './rrf';
 import type { CapabilityHit, CapabilityMeta, CapabilityType } from './types';
 import { InMemoryVectorStore } from './vector-store';
@@ -54,24 +54,16 @@ export class CapabilityRegistry {
 
   /** 检索 top-k 候选（含得分）：无 embedding 为 BM25；有 embedding 为 BM25 + 向量 RRF 融合。 */
   async retrieve(query: string, topK: number): Promise<CapabilityHit[]> {
-    const lexical = this.lexicalCandidates(query, topK * 2);
     if (!this.embedding || !this.vectorStore) {
-      return this.toHits(lexical.slice(0, topK));
+      return this.toHits(this.lexicalCandidates(query, topK));
     }
-    try {
-      await this.ensureVectors();
-      const [vector] = await this.embedding.embed([query]);
-      if (!vector) return this.toHits(lexical.slice(0, topK));
-      const matches = await this.vectorStore.query(vector, topK * 2);
-      const semantic: RankedCandidate[] = matches.map((match) => ({
-        id: match.id,
-        score: match.score,
-      }));
-      return this.toHits(reciprocalRankFusion([lexical, semantic]).slice(0, topK));
-    } catch {
-      // 语义召回是 best-effort：embedding 故障/向量查询失败时优雅回落 BM25，不拖垮能力检索。
-      return this.toHits(lexical.slice(0, topK));
-    }
+    const fused = await hybridRetrieve(query, topK, {
+      embedding: this.embedding,
+      vectorStore: this.vectorStore,
+      lexical: (q, k) => this.lexicalCandidates(q, k),
+      ensureVectors: () => this.ensureVectors(),
+    });
+    return this.toHits(fused);
   }
 
   /** 按类型列出已注册 meta。 */

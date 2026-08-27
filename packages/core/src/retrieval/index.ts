@@ -10,3 +10,5 @@ export type { Reranker } from './reranker';
 export { IdentityReranker } from './reranker';
 export type { RankedCandidate } from './rrf';
 export { reciprocalRankFusion } from './rrf';
+export type { HybridRetrieveOptions } from './hybrid-retriever';
+export { hybridRetrieve } from './hybrid-retriever';

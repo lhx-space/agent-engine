@@ -71,6 +71,7 @@ export type { VectorStore, VectorRecord, VectorMatch } from './retrieval/vector-
 export type { Retriever, RetrievalCandidate } from './retrieval/retriever';
 export type { Reranker } from './retrieval/reranker';
 export type { RankedCandidate } from './retrieval/rrf';
+export type { HybridRetrieveOptions } from './retrieval/hybrid-retriever';
 // embedding
 export type { EmbeddingProvider } from './embedding/embedding';
 // events

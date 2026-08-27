@@ -1,0 +1,5 @@
+- [x] `retrieval/hybrid-retriever.ts`：`hybridRetrieve` 唯一混合检索原语
+- [x] `retrieval/registry.ts`：`CapabilityRegistry.retrieve` 委托 `hybridRetrieve`
+- [x] `documents/document-index.ts`：`DocumentIndex.retrieve` 委托 `hybridRetrieve`
+- [x] `retrieval/index.ts` + `index.ts` 导出 `hybridRetrieve`
+- [x] 单测 + 全量校验
