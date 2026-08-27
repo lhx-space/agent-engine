@@ -111,6 +111,7 @@ model:
   presencePenalty: 0.0 # 已出现 token 惩罚（-2~2）
   stop: [] # 停止序列数组
   seed: 42 # 随机种子（可复现）
+  # 进阶（均可选）：toolChoice（auto/none/required/指定函数）、parallelToolCalls、extra（vendor 透传兜底）
 
 # rules / skills / documents 经能力插件（ContextContributor）自动注入，无需 {{rules}} 占位符
 systemPrompt:
