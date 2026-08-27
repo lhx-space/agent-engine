@@ -26,6 +26,7 @@ describe('createPresetPluginFactories', () => {
       '@agent-engine/plugin-git',
       '@agent-engine/plugin-guardrails',
       '@agent-engine/plugin-mcp',
+      '@agent-engine/plugin-otel',
       '@agent-engine/plugin-rules',
       '@agent-engine/plugin-skills',
       '@agent-engine/plugin-web',

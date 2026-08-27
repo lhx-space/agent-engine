@@ -8,7 +8,7 @@ TBD - created by archiving change server-api. Update Purpose after archive.
 
 ### Requirement: HTTP API 应用
 
-系统 SHALL 提供 `createApp(options)`，返回一个 Hono 实例，含 `GET /health` 与 `POST /api/agent/run` 两个端点；`options` 可注入 `pluginFactories`（name → 工厂）与 `providerFactory`。
+系统 SHALL 提供 `createApp(options)`，返回一个 Hono 实例，含 `GET /health`、`POST /api/agent/run`、`POST /api/agent/run/stream`、`DELETE /api/agent/sessions/:id` 与 skill 发现端点（`GET /api/skills/discover` / `GET /api/skills` / `POST /api/skills/install`）；`options` 可注入 `pluginFactories`、`providerFactory`、`sessionStore`、`logger` 与 `skillDiscoverer`。
 
 #### Scenario: 创建应用
 
@@ -104,16 +104,21 @@ server SHALL 提供 `Logger` 接口（`info` / `warn` / `error` / `debug`，均�
 - **WHEN** `createApp({ sessionStore: 自定义 SessionStoreBackend 实现 })`
 - **THEN** 会话的保存/复用/删除走该后端（缺省则走 in-memory）
 
-### Requirement: 内置 plugin 工厂注入
+### Requirement: skill 发现端点
 
-server SHALL 提供 `createBuiltinPluginFactories(config)`，为 `@agent-engine/plugin-files` / `@agent-engine/plugin-bash` / `@agent-engine/plugin-git` 构造工厂（闭包捕获 `security`，bash/git 的沙箱惰性解析）；`resolveAgentConfig` 调用时 SHALL 合并这些内置工厂与 `options.pluginFactories`。
+系统 SHALL 提供 `GET /api/skills/discover?repo=<owner/repo>`（列出 skills.sh 某仓库的 skills）、`GET /api/skills`（列出已装 skills）与 `POST /api/skills/install`（`{ repo, skill }` 安装并返回本地路径）；`options.skillDiscoverer` SHALL 可注入 `SkillDiscoverer`（缺省 `createNpxSkillDiscoverer()`，经 `npx skills` 对接 skills.sh）。
 
-#### Scenario: 内置 plugin 按声明加载
+#### Scenario: 发现 skill 列表
 
-- **WHEN** 请求 config 的 `plugins` 含 `@agent-engine/plugin-files`
-- **THEN** server 注入其工厂，`read_file` / `write_file` 进入 registry（无需外部 pluginFactories）
+- **WHEN** `GET /api/skills/discover?repo=vercel-labs/agent-skills`
+- **THEN** 返回 `{ repo, skills: [{ name, description }] }`
 
-#### Scenario: 用户工厂覆盖内置
+#### Scenario: 安装 skill
 
-- **WHEN** `options.pluginFactories` 提供同名工厂
-- **THEN** 用户工厂优先（内置工厂被覆盖）
+- **WHEN** `POST /api/skills/install` 传 `{ repo, skill }`
+- **THEN** 返回 `{ path }`（本地安装路径）
+
+#### Scenario: 缺参数返回 400
+
+- **WHEN** discover 缺 `repo`，或 install 缺 `repo` / `skill`
+- **THEN** 返回 400

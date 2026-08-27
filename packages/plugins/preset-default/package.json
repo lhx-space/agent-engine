@@ -37,6 +37,7 @@
     "@agent-engine/plugin-guardrails": "workspace:*",
     "@agent-engine/plugin-mcp": "workspace:*",
     "@agent-engine/plugin-memory": "workspace:*",
+    "@agent-engine/plugin-otel": "workspace:*",
     "@agent-engine/plugin-rules": "workspace:*",
     "@agent-engine/plugin-skills": "workspace:*",
     "@agent-engine/plugin-web": "workspace:*"

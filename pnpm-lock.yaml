@@ -317,6 +317,9 @@ importers:
       '@agent-engine/plugin-memory':
         specifier: workspace:*
         version: link:../plugin-memory
+      '@agent-engine/plugin-otel':
+        specifier: workspace:*
+        version: link:../plugin-otel
       '@agent-engine/plugin-rules':
         specifier: workspace:*
         version: link:../plugin-rules

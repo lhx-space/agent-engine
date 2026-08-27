@@ -9,4 +9,6 @@ export { consoleLogger } from './logger';
 export type { Logger } from './logger';
 export { InMemorySessionStore } from './session-store';
 export type { SessionStoreBackend, StoredSession, SessionStoreOptions } from './session-store';
+export { createNpxSkillDiscoverer, parseSkillList, stripAnsi } from './skill-store';
+export type { DiscoveredSkill, SkillDiscoverer, SkillDiscovererDeps } from './skill-store';
 export type { ServerOptions } from './types';

@@ -13,6 +13,7 @@ import { consoleLogger } from './logger';
 import { envProviderFactory } from './provider';
 import { InMemorySessionStore } from './session-store';
 import type { SessionStoreBackend } from './session-store';
+import { createNpxSkillDiscoverer } from './skill-store';
 import type { ServerOptions } from './types';
 
 interface ParsedRequest {
@@ -75,11 +76,12 @@ async function getOrCreateSession(
   return { id, agent: resolved.agent };
 }
 
-/** 创建 HTTP 应用：`GET /health` + `POST /api/agent/run`（非流式）+ `POST /api/agent/run/stream`（NDJSON）+ `DELETE /api/agent/sessions/:id`。 */
+/** 创建 HTTP 应用：`GET /health` + `POST /api/agent/run`（非流式）+ `POST /api/agent/run/stream`（NDJSON）+ `DELETE /api/agent/sessions/:id` + skill 发现（`GET /api/skills/discover` / `GET /api/skills` / `POST /api/skills/install`）。 */
 export function createApp(options: ServerOptions = {}): Hono {
   const app = new Hono();
   const store = options.sessionStore ?? new InMemorySessionStore();
   const logger = options.logger ?? consoleLogger;
+  const skillDiscoverer = options.skillDiscoverer ?? createNpxSkillDiscoverer();
 
   app.get('/health', (c) => c.json({ ok: true }));
 
@@ -176,6 +178,72 @@ export function createApp(options: ServerOptions = {}): Hono {
     const id = c.req.param('id');
     await store.delete(id);
     return c.json({ ok: true });
+  });
+
+  // find-skill：对接 skills.sh（发现 / 列出已装 / 安装），供前端生成 config.skills（source: path）。
+  app.get('/api/skills/discover', async (c) => {
+    const repo = c.req.query('repo');
+    if (!repo) return c.json({ error: 'missing query "repo" (owner/repo)' }, 400);
+    try {
+      const skills = await skillDiscoverer.discover(repo);
+      return c.json({ repo, skills });
+    } catch (error) {
+      logger.error({ err: error }, 'skill discover failed');
+      return c.json(
+        {
+          error: 'skill discover failed',
+          details: error instanceof Error ? error.message : String(error),
+        },
+        500,
+      );
+    }
+  });
+
+  app.get('/api/skills', async (c) => {
+    try {
+      const skills = await skillDiscoverer.listInstalled();
+      return c.json({ skills });
+    } catch (error) {
+      logger.error({ err: error }, 'skill list failed');
+      return c.json(
+        {
+          error: 'skill list failed',
+          details: error instanceof Error ? error.message : String(error),
+        },
+        500,
+      );
+    }
+  });
+
+  app.post('/api/skills/install', async (c) => {
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json({ error: 'invalid JSON body' }, 400);
+    }
+    const { repo, skill } = (body ?? {}) as { repo?: unknown; skill?: unknown };
+    if (
+      typeof repo !== 'string' ||
+      repo.length === 0 ||
+      typeof skill !== 'string' ||
+      skill.length === 0
+    ) {
+      return c.json({ error: '"repo" and "skill" are required' }, 400);
+    }
+    try {
+      const result = await skillDiscoverer.install(repo, skill);
+      return c.json(result);
+    } catch (error) {
+      logger.error({ err: error }, 'skill install failed');
+      return c.json(
+        {
+          error: 'skill install failed',
+          details: error instanceof Error ? error.message : String(error),
+        },
+        500,
+      );
+    }
   });
 
   return app;
