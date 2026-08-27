@@ -9,47 +9,70 @@ body,
   margin: 0;
 }
 
-.editor {
-  height: 100vh;
-}
-
-.editor__header {
+/* ===== 全局布局 ===== */
+.app-logo {
+  height: 56px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  padding: 0 20px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   height: 56px;
   padding: 0 20px;
-  background: #001529;
+  background: var(--ant-color-bg-container, #fff);
+  border-bottom: 1px solid var(--ant-color-border-secondary, #f0f0f0);
 }
 
-.editor__content {
-  display: grid;
-  grid-template-columns: 1.4fr 1.2fr 0.9fr;
-  gap: 12px;
-  padding: 12px;
-  height: calc(100vh - 56px);
+.app-header__title {
+  font-weight: 500;
+  color: var(--ant-color-text-secondary, #666);
 }
 
-.editor__col {
+.app-content {
+  padding: 16px;
+  overflow: auto;
+}
+
+/* ===== 配置页 ===== */
+.config-page {
   display: flex;
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  overflow: hidden;
 }
 
-.editor__col .ant-card-body {
+.config-page__bar {
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 12px;
+}
+
+.config-page .ant-tabs {
   flex: 1;
   min-height: 0;
+}
+
+.config-page .ant-tabs-content-holder {
   overflow: auto;
 }
 
-/* chat 面板：列表滚动 + 输入区固定在底部 */
+/* ===== chat 面板 ===== */
 .chat-panel {
   display: flex;
   flex-direction: column;
   height: 100%;
   min-height: 0;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .chat-list {
@@ -64,14 +87,14 @@ body,
   gap: 8px;
   align-items: flex-end;
   padding-top: 8px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--ant-color-border-secondary, #f0f0f0);
 }
 
 .chat-input .ant-input {
   flex: 1;
 }
 
-/* markdown 渲染样式 */
+/* ===== markdown 渲染 ===== */
 .chat-markdown {
   line-height: 1.6;
   word-break: break-word;
@@ -81,7 +104,7 @@ body,
   margin: 8px 0;
   padding: 10px 12px;
   border-radius: 6px;
-  background: #f6f8fa;
+  background: var(--ant-color-fill-tertiary, #f6f8fa);
   overflow: auto;
 }
 
@@ -93,14 +116,14 @@ body,
 .chat-markdown :not(pre) > code {
   padding: 0.1em 0.4em;
   border-radius: 4px;
-  background: #f0f1f2;
+  background: var(--ant-color-fill-secondary, #f0f1f2);
 }
 
 .chat-cursor {
   display: inline-block;
   margin-left: 2px;
   animation: chat-blink 1s steps(1) infinite;
-  color: #1677ff;
+  color: var(--ant-color-primary, #1677ff);
 }
 
 @keyframes chat-blink {
@@ -109,12 +132,12 @@ body,
   }
 }
 
-/* 步骤时间线详情 */
+/* ===== 步骤时间线 / 思考过程 ===== */
 .chat-step-detail {
   margin: 0;
   padding: 8px;
   border-radius: 6px;
-  background: #f6f8fa;
+  background: var(--ant-color-fill-tertiary, #f6f8fa);
   white-space: pre-wrap;
   word-break: break-all;
   font-size: 12px;
@@ -122,16 +145,15 @@ body,
   overflow: auto;
 }
 
-/* 模型思考过程（灰显、折叠） */
 .chat-reasoning-label {
-  color: #8c8c8c;
+  color: var(--ant-color-text-secondary, #8c8c8c);
   font-size: 12px;
 }
 
 .chat-reasoning {
-  color: #8c8c8c;
+  color: var(--ant-color-text-secondary, #8c8c8c);
   font-size: 12px;
-  border-left: 2px solid #e0e0e0;
+  border-left: 2px solid var(--ant-color-border-secondary, #e0e0e0);
   padding-left: 8px;
   margin: 4px 0;
   max-height: 240px;

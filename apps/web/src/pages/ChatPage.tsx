@@ -4,12 +4,8 @@ import { SendOutlined, StopOutlined } from '@ant-design/icons';
 import { useMemo, useState } from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import type { AgentConfig } from '@agent-engine/config/schema';
 import { useStreamChat, type ChatMessage, type ChatStep } from '../hooks/use-stream-chat';
-
-interface ChatPanelProps {
-  config: AgentConfig;
-}
+import { useConfigStore } from '../store/config-store';
 
 /** assistant 消息内容：markdown 渲染。 */
 function AssistantContent({ message }: { message: ChatMessage }) {
@@ -80,7 +76,8 @@ function StepsTimeline({ steps }: { steps: ChatStep[] }) {
   );
 }
 
-export function ChatPanel({ config }: ChatPanelProps) {
+export function ChatPage() {
+  const config = useConfigStore((state) => state.config);
   const { messages, running, send, stop } = useStreamChat(config);
   const [input, setInput] = useState('');
 

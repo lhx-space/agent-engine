@@ -9,7 +9,7 @@ interface MemoryFormProps {
 }
 
 export function MemoryForm({ memory, onChange }: MemoryFormProps) {
-  const session = memory.session ?? {};
+  const session = memory.session ?? { summary: false };
   const longTerm = memory.longTerm ?? { backend: 'in-memory' };
 
   return (

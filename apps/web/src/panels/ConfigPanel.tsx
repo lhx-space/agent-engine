@@ -1,4 +1,4 @@
-import { Form, Input, Select, Tabs } from 'antd';
+import { Form, Input, Select } from 'antd';
 import type { AgentConfig, Orchestration, OrchestrationMode } from '@agent-engine/config/schema';
 import { HooksForm } from '../config/HooksForm';
 import { McpForm } from '../config/McpForm';
@@ -12,17 +12,12 @@ import { ToolsForm } from '../config/ToolsForm';
 
 const ORCHESTRATION_MODES: OrchestrationMode[] = ['single', 'sequential', 'parallel', 'graph'];
 
-interface ConfigPanelProps {
-  config: AgentConfig;
-  onChange: (next: AgentConfig) => void;
-}
-
-export function ConfigPanel({ config, onChange }: ConfigPanelProps) {
+/** 构造 agent 配置各轴的 Tabs items（model/rules/.../orchestration）。 */
+export function buildConfigTabs(config: AgentConfig, onChange: (next: AgentConfig) => void) {
   const orchestration = config.orchestration ?? { mode: 'single' as const };
-
   const setOrchestration = (next: Orchestration) => onChange({ ...config, orchestration: next });
 
-  const items = [
+  return [
     {
       key: 'model',
       label: 'model',
@@ -129,6 +124,4 @@ export function ConfigPanel({ config, onChange }: ConfigPanelProps) {
       ),
     },
   ];
-
-  return <Tabs size="small" tabPosition="left" items={items} />;
 }
