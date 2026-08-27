@@ -14,6 +14,8 @@ import { createGuardrailsPlugin } from '@agent-engine/plugin-guardrails';
 import { createMcpPlugin } from '@agent-engine/plugin-mcp';
 import { createSemanticMemory } from '@agent-engine/plugin-memory';
 import { createOtelPlugin } from '@agent-engine/plugin-otel';
+import { createPgvectorPlugin } from '@agent-engine/plugin-pgvector';
+import { createRedisPlugin } from '@agent-engine/plugin-redis';
 import { createRulesPlugin } from '@agent-engine/plugin-rules';
 import { createSkillsPlugin, resolveSkills } from '@agent-engine/plugin-skills';
 import { createWebPlugin } from '@agent-engine/plugin-web';
@@ -63,6 +65,10 @@ export function createPresetPluginFactories(config: AgentConfig): Record<string,
     '@agent-engine/plugin-mcp': () => createMcpPlugin(config.mcp?.servers ?? []),
     // 可观测（opt-in 经 config.plugins 声明；exporter 由用户经 OTel SDK 配置）。
     '@agent-engine/plugin-otel': () => createOtelPlugin(),
+    // pgvector 持久化（opt-in 经 config.plugins 声明；连接串读 DATABASE_URL）。
+    '@agent-engine/plugin-pgvector': () => createPgvectorPlugin(),
+    // redis 缓存（opt-in 经 config.plugins 声明；连接串读 REDIS_URL）。
+    '@agent-engine/plugin-redis': () => createRedisPlugin(),
   };
 }
 

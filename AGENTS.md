@@ -848,10 +848,12 @@ M2 落地及 M3 推进过程中沉淀的坑点与约定，后续开发直接复�
 - **Next.js 宿主（`agents/`）**：`src/lib/agent-dir.ts`（扫目录 → 拼 `AgentConfig` + jiti 加载 hooks → `@local/hooks` 插件）+ `POST /api/agent/:name/run`；`pnpm-workspace.yaml` 加 `agents`。
 - **示例 harness**：`.lhx-agent/devops-agent/`（files/bash/git/otel + 远程 mcp + skill + rules + hooks）、`.lhx-agent/code-review-agent/`（files/git + skill + rules + hooks）。
 - **端到端验证通过**：rules（always/on-demand）/skills/hooks 注入 + 远程 mcp 连接失败隔离，均 200 跑通。
+- **`@agent-engine/plugin-pgvector`**：`PgVectorStore`（pgvector + `<=>` 余弦）+ `PgMemoryBackend`（KV jsonb）；接入 preset-default 按需激活；`docker/docker-compose.yml` 补 pgvector + redis。
+- **`@agent-engine/plugin-redis`**：`RedisCacheBackend`（TTL KV，ioredis + 命名空间前缀 + SCAN 清前缀）；接入 preset-default 按需激活。
 
 ### 15.3 引擎缺口清单（待办）
 
-1. **外部服务后端插件**：pgvector 记忆后端、redis 缓存/会话后端。抽象接口已就绪，**实现全空**，`docker/` 目录空；config 写 `backend: pgvector/redis` 目前报 Unknown backend。设计见 15.4。
+1. **外部服务后端插件**：pgvector + redis 缓存已实现（`plugin-pgvector` / `plugin-redis`，见 15.4）；redis 会话状态持久化（`SessionStoreBackend`）待做（server 层）。
 2. **编排引擎**：`orchestration` 只有 `{mode}` 占位（single/sequential/parallel/graph），core/plugins 零使用点。多 agent 串行/并行/DAG + 结果传递未实现；「目录化 → agent 成为可寻址单元」是编排复用的地基。
 3. **远程 MCP headers 的 `${VAR}` 插值**：扫描器读 mcps yaml 字面透传，`${GITHUB_TOKEN}` 未替换（当前 github 示例因此连接失败；需换无需 token 的远程端点，或接 env 插值）。
 4. **多租户 skill 存储**：`install` 现为 `-g` 全局 `~/.agents/skills`（单租户假设）。云端需 `SkillStore` 抽象 per-tenant（命名空间 + 租户身份 + 来源审查/人在环）。先不着急，但抽象要预留。
@@ -860,11 +862,11 @@ M2 落地及 M3 推进过程中沉淀的坑点与约定，后续开发直接复�
 7. **CLI 仍 stub**：`packages/cli` 只有 name/version，`run` 命令未实现。
 8. **docs（Rspress）+ Docker 编排**。
 
-### 15.4 外部服务后端插件设计（plugin-postgresql / plugin-redis）
+### 15.4 外部服务后端插件设计（plugin-pgvector / plugin-redis）
 
 原则：两个插件**只做「实现已有抽象接口 + 注册」，不改 core**。抽象已就绪：`MemoryBackend`（跨会话 KV 持久化）、`CacheBackend`（TTL KV）、`VectorStore`（语义向量检索）、`SessionStoreBackend`（server 层会话复用）。
 
-#### `@agent-engine/plugin-postgresql`（pgvector，语义记忆持久化）
+#### `@agent-engine/plugin-pgvector`（pgvector，语义记忆持久化）——✅ 已实现
 
 - 一个插件、两个后端，共用同一 PostgreSQL 实例：
   - `PgVectorStore`（实现 `VectorStore`，name `pgvector`）：依赖 pgvector 扩展；表 `agent_vectors(id text pk, vector vector(dim), metadata jsonb)`；`add` 批量 INSERT、`query` 用 `<=>` 余弦距离（topK）、`delete/clear`；启动时 `CREATE EXTENSION IF NOT EXISTS vector` + 建表。
@@ -873,7 +875,7 @@ M2 落地及 M3 推进过程中沉淀的坑点与约定，后续开发直接复�
 - 注册：`registerVectorStore('pgvector')` + `registerMemoryBackend('pg')`。
 - 语义记忆闭环：`SemanticMemory = PgMemoryBackend（存记忆）+ PgVectorStore（存向量）+ EmbeddingProvider（生成向量）`；config 侧 `memory.longTerm.backend: 'pg'` + `embedding`（DeepSeek 无 embeddings，需 OpenAI / 本地 ollama）。
 
-#### `@agent-engine/plugin-redis`（缓存 + 会话状态）
+#### `@agent-engine/plugin-redis`（缓存 + 会话状态）——✅ 缓存已实现
 
 - `RedisCacheBackend`（实现 `CacheBackend`，name `redis`）：ioredis / node-redis；`SET key value EX ttl`（TTL 到期）、`GET`/`DEL`/`FLUSHDB`，value JSON 序列化；config `cache.backend: 'redis'`。
 - 会话：`SessionStoreBackend` 存的是「已装配 `AgentLoop` 对象」（内存态，不可跨进程序列化），redis **不能直接承载**。多副本的正确姿势是「会话可序列化状态（conversation history）持久化 + 重建」，而非共享 `AgentLoop` 对象；`RedisSessionStore` 放 server 层（或后续把会话状态接口下沉）。
@@ -882,4 +884,4 @@ M2 落地及 M3 推进过程中沉淀的坑点与约定，后续开发直接复�
 
 1. **VectorStore 按名选择**：当前 assemble 取 `merged.vectorStores[0]`（先注册先得），多后端并存需扩展 config（如 `vectorStore.backend`）按名解析，对齐 `MemoryBackend`/`CacheBackend` 的 `resolveBackendByName` 模式。
 2. **后端 dispose 生命周期**：`registerMemoryBackend`/`registerCacheBackend`/`registerVectorStore` 现无释放钩子；pg/redis 连接池需关闭——给 `PluginContext` 加「后端 dispose 聚合」，或插件自管连接 + 全局 dispose。
-3. **docker-compose**：补 `pgvector/pgvector:pg16` + `redis:7-alpine`（13.1 已列镜像，缺编排文件）。
+3. **docker-compose**：✅ 已补 `docker/docker-compose.yml`（`pgvector/pgvector:pg16` + `redis:7-alpine`）。

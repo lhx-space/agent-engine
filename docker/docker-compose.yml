@@ -1,0 +1,24 @@
+services:
+  pgvector:
+    image: pgvector/pgvector:pg16
+    container_name: agent-engine-pgvector
+    environment:
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: agent
+      POSTGRES_DB: agent
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgvector-data:./data
+
+  redis:
+    image: redis:7-alpine
+    container_name: agent-engine-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:./data
+
+volumes:
+  pgvector-data:
+  redis-data:

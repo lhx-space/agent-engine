@@ -13,6 +13,13 @@ plugins:
   - '@agent-engine/plugin-bash'
   - '@agent-engine/plugin-git'
   - '@agent-engine/plugin-otel'
+  - '@agent-engine/plugin-pgvector' # 需 DATABASE_URL；未起 pgvector 时移除此行
+  - '@agent-engine/plugin-redis' # 需 REDIS_URL；未起 redis 时移除此行
+memory:
+  longTerm:
+    backend: pg # 选中 PgMemoryBackend；语义召回需配合 embedding（DeepSeek 无 embeddings）
+cache:
+  backend: redis # 选中 RedisCacheBackend
 guardrails:
   - id: deny-rm
     on: beforeToolCall

@@ -250,6 +250,8 @@ docs/（Rspress）为独立站点
 | `@agent-engine/plugin-skills`     | 技能包（path/npm/git）：加载 + 检索 + 捆绑工具                                                    | ✅ 已实现   |
 | `@agent-engine/plugin-documents`  | 文档摄入（md/html/pdf/docx/epub）→ 分块 → `hybridRetrieve`                                        | ✅ 已实现   |
 | `@agent-engine/plugin-memory`     | 语义长期记忆（`SemanticMemory`）                                                                  | ✅ 已实现   |
+| `@agent-engine/plugin-pgvector`   | pgvector 向量存储 + 长期记忆 KV 持久化                                                            | ✅ 已实现   |
+| `@agent-engine/plugin-redis`      | Redis 缓存后端（TTL KV）                                                                          | ✅ 已实现   |
 | `@agent-engine/plugin-web`        | `web_search` / `web_fetch`（多搜索 provider）                                                     | ✅ 已实现   |
 | `@agent-engine/plugin-mcp`        | MCP client（stdio）→ 归一化为标准工具                                                             | ✅ 已实现   |
 | `@agent-engine/plugin-guardrails` | 声明式 `guardrails` 配置编译为可执行规则                                                          | ✅ 已实现   |

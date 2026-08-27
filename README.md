@@ -250,6 +250,8 @@ docs/ (Rspress) is a standalone site
 | `@agent-engine/plugin-skills`     | skill packs (path/npm/git): load + retrieve + bundle tools                                                         | ✅ implemented |
 | `@agent-engine/plugin-documents`  | document ingestion (md/html/pdf/docx/epub) → chunk → `hybridRetrieve`                                              | ✅ implemented |
 | `@agent-engine/plugin-memory`     | semantic long-term memory (`SemanticMemory`)                                                                       | ✅ implemented |
+| `@agent-engine/plugin-pgvector`   | pgvector vector store + long-term memory KV persistence                                                            | ✅ implemented |
+| `@agent-engine/plugin-redis`      | Redis cache backend (TTL KV)                                                                                       | ✅ implemented |
 | `@agent-engine/plugin-web`        | `web_search` / `web_fetch` (multi search provider)                                                                 | ✅ implemented |
 | `@agent-engine/plugin-mcp`        | MCP client (stdio) → normalized tools                                                                              | ✅ implemented |
 | `@agent-engine/plugin-guardrails` | compile declarative `guardrails` config → executable rules                                                         | ✅ implemented |
