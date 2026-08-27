@@ -18,6 +18,7 @@ export default defineConfig({
       '/architecture/': [
         { text: '总览', link: '/architecture/overview' },
         { text: '内核执行引擎', link: '/architecture/kernel' },
+        { text: '内核瘦身重构规划', link: '/architecture/refactor-plan' },
       ],
     },
   },
