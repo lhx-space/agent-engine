@@ -1,10 +1,4 @@
-# events Specification
-
-## Purpose
-
-TBD - created by archiving change events-bus. Update Purpose after archive.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: EventBus 发布订阅
 

@@ -9,7 +9,6 @@ import type { ChatMessage, DeltaKind, FinishReason, LLMProvider } from '../llm/t
 import type { ConversationMemory } from '../memory/conversation-memory';
 import type { LongTermMemory } from '../memory/long-term-memory';
 import type { GuardrailRule } from '../guardrails';
-import type { Skill } from '../skills/types';
 import type { ToolRegistry } from '../tools/registry';
 
 export type { SystemPromptInput } from '../context/types';
@@ -44,9 +43,7 @@ export interface AgentLoopOptions {
   longTermMemory?: LongTermMemory;
   /** 文档检索索引（可选），run 时检索 top-k 注入 `[文档]`。 */
   documentIndex?: DocumentIndex;
-  /** 可复用能力包（可选），按 query 检索命中后注入指令 + 注册捆绑工具。 */
-  skills?: Skill[];
-  /** 语义召回 provider（可选）：配置后 rules/skills 检索升级为 BM25 + 向量 RRF 融合。 */
+  /** 语义召回 provider（可选）：能力包自建索引可传入，升级为 BM25 + 向量 RRF 融合。 */
   embeddingProvider?: EmbeddingProvider;
   /** 上下文贡献者（可选）：run 组装前收集，文本注入 prompt、工具临时注册。 */
   contextContributors?: ContextContributor[];

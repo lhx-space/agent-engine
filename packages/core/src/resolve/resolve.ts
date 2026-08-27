@@ -1,7 +1,6 @@
 import type { AgentConfig } from '@agent-engine/config';
 import { assembleAgentLoop } from '../agent/assemble';
 import { resolveMcpServers } from '../capability-source/mcp';
-import { resolveSkills } from '../capability-source/skill';
 import { loadDocuments } from '../documents';
 import { createEmbeddingProvider } from '../embedding/openai';
 import { HookPipeline } from '../hooks/pipeline';
@@ -13,8 +12,9 @@ import type { ResolveDeps, ResolvedAgent } from './types';
 /**
  * 把一份 `AgentConfig` 一键装配成可运行的 Agent（「配置即 Agent」的闭合点）。
  *
- * 装配顺序：provider（可注入 factory）→ 按名实例化 plugins → 按路径加载 skills →
+ * 装配顺序：provider（可注入 factory）→ 按名实例化 plugins →
  * 建 registry / hooks / memory → 交给 `assembleAgentLoop` 合并 bundles 并构造 AgentLoop。
+ * skills 已外放为 `@agent-engine/plugin-skills`（其工厂闭包 config.skills 自行解析加载）。
  */
 export async function resolveAgentConfig(
   config: AgentConfig,
@@ -36,9 +36,6 @@ export async function resolveAgentConfig(
     plugins.push(await factory());
   }
 
-  // skills：按来源（path / npm / git）解析加载，并聚合临时资源清理。
-  const { skills, dispose: disposeSkills } = await resolveSkills(config.skills);
-
   // embedding：文档语义召回与长期记忆共享同一 provider（插件注入的 provider 在 assemble 内解析，装载阶段不可见）。
   const embeddingProvider = config.embedding
     ? createEmbeddingProvider(config.embedding)
@@ -55,7 +52,6 @@ export async function resolveAgentConfig(
     registry,
     hooks,
     systemPrompt: config.systemPrompt,
-    skills,
     plugins,
     sessionMemory: config.memory?.session,
     security: config.security,
@@ -76,7 +72,6 @@ export async function resolveAgentConfig(
     await hooks.onInit();
   } catch (error) {
     await disposeAgent();
-    await disposeSkills();
     throw error;
   }
 
@@ -94,7 +89,6 @@ export async function resolveAgentConfig(
     reranker: resolved.reranker,
     dispose: async () => {
       await disposeAgent();
-      await disposeSkills();
     },
   };
 }

@@ -16,8 +16,6 @@ import {
 import type { ConversationMemory } from '../memory/conversation-memory';
 import type { LongTermMemory } from '../memory/long-term-memory';
 import type { GuardrailRule } from '../guardrails';
-import { CapabilityLoader } from '../retrieval/loader';
-import type { Skill } from '../skills/types';
 import { normalizeToolArgs } from '../tools/registry';
 import type { ToolRegistry } from '../tools/registry';
 import type { Tool } from '../tools/types';
@@ -47,7 +45,6 @@ export class AgentLoop {
   private readonly maxContinuations: number;
   private readonly hooks: HookPipeline | undefined;
   private readonly guardrails: GuardrailRule[];
-  private readonly skillLoader: CapabilityLoader<Skill> | undefined;
   private readonly memory: ConversationMemory | undefined;
   private readonly longTermMemory: LongTermMemory | undefined;
   private readonly contextContributors: ContextContributor[];
@@ -68,19 +65,12 @@ export class AgentLoop {
     this.maxContinuations = options.execution?.maxContinuations ?? 1;
     this.hooks = options.hooks;
     this.guardrails = options.guardrails ?? [];
-    this.skillLoader =
-      options.skills && options.skills.length > 0
-        ? new CapabilityLoader<Skill>('skill', options.skills, {
-            embedding: options.embeddingProvider,
-          })
-        : undefined;
     this.memory = options.memory;
     this.longTermMemory = options.longTermMemory;
     this.contextContributors = options.contextContributors ?? [];
     this.eventBus = options.eventBus;
     this.contextComposer = new ContextComposer({
       systemPrompt: options.systemPrompt,
-      skillLoader: this.skillLoader,
       memory: this.memory,
       longTermMemory: this.longTermMemory,
       documentIndex: options.documentIndex,
@@ -147,16 +137,10 @@ export class AgentLoop {
       .filter((t) => t.length > 0)
       .join('\n\n');
     const composed = await this.contextComposer.compose(userInput, injected);
-    // 记录本轮注册的 skill / contributor 工具（含覆盖前的同名工具），run 结束（含异常）时还原/移除，避免跨 run 残留。
-    const registeredSkillTools: { name: string; prior: Tool | undefined }[] = [];
-    for (const hit of composed.skillHits) {
-      for (const tool of hit.record.tools ?? []) {
-        registeredSkillTools.push({ name: tool.name, prior: this.registry.get(tool.name) });
-        this.registry.register(tool);
-      }
-    }
+    // 记录本轮注册的 contributor 工具（含覆盖前的同名工具），run 结束（含异常）时还原/移除，避免跨 run 残留。
+    const registeredRunTools: { name: string; prior: Tool | undefined }[] = [];
     for (const tool of contributions.flatMap((c) => c.tools ?? [])) {
-      registeredSkillTools.push({ name: tool.name, prior: this.registry.get(tool.name) });
+      registeredRunTools.push({ name: tool.name, prior: this.registry.get(tool.name) });
       this.registry.register(tool);
     }
     const messages = composed.messages;
@@ -291,7 +275,7 @@ export class AgentLoop {
       offTrace?.();
       offCustom?.();
       // 清理本轮注册的 skill 工具：覆盖过同名工具则还原，否则移除。
-      for (const { name, prior } of registeredSkillTools) {
+      for (const { name, prior } of registeredRunTools) {
         if (prior) {
           this.registry.register(prior);
         } else {

@@ -126,24 +126,16 @@ describe('端到端 demo（可观测）', () => {
         },
       };
 
-      // 4. 装配：plugin + rules 插件(经 ContextContributor) + skills + memory + security(内置工具)
+      // 4. 装配：plugin + rules/skills 插件(经 ContextContributor) + memory + security(内置工具)
       const memory = new ConversationMemory({ maxMessages: 10 });
       const security = makeSecurity(dir);
       const { agent: loop } = await assembleAgentLoop({
         provider,
         registry,
         systemPrompt: {
-          template: '你是 {{role}}。\n\n技能：\n{{skills}}',
+          template: '你是 {{role}}。',
           variables: { role: '天气助手' },
         },
-        skills: [
-          {
-            id: 'weather-qa',
-            description: '天气查询与穿衣建议',
-            instruction: '查询天气后，给出对应穿衣建议。',
-            tags: ['天气', '穿衣'],
-          },
-        ],
         plugins: [
           weatherPlugin,
           {
@@ -155,6 +147,19 @@ describe('端到端 demo（可观测）', () => {
                 name: 'rules-plugin',
                 async contribute() {
                   return { text: '回答要简洁\n\n报温度时注明摄氏度单位。' };
+                },
+              });
+            },
+          },
+          {
+            name: 'skills-plugin',
+            description: '技能上下文注入（demo 简化：静态技能文本）',
+            version: '1.0.0',
+            install(ctx) {
+              ctx.registerContextContributor({
+                name: 'skills-plugin',
+                async contribute() {
+                  return { text: '## weather-qa\n查询天气后，给出对应穿衣建议。' };
                 },
               });
             },

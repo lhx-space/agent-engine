@@ -38,7 +38,6 @@ import { InMemoryVectorStore } from '../retrieval/vector-store';
 import type { VectorStore } from '../retrieval/vector-store';
 import type { GuardrailRule } from '../guardrails';
 import type { SandboxBackend } from '../sandbox/types';
-import type { Skill } from '../skills/types';
 import { registerBuiltinTools } from '../tools/builtin';
 import { TODO_PLANNING_GUIDANCE } from '../tools/builtin/todo';
 import type { ToolRegistry } from '../tools/registry';
@@ -49,7 +48,6 @@ export interface AssembleAgentLoopOptions {
   provider: LLMProvider;
   registry: ToolRegistry;
   systemPrompt: SystemPromptInput;
-  skills?: Skill[];
   plugins?: Plugin[];
   hooks?: HookPipeline;
   guardrails?: GuardrailRule[];
@@ -114,7 +112,7 @@ function resolveBackendByName<T extends { readonly name: string }>(
 /**
  * 装配 AgentLoop（「装配层」）：
  * 安装 plugins → 装配内置工具（传 security 时）→ 连接 mcp → `mergeBundles` 合并 →
- * 注册 tools / hooks、合并 skills·rules、注入 prompt 片段 → 构造 AgentLoop + 聚合 dispose。
+ * 注册 tools / hooks、注入 prompt 片段 → 构造 AgentLoop + 聚合 dispose。
  */
 export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Promise<ResolvedAgent> {
   const eventBus = options.eventBus ?? new EventBus();
@@ -174,10 +172,6 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     derivedFragments.push(TODO_PLANNING_GUIDANCE);
   }
 
-  const skills = [...(options.skills ?? []), ...merged.skills];
-  for (const skill of skills) {
-    eventBus.emit({ type: 'skill.loaded', id: skill.id });
-  }
   const promptText = [...merged.promptFragments, ...derivedFragments].join('\n\n');
   const systemPrompt = injectPromptText(options.systemPrompt, promptText);
 
@@ -233,7 +227,6 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     provider: options.provider,
     registry: options.registry,
     systemPrompt,
-    skills,
     hooks: options.hooks,
     guardrails,
     memory,

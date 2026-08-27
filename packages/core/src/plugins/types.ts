@@ -10,11 +10,10 @@ import type { Reranker } from '../retrieval/reranker';
 import type { Retriever } from '../retrieval/retriever';
 import type { VectorStore } from '../retrieval/vector-store';
 import type { GuardrailRule } from '../guardrails';
-import type { Skill } from '../skills/types';
 import type { Tool } from '../tools/types';
 
 /**
- * 插件：最大的扩展单元，可打包多个 tools / skills / hooks / rules / prompt 片段，
+ * 插件：最大的扩展单元，可打包多个 tools / hooks / guardrails / prompt 片段 / context 贡献者，
  * 通过 `install(ctx)` 一次性注入能力。
  */
 export interface Plugin {
@@ -32,7 +31,6 @@ export interface Plugin {
 /** 插件与内核之间的能力注入桥梁。 */
 export interface PluginContext {
   registerTool(tool: Tool): void;
-  registerSkill(skill: Skill): void;
   registerHook(hook: Hook): void;
   /** 注册可执行 guardrail 规则（安全拦截）。 */
   registerGuardrail(rule: GuardrailRule): void;

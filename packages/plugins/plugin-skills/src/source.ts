@@ -5,11 +5,22 @@ import { promisify } from 'node:util';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import type { SkillRef } from '@agent-engine/config';
-import { loadSkillFromPath } from '../skills/load';
-import type { Skill } from '../skills/types';
-import type { SkillSourceDeps } from './types';
+import { loadSkillFromPath } from './load';
+import type { Skill } from './types';
 
 const execFileAsync = promisify(execFile);
+
+/** 技能来源解析依赖（命令执行 / 临时目录可注入，便于测试）。 */
+export interface SkillSourceDeps {
+  /** 执行外部命令（如 npm / git / tar）。 */
+  exec(command: string, args: string[], options?: { cwd?: string }): Promise<void>;
+  /** 创建临时目录。 */
+  mkdtemp(): Promise<string>;
+  /** 递归删除临时目录（幂等）。 */
+  rm(dir: string): Promise<void>;
+  /** 从拉取到的目录中定位并加载 SKILL.md。 */
+  readSkill(dir: string): Promise<Skill>;
+}
 
 /** 默认依赖：真实执行 npm / git / tar 命令 + 系统临时目录。 */
 export function createDefaultSkillSourceDeps(): SkillSourceDeps {

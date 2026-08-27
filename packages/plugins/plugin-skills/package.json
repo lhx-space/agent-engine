@@ -1,0 +1,36 @@
+{
+  "name": "@agent-engine/plugin-skills",
+  "version": "0.1.0",
+  "description": "技能插件（检索命中注入 instruction + 捆绑工具；SKILL.md 加载 + path/npm/git 来源解析）",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@agent-engine/config": "workspace:*",
+    "@agent-engine/core": "workspace:*",
+    "gray-matter": "^4.0.3",
+    "minisearch": "^7.2.0"
+  }
+}

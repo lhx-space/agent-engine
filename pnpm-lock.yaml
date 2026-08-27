@@ -236,6 +236,21 @@ importers:
         specifier: ^7.2.0
         version: 7.2.0
 
+  packages/plugins/plugin-skills:
+    dependencies:
+      '@agent-engine/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@agent-engine/core':
+        specifier: workspace:*
+        version: link:../../core
+      gray-matter:
+        specifier: ^4.0.3
+        version: 4.0.3
+      minisearch:
+        specifier: ^7.2.0
+        version: 7.2.0
+
   packages/server:
     dependencies:
       '@agent-engine/config':

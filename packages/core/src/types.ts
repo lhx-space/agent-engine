@@ -76,8 +76,6 @@ export type { HybridRetrieveOptions } from './retrieval/hybrid-retriever';
 export type { EmbeddingProvider } from './embedding/embedding';
 // events
 export type { AgentEngineEvent, EventListener } from './events/types';
-// skills
-export type { Skill } from './skills/types';
 // capability
 export type { CapabilityBundle } from './capability/types';
 export type { MergedBundles } from './capability/bundle';

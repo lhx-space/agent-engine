@@ -25,13 +25,12 @@ function baseConfig(): AgentConfig {
 }
 
 describe('mergeBundles', () => {
-  it('合并 tools/hooks/skills + dispose 聚合', async () => {
+  it('合并 tools/hooks + dispose 聚合', async () => {
     const disposed: string[] = [];
     const b1: CapabilityBundle = {
       tools: [
         { name: 't1', description: 'd', inputSchema: z.object({}), execute: async () => ({}) },
       ],
-      skills: [],
       hooks: [],
       guardrails: [],
       promptFragments: ['p1'],
@@ -51,7 +50,6 @@ describe('mergeBundles', () => {
     };
     const b2: CapabilityBundle = {
       tools: [],
-      skills: [],
       hooks: [],
       guardrails: [],
       promptFragments: [],

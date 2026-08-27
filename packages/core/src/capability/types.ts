@@ -10,7 +10,6 @@ import type { Reranker } from '../retrieval/reranker';
 import type { Retriever } from '../retrieval/retriever';
 import type { VectorStore } from '../retrieval/vector-store';
 import type { GuardrailRule } from '../guardrails';
-import type { Skill } from '../skills/types';
 import type { Tool } from '../tools/types';
 
 /**
@@ -21,7 +20,6 @@ import type { Tool } from '../tools/types';
  */
 export interface CapabilityBundle {
   tools: Tool[];
-  skills: Skill[];
   hooks: Hook[];
   guardrails: GuardrailRule[];
   promptFragments: string[];

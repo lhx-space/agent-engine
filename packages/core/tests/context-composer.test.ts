@@ -3,8 +3,6 @@ import { ContextComposer } from '../src/context/context-composer';
 import { HookPipeline } from '../src/hooks/pipeline';
 import { ConversationMemory } from '../src/memory/conversation-memory';
 import type { LongTermMemory } from '../src/memory/long-term-memory';
-import { CapabilityLoader } from '../src/retrieval/loader';
-import type { Skill } from '../src/skills/types';
 
 describe('ContextComposer', () => {
   it('组装 messages：system + 历史 + user，注入长期记忆', async () => {
@@ -42,21 +40,6 @@ describe('ContextComposer', () => {
 
     const system = result.messages[0]?.content ?? '';
     expect(system).toContain('外部素材');
-  });
-
-  it('skill 命中随结果返回（供调用方注册捆绑工具）', async () => {
-    const skills: Skill[] = [
-      { id: 's1', description: '天气查询', instruction: '技能指令', tags: ['天气'] },
-    ];
-    const composer = new ContextComposer({
-      systemPrompt: 'base',
-      skillLoader: new CapabilityLoader<Skill>('skill', skills),
-    });
-
-    const result = await composer.compose('查询天气');
-
-    expect(result.skillHits.map((h) => h.record.id)).toEqual(['s1']);
-    expect(result.skillsText).toContain('技能指令');
   });
 });
 

@@ -4,7 +4,6 @@ export type AgentEngineEvent =
   | { type: 'mcp.connected'; name: string }
   | { type: 'mcp.failed'; name: string; error: string }
   | { type: 'tool.registered'; name: string }
-  | { type: 'skill.loaded'; id: string }
   /** 逃生舱：用户/插件自定义事件（`data` 原样透传，类型自行收窄）。 */
   | { type: 'custom'; name: string; data?: unknown };
 

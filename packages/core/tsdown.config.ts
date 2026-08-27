@@ -20,7 +20,6 @@ export default defineConfig({
     retrieval: 'src/retrieval/index.ts',
     guardrails: 'src/guardrails/index.ts',
     sandbox: 'src/sandbox/index.ts',
-    skills: 'src/skills/index.ts',
     'structured-output': 'src/structured-output/index.ts',
     tools: 'src/tools/index.ts',
   },

@@ -27,41 +27,17 @@ TBD - created by archiving change add-context-assembly. Update Purpose after arc
 
 ### Requirement: system prompt 组装
 
-系统 SHALL 提供 `buildSystemPrompt(options)`，渲染 `systemPrompt.template`（用户变量 + 内置 `skills` 变量），返回本次调用的 system prompt；`skills` 变量值为 `options.skillsText`（调用方检索后传入的文本片段）。规则注入已外放为 `@agent-engine/plugin-rules` 的 `ContextContributor`，SHALL 不再占用 `buildSystemPrompt` 的模板占位符。
+系统 SHALL 提供 `buildSystemPrompt(options)`，渲染 `systemPrompt.template` 的用户变量，返回本次调用的 system prompt。rules / skills 能力注入已外放为 `@agent-engine/plugin-rules` / `@agent-engine/plugin-skills` 的 `ContextContributor`，SHALL 不再占用 `buildSystemPrompt` 的模板占位符。
 
-#### Scenario: 模板渲染 + skills 占位符注入
+#### Scenario: 模板渲染用户变量
 
-- **WHEN** 模板含 `{{skills}}` 且 `skillsText` 非空
-- **THEN** 用户变量被替换，`{{skills}}` 被替换为技能文本，结果不含 `{{skills}}` 字面量
+- **WHEN** 模板含 `{{role}}` 且 `variables.role` 非空
+- **THEN** `{{role}}` 被替换为用户变量值，结果不含 `{{role}}` 字面量
 
-#### Scenario: 模板无 skills 占位符时兜底追加
+#### Scenario: 无用户变量原样返回
 
-- **WHEN** 模板不含 `{{skills}}` 且 `skillsText` 非空
-- **THEN** 技能文本追加到渲染结果末尾
-
-#### Scenario: 未提供 skillsText
-
-- **WHEN** `options.skillsText` 未提供或为空串
-- **THEN** `skills` 变量为空串，不注入任何技能文本
-
-#### Scenario: 无匹配技能
-
-- **WHEN** `skillsText` 为空串（无候选）
-- **THEN** `{{skills}}` 替换为空串，输出不含残留占位符
-
-### Requirement: skills 片段注入
-
-系统 SHALL 支持 `buildSystemPrompt` 注入 skills 指令片段：`skills` 为内置变量（命中 skills 的 instruction 拼接文本），模板用 `{{skills}}` 声明注入点；未声明占位符且文本非空时兜底追加。
-
-#### Scenario: {{skills}} 占位符注入
-
-- **WHEN** 模板含 `{{skills}}` 且提供非空 skills 文本
-- **THEN** `{{skills}}` 被替换为 skills 指令文本，结果不含 `{{skills}}` 字面量
-
-#### Scenario: 无 skills 文本
-
-- **WHEN** 未提供 skills 文本或命中为空
-- **THEN** `{{skills}}` 替换为空串，不注入任何内容
+- **WHEN** 模板不含占位符
+- **THEN** 返回模板原文
 
 ### Requirement: Token 预算 / 上下文裁剪接口
 

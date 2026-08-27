@@ -5,7 +5,6 @@ import type { Plugin, PluginContext } from './types';
 export class PluginManager {
   private readonly assembly: CapabilityBundle = {
     tools: [],
-    skills: [],
     hooks: [],
     promptFragments: [],
     guardrails: [],
@@ -41,7 +40,6 @@ export class PluginManager {
   private createContext(): PluginContext {
     return {
       registerTool: (tool) => this.assembly.tools.push(tool),
-      registerSkill: (skill) => this.assembly.skills.push(skill),
       registerHook: (hook) => this.assembly.hooks.push(hook),
       registerGuardrail: (rule) => this.assembly.guardrails.push(rule),
       provideSystemPrompt: (fragment) => this.assembly.promptFragments.push(fragment),

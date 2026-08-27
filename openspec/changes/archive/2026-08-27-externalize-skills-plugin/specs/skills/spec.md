@@ -1,10 +1,12 @@
-# skills Specification
+## REMOVED Requirements
 
-## Purpose
+### Requirement: Skill 类型
 
-TBD - created by archiving change add-skills. Update Purpose after archive.
+### Requirement: SKILL.md 加载
 
-## Requirements
+### Requirement: CapabilityLoader 检索
+
+## ADDED Requirements
 
 ### Requirement: skills 能力外放
 

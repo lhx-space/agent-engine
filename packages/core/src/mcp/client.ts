@@ -86,7 +86,6 @@ export async function connectMcpServers(
 
   const bundle: CapabilityBundle = {
     tools: connections.flatMap((connection) => connection.tools),
-    skills: [],
     hooks: [],
     guardrails: [],
     promptFragments: [],

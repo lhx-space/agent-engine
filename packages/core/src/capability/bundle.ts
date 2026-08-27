@@ -10,14 +10,12 @@ import type { Reranker } from '../retrieval/reranker';
 import type { Retriever } from '../retrieval/retriever';
 import type { VectorStore } from '../retrieval/vector-store';
 import type { GuardrailRule } from '../guardrails';
-import type { Skill } from '../skills/types';
 import type { Tool } from '../tools/types';
 import type { CapabilityBundle } from './types';
 
 /** `mergeBundles` 的输出：扁平化的能力列表 + 聚合 dispose。 */
 export interface MergedBundles {
   tools: Tool[];
-  skills: Skill[];
   hooks: Hook[];
   guardrails: GuardrailRule[];
   promptFragments: string[];
@@ -42,7 +40,6 @@ export interface MergedBundles {
  */
 export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
   const tools: Tool[] = [];
-  const skills: Skill[] = [];
   const hooks: Hook[] = [];
   const guardrails: GuardrailRule[] = [];
   const promptFragments: string[] = [];
@@ -60,7 +57,6 @@ export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
 
   for (const bundle of bundles) {
     tools.push(...bundle.tools);
-    skills.push(...bundle.skills);
     hooks.push(...bundle.hooks);
     guardrails.push(...bundle.guardrails);
     promptFragments.push(...bundle.promptFragments);
@@ -79,7 +75,6 @@ export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
 
   return {
     tools,
-    skills,
     hooks,
     guardrails,
     promptFragments,

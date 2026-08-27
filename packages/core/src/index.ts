@@ -49,14 +49,8 @@ export type {
 export { connectMcpServer, connectMcpServers, toTool, normalizeCallToolResult } from './mcp';
 export type { McpConnection, McpToolMeta, ConnectMcpServersResult } from './mcp';
 export { mergeBundles } from './capability';
-export {
-  resolveMcpServer,
-  resolveMcpServers,
-  resolveSkill,
-  resolveSkills,
-  createDefaultSkillSourceDeps,
-} from './capability-source';
-export type { ResolvedMcpServer, SkillSourceDeps, ResolvedSkill } from './capability-source';
+export { resolveMcpServer, resolveMcpServers } from './capability-source';
+export type { ResolvedMcpServer } from './capability-source';
 export { resolveAgentConfig } from './resolve';
 export { HookPipeline } from './hooks/pipeline';
 export type { Hook, HookPoint, HookTrace } from './hooks/types';
@@ -91,7 +85,6 @@ export type { EmbeddingProvider } from './embedding/embedding';
 export { createEmbeddingProvider } from './embedding/openai';
 export { EventBus } from './events';
 export type { AgentEngineEvent, EventListener } from './events';
-export { loadSkillFromPath } from './skills';
 export { PluginManager } from './plugins';
 export { AgentLoop } from './agent/loop';
 export { assembleAgentLoop } from './agent/assemble';
