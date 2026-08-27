@@ -1,5 +1,5 @@
-import { defaultFetch } from './http';
-import type { FetchLike } from './http';
+import { defaultFetch } from '@agent-engine/core';
+import type { FetchLike } from '@agent-engine/core';
 import type { SearchProvider, SearchResult } from './search';
 
 interface SearXNGResult {

@@ -285,6 +285,24 @@ importers:
         specifier: ^7.2.0
         version: 7.2.0
 
+  packages/plugins/plugin-web:
+    dependencies:
+      '@agent-engine/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@agent-engine/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@mozilla/readability':
+        specifier: ^0.6.0
+        version: 0.6.0
+      linkedom:
+        specifier: ^0.18.13
+        version: 0.18.13
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+
   packages/server:
     dependencies:
       '@agent-engine/config':

@@ -126,7 +126,7 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
 
   // 2. 内置工具直接写 registry（无 dispose）。
   if (options.security) {
-    registerBuiltinTools(options.registry, options.security);
+    registerBuiltinTools(options.registry);
   }
 
   // 3. MCP 能力束（tools + dispose 关闭连接）；单个失败不阻断整体（错误隔离 + 事件报告）。

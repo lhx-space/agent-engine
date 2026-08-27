@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { WebSearchPolicy } from '@agent-engine/config';
-import type { Tool } from '../types';
-import type { SearchProvider, SearchResult } from '../utils/search';
+import type { Tool } from '@agent-engine/core/tools';
+import type { SearchProvider, SearchResult } from './search';
 
 // ============ 类型 ============
 

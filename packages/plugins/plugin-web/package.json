@@ -1,0 +1,37 @@
+{
+  "name": "@agent-engine/plugin-web",
+  "version": "0.1.0",
+  "description": "Web 工具插件（web_search / web_fetch，多搜索 provider + domain 约束）",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@agent-engine/config": "workspace:*",
+    "@agent-engine/core": "workspace:*",
+    "@mozilla/readability": "^0.6.0",
+    "linkedom": "^0.18.13",
+    "zod": "^4.4.3"
+  }
+}

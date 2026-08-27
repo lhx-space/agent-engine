@@ -13,10 +13,7 @@ export {
   TodoStore,
   registerBuiltinTools,
   createTodoTool,
-  createWebSearchTool,
-  createWebFetchTool,
   createDatetimeTool,
-  createDuckDuckGoSearchProvider,
   defaultFetch,
 } from './tools/builtin';
 export type { RegisterBuiltinToolsDeps } from './tools/builtin';

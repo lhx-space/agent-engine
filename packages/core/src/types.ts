@@ -28,14 +28,10 @@ export type {
   FileEntry,
 } from './tools/file';
 export type { BashInput } from './tools/bash';
-export type { WebSearchInput, WebSearchResult } from './tools/builtin/web-search';
-export type { WebFetchInput, WebFetchResult } from './tools/builtin/web-fetch';
 export type { DatetimeInput, DatetimeResult } from './tools/builtin/datetime';
 // tools/utils
 export type { TodoItem, TodoStatus } from './tools/utils/todo-store';
 export type { FetchLike, HttpResponse } from './tools/utils/http';
-export type { SearchProvider, SearchResult, SearchOptions } from './tools/utils/search';
-export type { DomainPolicy } from './tools/utils/domain';
 // sandbox
 export type {
   SandboxBackend,
