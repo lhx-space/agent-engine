@@ -34,3 +34,19 @@ export function parseSkillList(output: string): ParsedSkill[] {
   }
   return skills;
 }
+
+/**
+ * 解析 `npx skills ls -g` 的输出为已装 skill 名列表。
+ * 输出形态（strip ANSI 后）：
+ *   Global Skills
+ *
+ *   deploy-to-vercel ~/.agents/skills/deploy-to-vercel
+ *     Agents: ... Source: vercel-labs/agent-skills
+ */
+export function parseInstalledSkills(output: string): string[] {
+  return stripAnsi(output)
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line && line !== 'Global Skills' && !line.startsWith('Agents:'))
+    .map((line) => line.split(/\s+/)[0]!);
+}

@@ -19,6 +19,6 @@ export type {
   SkillDiscoverer,
   SkillDiscovererDeps,
 } from './services/skill-discovery';
-export { parseSkillList, stripAnsi } from './utils/skill-list';
+export { parseInstalledSkills, parseSkillList, stripAnsi } from './utils/skill-list';
 export type { ParsedSkill } from './utils/skill-list';
 export type { ServerOptions } from './types';

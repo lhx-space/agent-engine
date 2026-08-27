@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { parseSkillList, stripAnsi } from '../utils/skill-list';
+import { parseInstalledSkills, parseSkillList } from '../utils/skill-list';
 import type { ParsedSkill } from '../utils/skill-list';
 
 const execFileAsync = promisify(execFile);
@@ -40,11 +40,8 @@ export function createNpxSkillDiscoverer(deps?: SkillDiscovererDeps): SkillDisco
       return parseSkillList(stdout);
     },
     async listInstalled() {
-      const { stdout } = await exec('npx', ['--yes', 'skills', 'ls']);
-      return stripAnsi(stdout)
-        .split('\n')
-        .map((line) => line.trim())
-        .filter(Boolean);
+      const { stdout } = await exec('npx', ['--yes', 'skills', 'ls', '-g']);
+      return parseInstalledSkills(stdout);
     },
     async install(repo, skill) {
       await exec('npx', ['--yes', 'skills', 'add', repo, '-s', skill, '--copy', '-y', '-g']);
