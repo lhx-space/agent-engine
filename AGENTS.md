@@ -795,7 +795,7 @@ services:
 
 1. **M1 内核骨架**（✅ 已完成）：monorepo 搭建（tsdown 构建）+ `config` 包（Schema + 三格式加载）+ `core` 包（LLM Provider 抽象——**默认接 DeepSeek**、Tool 注册表、单 Agent Loop）。
 2. **M2 配置化能力**（✅ 已完成）：hooks、rules、skills、plugins 系统 + system-prompt 组装 + 会话 memory + 内置通用原语工具（`todo` / `datetime` / `web_search` / `web_fetch`）+ 执行沙箱（`SandboxBackend`：docker / nsjail 双后端，bash 默认禁用，rtk 输出压缩）+ 内置 plugin（`@agent-engine/plugin-files` / `@agent-engine/plugin-bash` / `@agent-engine/plugin-git`）。
-3. **M3 扩展接入**（**进行中**）：✅ ① MCP client（`connectMcpServer`/`connectMcpServers`，stdio transport）；✅ ④ config resolve 层（`resolveAgentConfig`：AgentConfig→AgentLoop 一键装配 + `CapabilityBundle` 统一）；✅ 流式输出（`chatCompletionStream` + NDJSON 端点）；✅ `onInit`/`onSessionStart`/`onSessionEnd` 三个 hook；✅ 会话生命周期（server `SessionStoreBackend` + `sessionId` 复用 + `DELETE /sessions/:id`）；✅ ReAct loop 强化（并行 tool_calls、工具重试+退避、`AbortSignal` 取消、`finishReason` 续写、`execution` 预算配置）；✅ 真思考透传（DeepSeek R1 `reasoning_content` → `ChatMessage.reasoning` + 前端「思考/回复」分开）；✅ ② 长期记忆（三层记忆：token 预算整轮裁剪 + 滚动摘要 + embedding 语义召回）；✅ ⑤ FunctionSandbox（`FunctionSandbox` + `WasiFunctionSandbox`，WASI）；✅ guardrail 声明式配置轴（`guardrails` + `compileGuardrails`）；✅ SessionStore 可插拔（`SessionStoreBackend` + `InMemorySessionStore`）；✅ 日志可插拔（`Logger` + `consoleLogger` 默认，移除 pino）。剩余：③ 多 Agent 编排（独立 `@agent-engine/orchestration` 包）。
+3. **M3 扩展接入**（**进行中**）：✅ ① MCP client（`connectMcpServer`/`connectMcpServers`，stdio + http（streamable-http/sse）transport）；✅ ④ config resolve 层（`resolveAgentConfig`：AgentConfig→AgentLoop 一键装配 + `CapabilityBundle` 统一）；✅ 流式输出（`chatCompletionStream` + NDJSON 端点）；✅ `onInit`/`onSessionStart`/`onSessionEnd` 三个 hook；✅ 会话生命周期（server `SessionStoreBackend` + `sessionId` 复用 + `DELETE /sessions/:id`）；✅ ReAct loop 强化（并行 tool_calls、工具重试+退避、`AbortSignal` 取消、`finishReason` 续写、`execution` 预算配置）；✅ 真思考透传（DeepSeek R1 `reasoning_content` → `ChatMessage.reasoning` + 前端「思考/回复」分开）；✅ ② 长期记忆（三层记忆：token 预算整轮裁剪 + 滚动摘要 + embedding 语义召回）；✅ ⑤ FunctionSandbox（`FunctionSandbox` + `WasiFunctionSandbox`，WASI）；✅ guardrail 声明式配置轴（`guardrails` + `compileGuardrails`）；✅ SessionStore 可插拔（`SessionStoreBackend` + `InMemorySessionStore`）；✅ 日志可插拔（`Logger` + `consoleLogger` 默认，移除 pino）。剩余：③ 多 Agent 编排（独立 `@agent-engine/orchestration` 包）。
 4. **M4 服务化**（**部分完成**）：✅ server HTTP API（`/api/agent/run` 非流式 + `/api/agent/run/stream` NDJSON + `DELETE /api/agent/sessions/:id`，可插拔 `Logger`（默认 console）、session 复用、`SessionStoreBackend`）。剩余：CLI（`packages/cli` 仍是 stub）。
 5. **M5 平台与文档**（**部分完成**）：✅ apps/web 三栏编辑器 + 流式 chat + 模型供应商预设 + security preset + 配置导出（省略默认值减负）。剩余：docs（Rspress）、Docker 编排、示例垂直领域 Agent。
 6. **内核瘦身（能力外放，✅ 已完成）**：rules / skills / documents / 语义记忆 / web / mcp / 声明式 guardrail 编译 全部外放为 `packages/plugins/plugin-*`，core 只留引擎 + 协议（`Retriever` / `hybridRetrieve` / `ToolSource` / `ContextContributor` / guardrail 协议）；`@agent-engine/preset-default` 聚合并据 config 切片激活；模型采样参数（`topP` / `frequencyPenalty` / `presencePenalty` / `stop` / `seed`）归一化透传（「配置缺省 + 调用覆盖」，顺带修复 `temperature` / `maxTokens` 未生效）。
@@ -819,3 +819,67 @@ M2 落地及 M3 推进过程中沉淀的坑点与约定，后续开发直接复�
 - **会话复用要求 resolve 始终创建 `ConversationMemory`**：否则「不配 memory 的多轮」是空的；`memory.session.maxMessages` 只调裁剪窗口。
 - **多模型方向（生产级）**：能力分离（chat / reasoning / embedding / vision 顶层分字段）+ 实例级覆盖（subagent 级）+ 模型路由（fallback / 按复杂度），是 M3 后续的地基；`deepseek-reasoner` 单模型已含「think + 执行」，分角色是成本/稳定性优化，非必须。
 - **预算兜底强制收尾**：reasoning 模型会在循环里花很多 step 思考/规划/调研，`maxSteps` 兜底时若最后消息仍带 `toolCalls`（模型还没给最终答案），要追加一轮「不带工具」的总结调用，否则答案被截断成「只有过程没有结论」。
+
+## 15. 架构规划与引擎缺口（「目录即 Agent」路线）
+
+> 只记「已定方向 + 已落地 + 待办缺口」，避免后续遗忘。
+
+### 15.1 核心架构（已定方向）
+
+内核 = harness，**只认一份协议化数据源（`AgentConfig`）**。YAML / JSON / 目录 / 网页表单 / 数据库都是「现实形式」，运行时归一化成同一份协议喂内核。**内核不读目录、不拼配置**——「目录 → 协议」的拼接是宿主层职责（Next.js / CLI / server 各写各的拼接器）。
+
+目录约定（一个 agent = 一个 harness 目录，`agents/.lhx-agent/<name>/`）：
+
+```text
+.lhx-agent/<name>/
+├── context/system.md       # frontmatter 标量（name/model/plugins/guardrails/execution/security）+ 正文 systemPrompt
+├── context/knowledge/*.md  # documents 知识源
+├── rules/*.mdc             # 每条规则一个文件（frontmatter: kind/description/tags）
+├── skills/<skill>/SKILL.md # 每个 skill 一个目录（frontmatter: name/description/tags）
+├── hooks/*.ts              # 每个 hook 一个文件（default export Hook 对象，jiti 加载）
+└── mcps/*.yaml             # 每个 MCP server 一个文件（source: command | registry | http）
+```
+
+关键边界：**hooks 只观察/改写、不阻断**（阻断是 guardrail/rules 职责）。hooks 返回 `void` = 保持原值，返回新值 = 改写。
+
+### 15.2 已落地（本轮）
+
+- **远程 MCP**：`McpServerSchema` 加 `http` 来源（`url` + `transport: streamable-http|sse` + `headers`）；`plugin-mcp` 接入 `StreamableHTTPClientTransport` / `SSEClientTransport`（sdk 1.30）。
+- **Next.js 宿主（`agents/`）**：`src/lib/agent-dir.ts`（扫目录 → 拼 `AgentConfig` + jiti 加载 hooks → `@local/hooks` 插件）+ `POST /api/agent/:name/run`；`pnpm-workspace.yaml` 加 `agents`。
+- **示例 harness**：`.lhx-agent/devops-agent/`（files/bash/git/otel + 远程 mcp + skill + rules + hooks）、`.lhx-agent/code-review-agent/`（files/git + skill + rules + hooks）。
+- **端到端验证通过**：rules（always/on-demand）/skills/hooks 注入 + 远程 mcp 连接失败隔离，均 200 跑通。
+
+### 15.3 引擎缺口清单（待办）
+
+1. **外部服务后端插件**：pgvector 记忆后端、redis 缓存/会话后端。抽象接口已就绪，**实现全空**，`docker/` 目录空；config 写 `backend: pgvector/redis` 目前报 Unknown backend。设计见 15.4。
+2. **编排引擎**：`orchestration` 只有 `{mode}` 占位（single/sequential/parallel/graph），core/plugins 零使用点。多 agent 串行/并行/DAG + 结果传递未实现；「目录化 → agent 成为可寻址单元」是编排复用的地基。
+3. **远程 MCP headers 的 `${VAR}` 插值**：扫描器读 mcps yaml 字面透传，`${GITHUB_TOKEN}` 未替换（当前 github 示例因此连接失败；需换无需 token 的远程端点，或接 env 插值）。
+4. **多租户 skill 存储**：`install` 现为 `-g` 全局 `~/.agents/skills`（单租户假设）。云端需 `SkillStore` 抽象 per-tenant（命名空间 + 租户身份 + 来源审查/人在环）。先不着急，但抽象要预留。
+5. **web_search/web_fetch 引用来源 URL 引导**：工具已返回 `{title,url,snippet}`，缺「引导模型在回答中引用来源 URL」的 description 注入。
+6. **前端 DocumentsForm**（sources/chunking/topK）：apps/web 缺该表单。
+7. **CLI 仍 stub**：`packages/cli` 只有 name/version，`run` 命令未实现。
+8. **docs（Rspress）+ Docker 编排**。
+
+### 15.4 外部服务后端插件设计（plugin-postgresql / plugin-redis）
+
+原则：两个插件**只做「实现已有抽象接口 + 注册」，不改 core**。抽象已就绪：`MemoryBackend`（跨会话 KV 持久化）、`CacheBackend`（TTL KV）、`VectorStore`（语义向量检索）、`SessionStoreBackend`（server 层会话复用）。
+
+#### `@agent-engine/plugin-postgresql`（pgvector，语义记忆持久化）
+
+- 一个插件、两个后端，共用同一 PostgreSQL 实例：
+  - `PgVectorStore`（实现 `VectorStore`，name `pgvector`）：依赖 pgvector 扩展；表 `agent_vectors(id text pk, vector vector(dim), metadata jsonb)`；`add` 批量 INSERT、`query` 用 `<=>` 余弦距离（topK）、`delete/clear`；启动时 `CREATE EXTENSION IF NOT EXISTS vector` + 建表。
+  - `PgMemoryBackend`（实现 `MemoryBackend`，name `pg`）：表 `agent_memory(key text pk, value jsonb, updated_at timestamptz)`，KV `get/set/delete/keys/clear`。
+- 连接：`DATABASE_URL`（node-postgres `pg` 驱动 + 连接池）。
+- 注册：`registerVectorStore('pgvector')` + `registerMemoryBackend('pg')`。
+- 语义记忆闭环：`SemanticMemory = PgMemoryBackend（存记忆）+ PgVectorStore（存向量）+ EmbeddingProvider（生成向量）`；config 侧 `memory.longTerm.backend: 'pg'` + `embedding`（DeepSeek 无 embeddings，需 OpenAI / 本地 ollama）。
+
+#### `@agent-engine/plugin-redis`（缓存 + 会话状态）
+
+- `RedisCacheBackend`（实现 `CacheBackend`，name `redis`）：ioredis / node-redis；`SET key value EX ttl`（TTL 到期）、`GET`/`DEL`/`FLUSHDB`，value JSON 序列化；config `cache.backend: 'redis'`。
+- 会话：`SessionStoreBackend` 存的是「已装配 `AgentLoop` 对象」（内存态，不可跨进程序列化），redis **不能直接承载**。多副本的正确姿势是「会话可序列化状态（conversation history）持久化 + 重建」，而非共享 `AgentLoop` 对象；`RedisSessionStore` 放 server 层（或后续把会话状态接口下沉）。
+
+#### 引擎侧需配套的 3 个设计点
+
+1. **VectorStore 按名选择**：当前 assemble 取 `merged.vectorStores[0]`（先注册先得），多后端并存需扩展 config（如 `vectorStore.backend`）按名解析，对齐 `MemoryBackend`/`CacheBackend` 的 `resolveBackendByName` 模式。
+2. **后端 dispose 生命周期**：`registerMemoryBackend`/`registerCacheBackend`/`registerVectorStore` 现无释放钩子；pg/redis 连接池需关闭——给 `PluginContext` 加「后端 dispose 聚合」，或插件自管连接 + 全局 dispose。
+3. **docker-compose**：补 `pgvector/pgvector:pg16` + `redis:7-alpine`（13.1 已列镜像，缺编排文件）。
