@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from '@rstest/core';
-import { resolveEnvApiKey } from '../src/provider';
+import { resolveEnvApiKey } from '../src/infra/provider';
 
 describe('resolveEnvApiKey（部署层环境变量映射）', () => {
   beforeEach(() => {

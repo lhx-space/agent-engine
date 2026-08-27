@@ -1,5 +1,5 @@
 import type { ErrorHandler } from 'hono';
-import type { Logger } from '../logger';
+import type { Logger } from '../infra/logger';
 
 /** 带 HTTP 状态码与可选 details 的领域错误；handler 抛出，由全局 errorHandler 统一映射。 */
 export class HttpError extends Error {

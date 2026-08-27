@@ -2,7 +2,7 @@ import { describe, expect, it } from '@rstest/core';
 import { AgentConfigSchema } from '@agent-engine/config';
 import type { ChatMessage, LLMProvider, ProviderFactory } from '@agent-engine/core';
 import { createApp } from '../src/app';
-import type { SessionStoreBackend } from '../src/session-store';
+import type { SessionStoreBackend } from '../src/infra/session-store';
 
 function makeConfig() {
   return AgentConfigSchema.parse({

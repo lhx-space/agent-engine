@@ -2,14 +2,13 @@ import { execFile } from 'node:child_process';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
+import { parseSkillList, stripAnsi } from '../utils/skill-list';
+import type { ParsedSkill } from '../utils/skill-list';
 
 const execFileAsync = promisify(execFile);
 
-/** 从 skills.sh 发现的单个 skill。 */
-export interface DiscoveredSkill {
-  name: string;
-  description: string;
-}
+/** 从 skills.sh 发现的单个 skill（即 `parseSkillList` 的解析结果）。 */
+export type DiscoveredSkill = ParsedSkill;
 
 /** skill 发现依赖（命令执行可注入，便于测试）。 */
 export interface SkillDiscovererDeps {
@@ -25,37 +24,6 @@ export interface SkillDiscoverer {
   listInstalled(): Promise<string[]>;
   /** 安装一个 skill 到全局，返回其本地路径（`~/.agents/skills/<skill>`）。 */
   install(repo: string, skill: string): Promise<{ path: string }>;
-}
-
-/** 剥离 ANSI 转义序列（色码 + TUI 光标控制）。 */
-const ANSI_RE = /\x1b\[[0-9;?]*[a-zA-Z]/g;
-export function stripAnsi(text: string): string {
-  return text.replace(ANSI_RE, '');
-}
-
-/**
- * 解析 `npx skills add <repo> -l` 的输出为 skill 列表。
- * 输出形态（strip ANSI 后）：
- *   │    <skill-name>
- *   │
- *   │      <description>
- */
-export function parseSkillList(output: string): DiscoveredSkill[] {
-  const skills: DiscoveredSkill[] = [];
-  let current: DiscoveredSkill | null = null;
-  for (const rawLine of stripAnsi(output).split('\n')) {
-    const line = rawLine.trimEnd();
-    const nameMatch = line.match(/^│    (\S.*)$/);
-    const descMatch = line.match(/^│      (.*)$/);
-    if (nameMatch) {
-      current = { name: nameMatch[1]!.trim(), description: '' };
-      skills.push(current);
-    } else if (descMatch && current) {
-      const desc = descMatch[1]!.trim();
-      current.description = current.description ? `${current.description} ${desc}` : desc;
-    }
-  }
-  return skills;
 }
 
 async function defaultExec(command: string, args: string[]): Promise<{ stdout: string }> {

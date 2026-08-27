@@ -1,6 +1,6 @@
 import type { AgentLoop } from '@agent-engine/core';
 import type { Context } from 'hono';
-import type { Logger } from '../logger';
+import type { Logger } from '../infra/logger';
 import { HttpError } from '../middlewares/error';
 import type { AgentService } from '../services/agent';
 import { readJson } from './http';

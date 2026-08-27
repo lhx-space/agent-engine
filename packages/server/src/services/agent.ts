@@ -8,8 +8,8 @@ import {
   createPresetPluginFactories,
   defaultCapabilityPlugins,
 } from '@agent-engine/preset-default';
-import { envProviderFactory } from '../provider';
-import type { SessionStoreBackend } from '../session-store';
+import { envProviderFactory } from '../infra/provider';
+import type { SessionStoreBackend } from '../infra/session-store';
 import type { ServerOptions } from '../types';
 
 /** 一次 run 的已解析请求。 */
