@@ -168,14 +168,14 @@
         "default": "./dist/retrieval.cjs"
       }
     },
-    "./rules": {
+    "./guardrails": {
       "import": {
-        "types": "./dist/rules.d.mts",
-        "default": "./dist/rules.mjs"
+        "types": "./dist/guardrails.d.mts",
+        "default": "./dist/guardrails.mjs"
       },
       "require": {
-        "types": "./dist/rules.d.cts",
-        "default": "./dist/rules.cjs"
+        "types": "./dist/guardrails.d.cts",
+        "default": "./dist/guardrails.cjs"
       }
     },
     "./sandbox": {

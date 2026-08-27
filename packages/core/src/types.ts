@@ -62,8 +62,8 @@ export type {
 } from './sandbox/function';
 // hooks
 export type { Hook } from './hooks/types';
-// rules
-export type { GuardrailContext, GuardrailResult, GuardrailRule } from './rules/types';
+// guardrails（协议：GuardrailRule 接口）
+export type { GuardrailContext, GuardrailResult, GuardrailRule } from './guardrails';
 // retrieval
 export type { CapabilityHit, CapabilityMeta, CapabilityType } from './retrieval/types';
 export type { CapabilityRecord, CapabilityRecordHit } from './retrieval/loader';

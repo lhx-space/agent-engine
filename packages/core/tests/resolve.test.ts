@@ -25,7 +25,7 @@ function baseConfig(): AgentConfig {
 }
 
 describe('mergeBundles', () => {
-  it('合并 tools/hooks/rules/skills + dispose 聚合', async () => {
+  it('合并 tools/hooks/skills + dispose 聚合', async () => {
     const disposed: string[] = [];
     const b1: CapabilityBundle = {
       tools: [
@@ -33,7 +33,6 @@ describe('mergeBundles', () => {
       ],
       skills: [],
       hooks: [],
-      rules: [],
       guardrails: [],
       promptFragments: ['p1'],
       memoryBackends: [],
@@ -54,7 +53,6 @@ describe('mergeBundles', () => {
       tools: [],
       skills: [],
       hooks: [],
-      rules: [],
       guardrails: [],
       promptFragments: [],
       memoryBackends: [],
@@ -159,9 +157,9 @@ describe('resolveAgentConfig', () => {
     expect(result.finalMessage.content).toBe('ok');
   });
 
-  it('声明式 guardrail 阻断工具调用（resolve 装配进循环）', async () => {
+  it('plugin 注册的 guardrail 阻断工具调用（resolve 装配进循环）', async () => {
     const config = baseConfig();
-    config.guardrails = [{ id: 'deny-todo', denyTools: ['builtin.todo'] }];
+    config.plugins = ['guardrail-plugin'];
 
     let calls = 0;
     const provider: LLMProvider = {
@@ -187,7 +185,26 @@ describe('resolveAgentConfig', () => {
       },
     };
 
-    const resolved = await resolveAgentConfig(config, { providerFactory: () => provider });
+    const resolved = await resolveAgentConfig(config, {
+      providerFactory: () => provider,
+      pluginFactories: {
+        'guardrail-plugin': () => ({
+          name: 'guardrail-plugin',
+          description: '测试 guardrail 插件',
+          version: '1.0.0',
+          install(ctx) {
+            ctx.registerGuardrail({
+              id: 'deny-todo',
+              on: 'beforeToolCall',
+              validate: async (context) =>
+                context.toolName === 'builtin.todo'
+                  ? { allowed: false, reason: 'denied tool "builtin.todo"' }
+                  : { allowed: true },
+            });
+          },
+        }),
+      },
+    });
     const result = await resolved.agent.run('hi');
     await resolved.dispose();
 

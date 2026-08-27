@@ -1,7 +1,5 @@
 import type {
   ExecutionConfig,
-  GuardrailConfig,
-  Rule,
   SecurityConfig,
   SessionMemory,
   ToolsConfig,
@@ -38,8 +36,7 @@ import type { Retriever } from '../retrieval/retriever';
 import { CapabilityRegistry } from '../retrieval/registry';
 import { InMemoryVectorStore } from '../retrieval/vector-store';
 import type { VectorStore } from '../retrieval/vector-store';
-import { compileGuardrails } from '../rules/declarative';
-import { RuleRegistry } from '../rules/registry';
+import type { GuardrailRule } from '../guardrails';
 import type { SandboxBackend } from '../sandbox/types';
 import type { Skill } from '../skills/types';
 import { registerBuiltinTools } from '../tools/builtin';
@@ -52,11 +49,10 @@ export interface AssembleAgentLoopOptions {
   provider: LLMProvider;
   registry: ToolRegistry;
   systemPrompt: SystemPromptInput;
-  rules?: Rule[];
   skills?: Skill[];
   plugins?: Plugin[];
   hooks?: HookPipeline;
-  guardrails?: RuleRegistry;
+  guardrails?: GuardrailRule[];
   memory?: ConversationMemory;
   maxSteps?: number;
   /** 执行预算 / 重试 / 续写策略（可选，缺省对齐现状）。 */
@@ -77,8 +73,6 @@ export interface AssembleAgentLoopOptions {
   embeddingProvider?: EmbeddingProvider;
   /** 预置事件总线（缺省新建；测试可注入以断言事件）。 */
   eventBus?: EventBus;
-  /** 声明式 guardrail 配置（`config.guardrails`）；装配时编译为 `GuardrailRule` 注入循环。 */
-  guardrailConfig?: GuardrailConfig;
   /** 会话记忆配置（`config.memory.session`）；未注入 `memory` 时据此构造（token 预算 + 滚动摘要）。 */
   sessionMemory?: SessionMemory;
   /** 预置滚动摘要策略（插件注册的优先；缺省 `LLMSummarizer(provider)`）。 */
@@ -181,10 +175,6 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
   }
 
   const skills = [...(options.skills ?? []), ...merged.skills];
-  const rules = [...(options.rules ?? []), ...merged.rules];
-  for (const rule of rules) {
-    eventBus.emit({ type: 'rule.loaded', id: rule.id });
-  }
   for (const skill of skills) {
     eventBus.emit({ type: 'skill.loaded', id: skill.id });
   }
@@ -235,22 +225,17 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
       summarizer: session?.summary ? summarizer : undefined,
     });
 
-  // 5.9 guardrail 装配：预置可执行规则 + 插件注册 + 声明式配置编译，合并进同一 RuleRegistry。
-  const guardrailRegistry = new RuleRegistry();
-  for (const rule of options.guardrails?.list() ?? []) guardrailRegistry.register(rule);
-  for (const rule of merged.guardrails) guardrailRegistry.register(rule);
-  for (const rule of compileGuardrails(options.guardrailConfig ?? [])) {
-    guardrailRegistry.register(rule);
-  }
+  // 5.9 guardrail 装配：预置可执行规则 + 插件注册的规则，合并成 `GuardrailRule[]`（core 只认协议）。
+  // 声明式 `config.guardrails` 的解释已外放为 `@agent-engine/plugin-guardrails`（经 registerGuardrail 注入）。
+  const guardrails: GuardrailRule[] = [...(options.guardrails ?? []), ...merged.guardrails];
 
   const agent = new AgentLoop({
     provider: options.provider,
     registry: options.registry,
     systemPrompt,
-    rules,
     skills,
     hooks: options.hooks,
-    guardrails: guardrailRegistry,
+    guardrails,
     memory,
     longTermMemory,
     documentIndex: options.documentIndex,

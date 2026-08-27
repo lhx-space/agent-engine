@@ -18,7 +18,7 @@ export default defineConfig({
     plugins: 'src/plugins/index.ts',
     resolve: 'src/resolve/index.ts',
     retrieval: 'src/retrieval/index.ts',
-    rules: 'src/rules/index.ts',
+    guardrails: 'src/guardrails/index.ts',
     sandbox: 'src/sandbox/index.ts',
     skills: 'src/skills/index.ts',
     'structured-output': 'src/structured-output/index.ts',

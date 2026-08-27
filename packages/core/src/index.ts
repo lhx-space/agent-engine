@@ -60,9 +60,6 @@ export type { ResolvedMcpServer, SkillSourceDeps, ResolvedSkill } from './capabi
 export { resolveAgentConfig } from './resolve';
 export { HookPipeline } from './hooks/pipeline';
 export type { Hook, HookPoint, HookTrace } from './hooks/types';
-export { RuleRegistry } from './rules/registry';
-export { loadRulesText } from './rules/load';
-export { compileGuardrails, createDeclarativeGuardrail } from './rules/declarative';
 export { CapabilityRegistry } from './retrieval/registry';
 export { CapabilityLoader } from './retrieval/loader';
 export { renderTemplate, buildSystemPrompt, ContextComposer } from './context';

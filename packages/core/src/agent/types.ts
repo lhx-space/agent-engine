@@ -1,4 +1,3 @@
-import type { Rule } from '@agent-engine/config';
 import type { DocumentIndex } from '../documents/document-index';
 import type { ContextContributor } from '../context/context-contributor';
 import type { SystemPromptInput } from '../context/types';
@@ -9,7 +8,7 @@ import type { HookTrace } from '../hooks/types';
 import type { ChatMessage, DeltaKind, FinishReason, LLMProvider } from '../llm/types';
 import type { ConversationMemory } from '../memory/conversation-memory';
 import type { LongTermMemory } from '../memory/long-term-memory';
-import type { RuleRegistry } from '../rules/registry';
+import type { GuardrailRule } from '../guardrails';
 import type { Skill } from '../skills/types';
 import type { ToolRegistry } from '../tools/registry';
 
@@ -37,13 +36,8 @@ export interface AgentLoopOptions {
   execution?: AgentExecutionOptions;
   /** 生命周期钩子管线，可省略。 */
   hooks?: HookPipeline;
-  /**
-   * 上下文规则（可配置文本规则）。`systemPrompt` 为模板对象时，
-   * 每次 run 自动按 userInput 检索并注入；否则被忽略。
-   */
-  rules?: Rule[];
-  /** guardrail 规则注册表（安全拦截），可省略。 */
-  guardrails?: RuleRegistry;
+  /** guardrail 规则（安全拦截），可省略。 */
+  guardrails?: GuardrailRule[];
   /** 会话记忆（可选），注入后跨 run 累积历史，实现多轮对话。 */
   memory?: ConversationMemory;
   /** 长期记忆（可选），run 开始召回注入、正常结束写回（三层记忆③）。 */

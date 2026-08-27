@@ -1,4 +1,3 @@
-import type { Rule } from '@agent-engine/config';
 import type { ContextContribution, ContextContributor } from '../context/context-contributor';
 import { ContextComposer } from '../context/context-composer';
 import type { EventBus } from '../events/event-bus';
@@ -16,7 +15,7 @@ import {
 } from '../llm/types';
 import type { ConversationMemory } from '../memory/conversation-memory';
 import type { LongTermMemory } from '../memory/long-term-memory';
-import type { RuleRegistry } from '../rules/registry';
+import type { GuardrailRule } from '../guardrails';
 import { CapabilityLoader } from '../retrieval/loader';
 import type { Skill } from '../skills/types';
 import { normalizeToolArgs } from '../tools/registry';
@@ -47,9 +46,7 @@ export class AgentLoop {
   private readonly toolRetry: { maxRetries: number; baseDelayMs: number };
   private readonly maxContinuations: number;
   private readonly hooks: HookPipeline | undefined;
-  private readonly guardrails: RuleRegistry | undefined;
-  private readonly rules: Rule[];
-  private readonly ruleLoader: CapabilityLoader<Rule> | undefined;
+  private readonly guardrails: GuardrailRule[];
   private readonly skillLoader: CapabilityLoader<Skill> | undefined;
   private readonly memory: ConversationMemory | undefined;
   private readonly longTermMemory: LongTermMemory | undefined;
@@ -70,14 +67,7 @@ export class AgentLoop {
     };
     this.maxContinuations = options.execution?.maxContinuations ?? 1;
     this.hooks = options.hooks;
-    this.guardrails = options.guardrails;
-    this.rules = options.rules ?? [];
-    this.ruleLoader =
-      this.rules.length > 0
-        ? new CapabilityLoader<Rule>('rule', this.rules, {
-            embedding: options.embeddingProvider,
-          })
-        : undefined;
+    this.guardrails = options.guardrails ?? [];
     this.skillLoader =
       options.skills && options.skills.length > 0
         ? new CapabilityLoader<Skill>('skill', options.skills, {
@@ -90,8 +80,6 @@ export class AgentLoop {
     this.eventBus = options.eventBus;
     this.contextComposer = new ContextComposer({
       systemPrompt: options.systemPrompt,
-      rules: this.rules,
-      ruleLoader: this.ruleLoader,
       skillLoader: this.skillLoader,
       memory: this.memory,
       longTermMemory: this.longTermMemory,
@@ -364,7 +352,7 @@ export class AgentLoop {
       const args = (await this.hooks?.beforeToolCall(name, normalizedArgs)) ?? normalizedArgs;
       emit?.({ type: 'tool_call', name, args });
 
-      const beforeRules = this.guardrails?.forPoint('beforeToolCall') ?? [];
+      const beforeRules = this.guardrails.filter((rule) => rule.on === 'beforeToolCall');
       let blocked = false;
       let blockedReason: string | undefined;
       for (const rule of beforeRules) {
@@ -409,7 +397,7 @@ export class AgentLoop {
       if (!plan || raw === undefined) continue;
       let toolResult = raw;
 
-      const afterRules = this.guardrails?.forPoint('afterToolCall') ?? [];
+      const afterRules = this.guardrails.filter((rule) => rule.on === 'afterToolCall');
       for (const rule of afterRules) {
         const verdict = await rule.validate({ toolName: plan.name, result: toolResult });
         if (!verdict.allowed) {

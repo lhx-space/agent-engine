@@ -1,8 +1,8 @@
 import { describe, expect, it, rs } from '@rstest/core';
 import { z } from 'zod';
 import { AgentLoop } from '../src/agent/loop';
+import type { GuardrailRule } from '../src/guardrails';
 import type { ChatCompletionResult, ChatMessage, LLMProvider } from '../src/llm/types';
-import { RuleRegistry } from '../src/rules/registry';
 import { ToolRegistry } from '../src/tools/registry';
 
 function makeProvider(responses: ChatCompletionResult[]): LLMProvider {
@@ -40,31 +40,13 @@ function bashCall(cmd: string): ChatMessage {
   };
 }
 
-describe('RuleRegistry', () => {
-  it('注册 / 查询 / forPoint 过滤', () => {
-    const registry = new RuleRegistry();
-    const rule = {
-      id: 'no-rm',
-      on: 'beforeToolCall' as const,
-      validate: async () => ({ allowed: true }),
-    };
-    registry.register(rule);
-
-    expect(registry.get('no-rm')).toBe(rule);
-    expect(registry.list()).toHaveLength(1);
-    expect(registry.forPoint('beforeToolCall')).toContain(rule);
-    expect(registry.forPoint('afterToolCall')).toHaveLength(0);
-  });
-});
-
-describe('guardrail 拦截', () => {
+describe('guardrail 拦截（协议：GuardrailRule[]）', () => {
   it('beforeToolCall 阻断：工具不执行、回填 Blocked、循环继续', async () => {
     const tools = new ToolRegistry();
     const bash = makeBashTool();
     tools.register(bash);
 
-    const rules = new RuleRegistry();
-    rules.register({
+    const rule: GuardrailRule = {
       id: 'no-rm',
       on: 'beforeToolCall',
       validate: async (ctx) => {
@@ -73,13 +55,18 @@ describe('guardrail 拦截', () => {
         }
         return { allowed: true };
       },
-    });
+    };
 
     const provider = makeProvider([
       { message: bashCall('rm -rf /') },
       { message: { role: 'assistant', content: 'ok' } },
     ]);
-    const loop = new AgentLoop({ provider, registry: tools, systemPrompt: 's', guardrails: rules });
+    const loop = new AgentLoop({
+      provider,
+      registry: tools,
+      systemPrompt: 's',
+      guardrails: [rule],
+    });
 
     const result = await loop.run('x');
 
@@ -94,21 +81,25 @@ describe('guardrail 拦截', () => {
     const bash = makeBashTool();
     tools.register(bash);
 
-    const rules = new RuleRegistry();
-    rules.register({
+    const rule: GuardrailRule = {
       id: 'no-rm',
       on: 'beforeToolCall',
       validate: async (ctx) =>
         ctx.args?.includes('rm -rf')
           ? { allowed: false, reason: '破坏性命令被禁止' }
           : { allowed: true },
-    });
+    };
 
     const provider = makeProvider([
       { message: bashCall('ls -la') },
       { message: { role: 'assistant', content: 'done' } },
     ]);
-    const loop = new AgentLoop({ provider, registry: tools, systemPrompt: 's', guardrails: rules });
+    const loop = new AgentLoop({
+      provider,
+      registry: tools,
+      systemPrompt: 's',
+      guardrails: [rule],
+    });
 
     const result = await loop.run('x');
 
@@ -126,15 +117,14 @@ describe('guardrail 拦截', () => {
       execute: rs.fn(async () => ({ content: 'secret data' })),
     });
 
-    const rules = new RuleRegistry();
-    rules.register({
+    const rule: GuardrailRule = {
       id: 'redact-secret',
       on: 'afterToolCall',
       validate: async (ctx) =>
         ctx.result?.includes('secret')
           ? { allowed: false, reason: '结果含敏感信息' }
           : { allowed: true },
-    });
+    };
 
     const readCall: ChatMessage = {
       role: 'assistant',
@@ -152,7 +142,12 @@ describe('guardrail 拦截', () => {
       { message: readCall },
       { message: { role: 'assistant', content: 'done' } },
     ]);
-    const loop = new AgentLoop({ provider, registry: tools, systemPrompt: 's', guardrails: rules });
+    const loop = new AgentLoop({
+      provider,
+      registry: tools,
+      systemPrompt: 's',
+      guardrails: [rule],
+    });
 
     const result = await loop.run('x');
 

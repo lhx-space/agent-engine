@@ -1,6 +1,20 @@
 import { describe, expect, it } from '@rstest/core';
 import type { GuardrailRuleConfig } from '@agent-engine/config';
-import { compileGuardrails, createDeclarativeGuardrail } from '../src/rules/declarative';
+import type { GuardrailRule } from '@agent-engine/core/guardrails';
+import type { PluginContext } from '@agent-engine/core/plugins';
+import {
+  compileGuardrails,
+  createDeclarativeGuardrail,
+  createGuardrailsPlugin,
+} from '../src/index';
+
+function makeCtx(): { ctx: PluginContext; rules: GuardrailRule[] } {
+  const rules: GuardrailRule[] = [];
+  const ctx = {
+    registerGuardrail: (rule: GuardrailRule) => rules.push(rule),
+  } as PluginContext;
+  return { ctx, rules };
+}
 
 describe('声明式 guardrail 编译', () => {
   it('denyTools 命中阻断', async () => {
@@ -58,5 +72,25 @@ describe('声明式 guardrail 编译', () => {
 
   it('非法正则在编译期抛错', () => {
     expect(() => compileGuardrails([{ id: 'bad', denyPatterns: ['('] }])).toThrow();
+  });
+});
+
+describe('createGuardrailsPlugin', () => {
+  it('安装后注册编译出的 GuardrailRule', async () => {
+    const { ctx, rules } = makeCtx();
+    await createGuardrailsPlugin([
+      { id: 'a', denyTools: ['builtin.bash'] },
+      { id: 'b', on: 'afterToolCall', denyPatterns: ['secret'] },
+    ]).install(ctx);
+
+    expect(rules.map((r) => r.id)).toEqual(['a', 'b']);
+    expect(rules[0]?.on).toBe('beforeToolCall');
+    expect(rules[1]?.on).toBe('afterToolCall');
+  });
+
+  it('空配置注册零规则', async () => {
+    const { ctx, rules } = makeCtx();
+    await createGuardrailsPlugin([]).install(ctx);
+    expect(rules).toHaveLength(0);
   });
 });
