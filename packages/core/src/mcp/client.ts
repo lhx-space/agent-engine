@@ -100,6 +100,7 @@ export async function connectMcpServers(
     retrievers: [],
     rerankers: [],
     summarizers: [],
+    contextContributors: [],
     dispose: async () => {
       await Promise.all(connections.map((connection) => connection.close()));
     },

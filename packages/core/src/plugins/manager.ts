@@ -19,6 +19,7 @@ export class PluginManager {
     retrievers: [],
     rerankers: [],
     summarizers: [],
+    contextContributors: [],
   };
 
   /** 安装单个 plugin，能力收集进 assembly。 */
@@ -55,6 +56,8 @@ export class PluginManager {
       registerRetriever: (retriever) => this.assembly.retrievers.push(retriever),
       registerReranker: (reranker) => this.assembly.rerankers.push(reranker),
       registerSummarizer: (summarizer) => this.assembly.summarizers.push(summarizer),
+      registerContextContributor: (contributor) =>
+        this.assembly.contextContributors.push(contributor),
     };
   }
 }

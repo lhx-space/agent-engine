@@ -1,6 +1,7 @@
 import type { Rule } from '@agent-engine/config';
 import type { CacheBackend } from '../cache/cache-backend';
 import type { ContextCompactor } from '../context/compactor';
+import type { ContextContributor } from '../context/context-contributor';
 import type { TokenCounter } from '../context/token-counter';
 import type { EmbeddingProvider } from '../embedding/embedding';
 import type { Hook } from '../hooks/types';
@@ -56,4 +57,6 @@ export interface PluginContext {
   registerReranker(reranker: Reranker): void;
   /** 注册滚动摘要策略（缺省 `LLMSummarizer`）。 */
   registerSummarizer(summarizer: Summarizer): void;
+  /** 注册上下文贡献者（能力向 context 注入文本 + 临时工具的统一缝）。 */
+  registerContextContributor(contributor: ContextContributor): void;
 }

@@ -1,0 +1,6 @@
+- [x] `context/context-contributor.ts`：`ContextContributor` 接口
+- [x] `plugins/types.ts`：`registerContextContributor`；`plugins/manager.ts`：收集
+- [x] `capability/{types,bundle}.ts`：`contextContributors` 承载 + `mergeBundles` 汇聚
+- [x] `agent/{types,loop,assemble}.ts`：`AgentLoop` 收集注入 + `assemble` 传入
+- [x] `context/index.ts` + `index.ts`/`types.ts` 导出
+- [x] 测试 + 全量校验

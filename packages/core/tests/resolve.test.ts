@@ -45,6 +45,7 @@ describe('mergeBundles', () => {
       retrievers: [],
       rerankers: [],
       summarizers: [],
+      contextContributors: [],
       dispose: async () => {
         disposed.push('a');
       },
@@ -65,6 +66,7 @@ describe('mergeBundles', () => {
       retrievers: [],
       rerankers: [],
       summarizers: [],
+      contextContributors: [],
       dispose: async () => {
         disposed.push('b');
       },

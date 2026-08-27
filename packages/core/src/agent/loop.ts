@@ -1,4 +1,5 @@
 import type { Rule } from '@agent-engine/config';
+import type { ContextContribution, ContextContributor } from '../context/context-contributor';
 import { ContextComposer } from '../context/context-composer';
 import type { EventBus } from '../events/event-bus';
 import type { HookPipeline } from '../hooks/pipeline';
@@ -52,6 +53,7 @@ export class AgentLoop {
   private readonly skillLoader: CapabilityLoader<Skill> | undefined;
   private readonly memory: ConversationMemory | undefined;
   private readonly longTermMemory: LongTermMemory | undefined;
+  private readonly contextContributors: ContextContributor[];
   private readonly eventBus: EventBus | undefined;
   private sessionStarted = false;
   private sessionEnded = false;
@@ -84,6 +86,7 @@ export class AgentLoop {
         : undefined;
     this.memory = options.memory;
     this.longTermMemory = options.longTermMemory;
+    this.contextContributors = options.contextContributors ?? [];
     this.eventBus = options.eventBus;
     this.contextComposer = new ContextComposer({
       systemPrompt: options.systemPrompt,
@@ -112,6 +115,20 @@ export class AgentLoop {
     }
   }
 
+  /** 收集所有上下文贡献者（单个失败隔离，best-effort，不阻断 run）。 */
+  private async collectContributions(userInput: string): Promise<ContextContribution[]> {
+    const out: ContextContribution[] = [];
+    for (const contributor of this.contextContributors) {
+      try {
+        const result = await contributor.contribute({ userInput });
+        if (result) out.push(result);
+      } catch {
+        // 单个贡献者失败跳过，不影响其余贡献者与整体 run。
+      }
+    }
+    return out;
+  }
+
   async run(userInput: string, options?: AgentRunOptions): Promise<AgentLoopResult> {
     const emit = options?.onEvent;
     const signal = options?.signal;
@@ -130,16 +147,29 @@ export class AgentLoop {
       throw new AbortError();
     }
 
-    // 外部素材注入（beforeContextCompose）+ 上下文组装（ContextComposer）。
-    const injected = (await this.hooks?.beforeContextCompose(userInput)) ?? '';
+    // 外部素材注入（beforeContextCompose + ContextContributor）+ 上下文组装（ContextComposer）。
+    const hookFragment = (await this.hooks?.beforeContextCompose(userInput)) ?? '';
+    const contributions = await this.collectContributions(userInput);
+    const injected = [
+      hookFragment,
+      ...contributions
+        .map((c) => c.text)
+        .filter((t): t is string => typeof t === 'string' && t.length > 0),
+    ]
+      .filter((t) => t.length > 0)
+      .join('\n\n');
     const composed = await this.contextComposer.compose(userInput, injected);
-    // 记录本轮注册的 skill 工具（含覆盖前的同名工具），run 结束（含异常）时还原/移除，避免跨 run 残留。
+    // 记录本轮注册的 skill / contributor 工具（含覆盖前的同名工具），run 结束（含异常）时还原/移除，避免跨 run 残留。
     const registeredSkillTools: { name: string; prior: Tool | undefined }[] = [];
     for (const hit of composed.skillHits) {
       for (const tool of hit.record.tools ?? []) {
         registeredSkillTools.push({ name: tool.name, prior: this.registry.get(tool.name) });
         this.registry.register(tool);
       }
+    }
+    for (const tool of contributions.flatMap((c) => c.tools ?? [])) {
+      registeredSkillTools.push({ name: tool.name, prior: this.registry.get(tool.name) });
+      this.registry.register(tool);
     }
     const messages = composed.messages;
     // 本轮新增消息的起始索引（system + 历史之后），正常结束时回写 memory。

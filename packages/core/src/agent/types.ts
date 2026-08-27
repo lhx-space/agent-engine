@@ -1,5 +1,6 @@
 import type { Rule } from '@agent-engine/config';
 import type { DocumentIndex } from '../documents/document-index';
+import type { ContextContributor } from '../context/context-contributor';
 import type { SystemPromptInput } from '../context/types';
 import type { EmbeddingProvider } from '../embedding/embedding';
 import type { EventBus } from '../events/event-bus';
@@ -53,6 +54,8 @@ export interface AgentLoopOptions {
   skills?: Skill[];
   /** 语义召回 provider（可选）：配置后 rules/skills 检索升级为 BM25 + 向量 RRF 融合。 */
   embeddingProvider?: EmbeddingProvider;
+  /** 上下文贡献者（可选）：run 组装前收集，文本注入 prompt、工具临时注册。 */
+  contextContributors?: ContextContributor[];
   /** 事件总线（可选）：run 期间把总线 `custom` 事件转发到 `onEvent`。 */
   eventBus?: EventBus;
 }

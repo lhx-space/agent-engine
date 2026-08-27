@@ -255,6 +255,7 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     longTermMemory,
     documentIndex: options.documentIndex,
     embeddingProvider,
+    contextContributors: merged.contextContributors,
     maxSteps: options.maxSteps,
     execution: options.execution,
     eventBus,

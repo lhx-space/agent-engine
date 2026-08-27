@@ -72,6 +72,9 @@ export type {
   ContextCompactor,
   ComposeContextInput,
   ComposeContextResult,
+  ContextContributor,
+  ContextContribution,
+  ContextContributeInput,
 } from './context';
 export { Bm25Retriever, IdentityReranker, reciprocalRankFusion, hybridRetrieve } from './retrieval';
 export type {

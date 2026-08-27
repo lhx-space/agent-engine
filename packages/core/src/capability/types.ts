@@ -1,6 +1,7 @@
 import type { Rule } from '@agent-engine/config';
 import type { CacheBackend } from '../cache/cache-backend';
 import type { ContextCompactor } from '../context/compactor';
+import type { ContextContributor } from '../context/context-contributor';
 import type { TokenCounter } from '../context/token-counter';
 import type { EmbeddingProvider } from '../embedding/embedding';
 import type { Hook } from '../hooks/types';
@@ -35,6 +36,7 @@ export interface CapabilityBundle {
   retrievers: Retriever[];
   rerankers: Reranker[];
   summarizers: Summarizer[];
+  contextContributors: ContextContributor[];
   /** 释放来源持有的资源（幂等）。 */
   dispose?: () => Promise<void>;
 }

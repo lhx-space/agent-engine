@@ -98,6 +98,11 @@ export type { CacheBackend } from './cache/cache-backend';
 export type { BuildSystemPromptOptions } from './context/types';
 export type { TokenCounter } from './context/token-counter';
 export type { ContextCompactor } from './context/compactor';
+export type {
+  ContextContributeInput,
+  ContextContribution,
+  ContextContributor,
+} from './context/context-contributor';
 // agent
 export type {
   AgentLoopOptions,
