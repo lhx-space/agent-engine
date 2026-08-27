@@ -1,0 +1,6 @@
+---
+kind: always
+description: 禁止执行破坏性命令
+tags: [安全]
+---
+禁止执行 rm -rf、DROP TABLE、DROP DATABASE 等破坏性命令；执行前须说明影响范围并征得确认。

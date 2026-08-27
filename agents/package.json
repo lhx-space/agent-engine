@@ -1,0 +1,30 @@
+{
+  "name": "@agent-engine/host",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agent Engine 的 Next.js 宿主参考实现：扫 .lhx-agent/<name>/ 目录 → 运行时构建协议 → 调内核运行",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@agent-engine/config": "workspace:*",
+    "@agent-engine/core": "workspace:*",
+    "@agent-engine/preset-default": "workspace:*",
+    "gray-matter": "^4.0.3",
+    "jiti": "^2.7.0",
+    "next": "^15.0.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.7.0"
+  }
+}

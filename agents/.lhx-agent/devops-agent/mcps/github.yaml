@@ -1,0 +1,8 @@
+# 远程 MCP（streamable-http）：GitHub Copilot MCP 远程端点
+# 运行时 headers 作为认证头透传（可替换为任意远程 MCP URL）
+name: github
+source: http
+url: https://api.githubcopilot.com/mcp/
+transport: streamable-http
+headers:
+  Authorization: Bearer ${GITHUB_TOKEN}

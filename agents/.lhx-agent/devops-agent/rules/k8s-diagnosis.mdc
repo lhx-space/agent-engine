@@ -1,0 +1,6 @@
+---
+kind: on-demand
+description: Kubernetes 故障诊断规范
+tags: [k8s, kubernetes, 诊断]
+---
+排查顺序：kubectl get events → describe pod → logs → 逐层定位。

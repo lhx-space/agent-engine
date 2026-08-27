@@ -30,3 +30,6 @@ Thumbs.db
 # IDE
 .idea/
 *.swp
+
+# next.js
+.next/
