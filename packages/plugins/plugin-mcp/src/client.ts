@@ -1,9 +1,8 @@
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import type { ResolvedMcpServer } from '../capability-source/types';
-import type { CapabilityBundle } from '../capability/types';
+import { Client } from '@modelcontextprotocol/sdk/client/index';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio';
+import type { Tool } from '@agent-engine/core/tools';
 import { toTool } from './normalize';
-import type { McpConnection } from './types';
+import type { McpConnection, ResolvedMcpServer } from './types';
 
 const CLIENT_INFO = { name: 'agent-engine', version: '0.1.0' };
 
@@ -55,11 +54,11 @@ export async function connectMcpServer(server: ResolvedMcpServer): Promise<McpCo
   };
 }
 
-/** `connectMcpServers` 的返回：统一能力束 + 失败项（错误隔离，单个失败不阻断整体）。 */
+/** `connectMcpServers` 的返回：归一化工具 + 失败项 + 聚合关闭（错误隔离）。 */
 export interface ConnectMcpServersResult {
-  /** 归一化工具 + `dispose` 关闭所有已连接 server。 */
-  bundle: CapabilityBundle;
+  tools: Tool[];
   errors: { name: string; error: Error }[];
+  dispose(): Promise<void>;
 }
 
 /** 并发连接多个 MCP server；单个失败不阻断其他，失败项以错误报告返回。 */
@@ -84,25 +83,11 @@ export async function connectMcpServers(
     }
   });
 
-  const bundle: CapabilityBundle = {
+  return {
     tools: connections.flatMap((connection) => connection.tools),
-    hooks: [],
-    guardrails: [],
-    promptFragments: [],
-    memoryBackends: [],
-    cacheBackends: [],
-    vectorStores: [],
-    embeddingProviders: [],
-    tokenCounters: [],
-    contextCompactors: [],
-    retrievers: [],
-    rerankers: [],
-    summarizers: [],
-    contextContributors: [],
+    errors,
     dispose: async () => {
       await Promise.all(connections.map((connection) => connection.close()));
     },
   };
-
-  return { bundle, errors };
 }

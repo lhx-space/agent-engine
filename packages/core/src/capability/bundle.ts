@@ -1,3 +1,4 @@
+import type { ToolSource } from '../capability-source/types';
 import type { CacheBackend } from '../cache/cache-backend';
 import type { ContextCompactor } from '../context/compactor';
 import type { ContextContributor } from '../context/context-contributor';
@@ -16,6 +17,7 @@ import type { CapabilityBundle } from './types';
 /** `mergeBundles` 的输出：扁平化的能力列表 + 聚合 dispose。 */
 export interface MergedBundles {
   tools: Tool[];
+  toolSources: ToolSource[];
   hooks: Hook[];
   guardrails: GuardrailRule[];
   promptFragments: string[];
@@ -40,6 +42,7 @@ export interface MergedBundles {
  */
 export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
   const tools: Tool[] = [];
+  const toolSources: ToolSource[] = [];
   const hooks: Hook[] = [];
   const guardrails: GuardrailRule[] = [];
   const promptFragments: string[] = [];
@@ -57,6 +60,7 @@ export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
 
   for (const bundle of bundles) {
     tools.push(...bundle.tools);
+    toolSources.push(...bundle.toolSources);
     hooks.push(...bundle.hooks);
     guardrails.push(...bundle.guardrails);
     promptFragments.push(...bundle.promptFragments);
@@ -75,6 +79,7 @@ export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
 
   return {
     tools,
+    toolSources,
     hooks,
     guardrails,
     promptFragments,

@@ -1,3 +1,4 @@
+import type { ToolSource } from '../capability-source/types';
 import type { CacheBackend } from '../cache/cache-backend';
 import type { ContextCompactor } from '../context/compactor';
 import type { ContextContributor } from '../context/context-contributor';
@@ -20,6 +21,7 @@ import type { Tool } from '../tools/types';
  */
 export interface CapabilityBundle {
   tools: Tool[];
+  toolSources: ToolSource[];
   hooks: Hook[];
   guardrails: GuardrailRule[];
   promptFragments: string[];

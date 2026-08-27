@@ -32,11 +32,8 @@ export type {
   FunctionSandboxExecRequest,
   FunctionSandboxExecResult,
 } from './sandbox';
-export { connectMcpServer, connectMcpServers, toTool, normalizeCallToolResult } from './mcp';
-export type { McpConnection, McpToolMeta, ConnectMcpServersResult } from './mcp';
 export { mergeBundles } from './capability';
-export { resolveMcpServer, resolveMcpServers } from './capability-source';
-export type { ResolvedMcpServer } from './capability-source';
+export type { ToolSource } from './capability-source';
 export { resolveAgentConfig } from './resolve';
 export { HookPipeline } from './hooks/pipeline';
 export type { Hook, HookPoint, HookTrace } from './hooks/types';

@@ -67,8 +67,8 @@ export type { CapabilityBundle } from './capability/types';
 export type { MergedBundles } from './capability/bundle';
 // plugins
 export type { Plugin, PluginContext } from './plugins/types';
-// mcp
-export type { McpConnection, McpToolMeta, ConnectMcpServersResult } from './mcp';
+// capability-source
+export type { ToolSource } from './capability-source/types';
 // resolve
 export type { ResolvedAgent, ResolveDeps, PluginFactory } from './resolve/types';
 // memory

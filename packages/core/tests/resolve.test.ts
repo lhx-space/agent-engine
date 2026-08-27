@@ -31,6 +31,7 @@ describe('mergeBundles', () => {
       tools: [
         { name: 't1', description: 'd', inputSchema: z.object({}), execute: async () => ({}) },
       ],
+      toolSources: [],
       hooks: [],
       guardrails: [],
       promptFragments: ['p1'],
@@ -50,6 +51,7 @@ describe('mergeBundles', () => {
     };
     const b2: CapabilityBundle = {
       tools: [],
+      toolSources: [],
       hooks: [],
       guardrails: [],
       promptFragments: [],

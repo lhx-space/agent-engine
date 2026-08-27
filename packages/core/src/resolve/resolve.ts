@@ -1,6 +1,5 @@
 import type { AgentConfig } from '@agent-engine/config';
 import { assembleAgentLoop } from '../agent/assemble';
-import { resolveMcpServers } from '../capability-source/mcp';
 import { createEmbeddingProvider } from '../embedding/openai';
 import { HookPipeline } from '../hooks/pipeline';
 import { createProvider } from '../llm/provider';
@@ -50,7 +49,6 @@ export async function resolveAgentConfig(
     security: config.security,
     tools: config.tools,
     execution: config.execution,
-    mcp: resolveMcpServers(config.mcp?.servers ?? []),
     sandbox: deps.sandbox,
     longTermBackend: config.memory?.longTerm?.backend,
     cacheBackend: config.cache?.backend,

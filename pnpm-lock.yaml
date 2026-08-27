@@ -132,9 +132,6 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.120.0
         version: 0.120.0(zod@4.4.3)
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.30.0
-        version: 1.30.0(zod@4.4.3)
       '@mozilla/readability':
         specifier: ^0.6.0
         version: 0.6.0
@@ -242,6 +239,21 @@ importers:
       '@agent-engine/core':
         specifier: workspace:*
         version: link:../../core
+
+  packages/plugins/plugin-mcp:
+    dependencies:
+      '@agent-engine/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@agent-engine/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.30.0
+        version: 1.30.0(zod@4.4.3)
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
 
   packages/plugins/plugin-memory:
     dependencies:

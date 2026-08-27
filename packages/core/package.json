@@ -108,16 +108,6 @@
         "default": "./dist/llm.cjs"
       }
     },
-    "./mcp": {
-      "import": {
-        "types": "./dist/mcp.d.mts",
-        "default": "./dist/mcp.mjs"
-      },
-      "require": {
-        "types": "./dist/mcp.d.cts",
-        "default": "./dist/mcp.cjs"
-      }
-    },
     "./memory": {
       "import": {
         "types": "./dist/memory.d.mts",
@@ -210,7 +200,6 @@
   "dependencies": {
     "@agent-engine/config": "workspace:*",
     "@anthropic-ai/sdk": "^0.120.0",
-    "@modelcontextprotocol/sdk": "^1.30.0",
     "@mozilla/readability": "^0.6.0",
     "epub2": "^3.0.2",
     "gray-matter": "^4.0.3",

@@ -12,7 +12,6 @@ export default defineConfig({
     events: 'src/events/index.ts',
     hooks: 'src/hooks/index.ts',
     llm: 'src/llm/index.ts',
-    mcp: 'src/mcp/index.ts',
     memory: 'src/memory/index.ts',
     plugins: 'src/plugins/index.ts',
     resolve: 'src/resolve/index.ts',

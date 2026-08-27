@@ -1,10 +1,18 @@
-# mcp Specification
+## REMOVED Requirements
 
-## Purpose
+### Requirement: MCP 连接（stdio）
 
-TBD - created by archiving change mcp-client. Update Purpose after archive.
+### Requirement: 工具归一化
 
-## Requirements
+### Requirement: 结果归一化
+
+### Requirement: 错误隔离
+
+### Requirement: 生命周期
+
+### Requirement: 装配接入
+
+## ADDED Requirements
 
 ### Requirement: ToolSource 协议 + mcp 能力外放
 

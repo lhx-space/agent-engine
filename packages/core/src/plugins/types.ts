@@ -1,3 +1,4 @@
+import type { ToolSource } from '../capability-source/types';
 import type { CacheBackend } from '../cache/cache-backend';
 import type { ContextCompactor } from '../context/compactor';
 import type { ContextContributor } from '../context/context-contributor';
@@ -32,6 +33,8 @@ export interface Plugin {
 export interface PluginContext {
   registerTool(tool: Tool): void;
   registerHook(hook: Hook): void;
+  /** 注册外部工具来源（如 MCP；装配层 resolve 出工具 + 聚合释放）。 */
+  registerToolSource(source: ToolSource): void;
   /** 注册可执行 guardrail 规则（安全拦截）。 */
   registerGuardrail(rule: GuardrailRule): void;
   provideSystemPrompt(fragment: string): void;

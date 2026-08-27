@@ -7,7 +7,6 @@ import type {
 import { InMemoryCacheBackend } from '../cache/cache-backend';
 import type { CacheBackend } from '../cache/cache-backend';
 import { mergeBundles } from '../capability/bundle';
-import type { ResolvedMcpServer } from '../capability-source/types';
 import type { CapabilityBundle } from '../capability/types';
 import { TokenBudgetCompactor } from '../context/compactor';
 import type { ContextCompactor } from '../context/compactor';
@@ -17,7 +16,6 @@ import type { EmbeddingProvider } from '../embedding/embedding';
 import { EventBus } from '../events/event-bus';
 import type { HookPipeline } from '../hooks/pipeline';
 import type { LLMProvider } from '../llm/types';
-import { connectMcpServers } from '../mcp/client';
 import { ConversationMemory } from '../memory/conversation-memory';
 import type { LongTermMemory } from '../memory/long-term-memory';
 import { noopLongTermMemory } from '../memory/long-term-memory';
@@ -62,8 +60,6 @@ export interface AssembleAgentLoopOptions {
   tools?: ToolsConfig;
   /** 预置沙箱后端（bash 启用时使用；缺省按 security.sandbox.backend 解析）。 */
   sandbox?: SandboxBackend;
-  /** 归一化后的 MCP servers（command 形态）；装配时连接并把归一化工具注册进 registry。 */
-  mcp?: ResolvedMcpServer[];
   /** 长期记忆后端名（缺省 in-memory）；按名解析内置/插件注册的后端。 */
   longTermBackend?: string;
   /** 缓存后端名（缺省 in-memory）；按名解析内置/插件注册的后端。 */
@@ -110,8 +106,8 @@ function resolveBackendByName<T extends { readonly name: string }>(
 
 /**
  * 装配 AgentLoop（「装配层」）：
- * 安装 plugins → 装配内置工具（传 security 时）→ 连接 mcp → `mergeBundles` 合并 →
- * 注册 tools / hooks、注入 prompt 片段 → 构造 AgentLoop + 聚合 dispose。
+ * 安装 plugins → 装配内置工具（传 security 时）→ `mergeBundles` 合并 →
+ * 注册 tools / hooks、resolve 外部工具来源、注入 prompt 片段 → 构造 AgentLoop + 聚合 dispose。
  */
 export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Promise<ResolvedAgent> {
   const eventBus = options.eventBus ?? new EventBus();
@@ -129,23 +125,7 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     registerBuiltinTools(options.registry);
   }
 
-  // 3. MCP 能力束（tools + dispose 关闭连接）；单个失败不阻断整体（错误隔离 + 事件报告）。
-  if (options.mcp && options.mcp.length > 0) {
-    const { bundle, errors } = await connectMcpServers(options.mcp);
-    bundles.push(bundle);
-    const failedNames = new Set(errors.map(({ name }) => name));
-    for (const server of options.mcp) {
-      if (!failedNames.has(server.name)) {
-        eventBus.emit({ type: 'mcp.connected', name: server.name });
-      }
-    }
-    for (const { name, error } of errors) {
-      console.warn(`[assembleAgentLoop] MCP server "${name}" 连接失败，已跳过：${error.message}`);
-      eventBus.emit({ type: 'mcp.failed', name, error: error.message });
-    }
-  }
-
-  // 4. 单一汇聚点：把 bundles 合并成扁平能力列表 + 聚合 dispose。
+  // 3. 单一汇聚点：把 bundles 合并成扁平能力列表 + 聚合 dispose。
   const merged = mergeBundles(bundles);
 
   for (const tool of merged.tools) {
@@ -153,6 +133,21 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
   }
   for (const hook of merged.hooks) {
     options.hooks?.register(hook);
+  }
+
+  // 3.5 外部工具来源（ToolSource，如 MCP）：resolve 出工具 + 聚合释放；单个失败隔离。
+  const toolSourceDisposers: (() => Promise<void>)[] = [];
+  for (const source of merged.toolSources) {
+    try {
+      const { tools, dispose } = await source.resolve();
+      for (const tool of tools) {
+        options.registry.register(tool);
+      }
+      toolSourceDisposers.push(dispose);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[assembleAgentLoop] toolSource "${source.name}" resolve 失败：${message}`);
+    }
   }
 
   // 4.5 工具轴：装配末按名移除被禁用工具（覆盖 builtin / plugin / mcp 三类来源）。
@@ -238,6 +233,7 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     if (disposed) return;
     disposed = true;
     await merged.dispose();
+    await Promise.all(toolSourceDisposers.map((d) => d()));
   };
 
   return {
