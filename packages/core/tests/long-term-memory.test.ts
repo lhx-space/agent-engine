@@ -1,49 +1,10 @@
 import { describe, expect, it } from '@rstest/core';
 import { AgentLoop } from '../src/agent/loop';
-import type { EmbeddingProvider } from '../src/embedding/embedding';
 import type { ChatCompletionResult, ChatMessage, LLMProvider } from '../src/llm/types';
-import { InMemoryMemoryBackend } from '../src/memory/memory-backend';
-import { SemanticMemory } from '../src/memory/long-term-memory';
 import type { LongTermMemory } from '../src/memory/long-term-memory';
-import { InMemoryVectorStore } from '../src/retrieval/vector-store';
 import { ToolRegistry } from '../src/tools/registry';
 
-function makeEmbedding(): EmbeddingProvider {
-  return {
-    name: 'mock',
-    dimension: 2,
-    async embed(texts: string[]) {
-      return texts.map(() => [1, 0]);
-    },
-  };
-}
-
-describe('SemanticMemory', () => {
-  it('remember 向量化写入 + recall 召回', async () => {
-    const backend = new InMemoryMemoryBackend();
-    const store = new InMemoryVectorStore();
-    const mem = new SemanticMemory(store, makeEmbedding(), backend);
-
-    await mem.remember('用户偏好蓝色');
-    const recalled = await mem.recall('喜欢什么颜色', 3);
-
-    expect(recalled).toContain('用户偏好蓝色');
-    // 同时持久化到 MemoryBackend。
-    expect(await backend.keys()).toHaveLength(1);
-  });
-
-  it('无 embedding 时 no-op', async () => {
-    const backend = new InMemoryMemoryBackend();
-    const store = new InMemoryVectorStore();
-    const mem = new SemanticMemory(store, undefined, backend);
-
-    await mem.remember('不会写入');
-    expect(await mem.recall('任意')).toEqual([]);
-    expect(await backend.keys()).toHaveLength(0);
-  });
-});
-
-describe('AgentLoop 长期记忆', () => {
+describe('AgentLoop 长期记忆（协议：LongTermMemory）', () => {
   function makeProvider(captured: ChatMessage[][]): LLMProvider {
     let i = 0;
     return {

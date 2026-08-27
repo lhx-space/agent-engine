@@ -243,6 +243,12 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/plugins/plugin-memory:
+    dependencies:
+      '@agent-engine/core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/plugins/plugin-otel:
     dependencies:
       '@agent-engine/core':

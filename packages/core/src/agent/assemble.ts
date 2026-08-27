@@ -19,8 +19,8 @@ import type { HookPipeline } from '../hooks/pipeline';
 import type { LLMProvider } from '../llm/types';
 import { connectMcpServers } from '../mcp/client';
 import { ConversationMemory } from '../memory/conversation-memory';
-import { SemanticMemory } from '../memory/long-term-memory';
 import type { LongTermMemory } from '../memory/long-term-memory';
+import { noopLongTermMemory } from '../memory/long-term-memory';
 import { InMemoryMemoryBackend } from '../memory/memory-backend';
 import type { MemoryBackend } from '../memory/memory-backend';
 import { LLMSummarizer } from '../memory/summarizer';
@@ -51,6 +51,8 @@ export interface AssembleAgentLoopOptions {
   hooks?: HookPipeline;
   guardrails?: GuardrailRule[];
   memory?: ConversationMemory;
+  /** 长期记忆实现（缺省 no-op；语义实现由 `@agent-engine/plugin-memory` 提供）。 */
+  longTermMemory?: LongTermMemory;
   maxSteps?: number;
   /** 执行预算 / 重试 / 续写策略（可选，缺省对齐现状）。 */
   execution?: ExecutionConfig;
@@ -198,12 +200,8 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
   const embeddingProvider: EmbeddingProvider | undefined =
     merged.embeddingProviders[0] ?? options.embeddingProvider;
 
-  // 5.7 语义长期记忆：embedding 向量化 + 向量召回 + 持久化（无 embedding 时优雅 no-op）。
-  const longTermMemory: LongTermMemory = new SemanticMemory(
-    vectorStore,
-    embeddingProvider,
-    memoryBackend,
-  );
+  // 5.7 长期记忆：实现已外放为 `@agent-engine/plugin-memory`（SemanticMemory）；core 默认 no-op。
+  const longTermMemory: LongTermMemory = options.longTermMemory ?? noopLongTermMemory;
 
   // 5.8 会话记忆：注入的 memory 直接用；否则按 config.memory.session 构造（token 预算 + 滚动摘要）。
   const session = options.sessionMemory;

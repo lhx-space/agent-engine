@@ -64,7 +64,12 @@ export type {
   RankedCandidate,
   HybridRetrieveOptions,
 } from './retrieval';
-export { ConversationMemory, InMemoryMemoryBackend, LLMSummarizer, SemanticMemory } from './memory';
+export {
+  ConversationMemory,
+  InMemoryMemoryBackend,
+  LLMSummarizer,
+  noopLongTermMemory,
+} from './memory';
 export type { MemoryBackend, Summarizer, LongTermMemory } from './memory';
 export { InMemoryCacheBackend } from './cache';
 export type { CacheBackend } from './cache';
