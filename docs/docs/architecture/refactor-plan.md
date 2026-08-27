@@ -54,18 +54,44 @@ plugins（能力：全部外置，各一个包，走统一缝接入）
 | MCP client（两可）                              | `@agent-engine/plugin-mcp`       |
 | `web_search` / `web_fetch`                      | `@agent-engine/plugin-web`       |
 
-## 四、关键决策点（先拍板，再写代码）
+## 四、能力 ↔ 内核协议（外放的核心约束）
+
+能力包（`plugin-xxx`）只允许依赖内核暴露的**协议**，不得依赖内核内部实现。这是「怎么执行 vs 什么能力」的硬边界，也是本轮「协议重构」的主线。
+
+### A. 内核暴露给能力包的协议（白名单）
+
+| 协议            | 形状                                                                                                                                                              | 能力用途                   |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| 扩展缝          | `Plugin.install(ctx)` + `PluginContext`                                                                                                                           | 能力包入口                 |
+| 统一缝          | `ContextContributor.contribute({ userInput }) → { text?, tools? }`                                                                                                | 注入文本 + 临时工具        |
+| 工具原语        | `Tool` + `ToolRegistry`                                                                                                                                           | 注册常驻工具               |
+| 检索编排        | `hybridRetrieve(query, topK, { embedding, vectorStore, lexical, ensureVectors? })`                                                                                | 能力自建索引、复用统一 RRF |
+| 检索策略        | `Retriever` / `Reranker`                                                                                                                                          | 自定义召回 / 重排          |
+| 后端抽象        | `EmbeddingProvider` / `VectorStore` / `CacheBackend` / `MemoryBackend` / `SandboxBackend` / `LongTermMemory` / `Summarizer` / `TokenCounter` / `ContextCompactor` | 可插拔后端                 |
+| 外部工具来源    | `ToolSource`（D4 新增薄接口）                                                                                                                                     | MCP 等外部工具             |
+| config 切片类型 | `@agent-engine/config` 的能力切片类型（`Rule` / `Skill` / `SkillRef` / …）                                                                                        | 读自己的 config 切片       |
+
+### B. 能力包不得依赖的 core 内部（Phase 3 删除）
+
+- `CapabilityLoader` / `CapabilityRegistry` / `CapabilityType`（闭合枚举）——能力包自建索引（MiniSearch + 自己的 `VectorStore`），检索编排复用 `hybridRetrieve`。
+- 各能力的一等公民实现（rules 文本注入 / skill 检索 / `DocumentIndex` / `SemanticMemory` / MCP client / web 工具）。
+
+### C. config 切片访问（D1-A 落地）
+
+能力包工厂函数接收自己的 config 切片，如 `createSkillsPlugin(config.skills, deps)`，由组合层（`preset-default`）闭包 `config` 传入；core 只透传 `config`、不解释能力字段。这是 Phase 2 迁包期间各能力包统一采用的形式，**server 装配延后到 Phase 4**。
+
+## 五、关键决策点（先拍板，再写代码）
 
 - **D1 配置归属**：能力迁走后 `rules / skills / documents / memory.longTerm / mcp` 字段归谁。
   - 方案 A：YAML 字段不变，解释权移交插件（内核只透传 config，插件读自己切片）。用户零迁移。
   - 方案 B：插件注册自己的 Zod 子 schema，`AgentConfig` 只留骨架 + `plugins[].config`。更彻底，但「单一事实来源」要重设计。
   - **倾向：先 A 后 B。**
 - **D2 统一缝形状**：`ContextContributor.contribute()` 的入参/返回与工具生命周期（临时注册 vs 常驻）。
-- **D3 检索策略归属**：`Retriever`（含 `hybridRetrieve`）留 core；「索引构建」归插件——能力自建索引，复用 core 的混合检索。RRF 只此一份。
-- **D4 MCP 归属**：core 留「外部工具来源」薄接口（`ToolSource`），MCP 实现放 `plugin-mcp`；或纯插件。二选一。
+- **D3 检索策略归属**：`Retriever`（含 `hybridRetrieve`）留 core；「索引构建」归插件——能力自建索引，复用 core 的混合检索。RRF 只此一份。能力包不依赖 `CapabilityLoader` / `CapabilityRegistry`（见 §四.B）。
+- **D4 MCP 归属**：core 留「外部工具来源」薄接口（`ToolSource`：`name` + `listTools() → Tool[]` + `dispose()`），MCP 实现放 `plugin-mcp`。二选一，取「薄接口 + 插件实现」。
 - **D5 开箱即用**：全外放后要 `@agent-engine/preset-default`（全家桶），否则用户装 5 个包才能干活。
 
-## 五、分阶段路线
+## 六、分阶段路线
 
 ### Phase 0 —— 止血：统一混合检索（消 RRF 重复）
 
@@ -104,13 +130,13 @@ plugins（能力：全部外置，各一个包，走统一缝接入）
 - **目标**：`@agent-engine/preset-default` 聚合全部能力插件，config 一行还原今天的能力。
 - **OpenSpec**：`preset-default`。
 
-## 六、兼容与回滚
+## 七、兼容与回滚
 
 1. **配置兼容**（D1-A）：现有 `agent.yaml` 字段解释权移交后，用户 YAML 不改——硬约束。
 2. **每阶段独立可回滚**：Phase 0~2 每步可单独 revert。
 3. **依赖方向不变**：`config ← core ← plugins`。
 
-## 七、启动顺序
+## 八、启动顺序
 
 1. 拍板 D1/D2/D4/D5（尤其 D1）。
 2. 先做 Phase 0（零风险），同时把 Phase 1 的 `ContextContributor` 接口形状在同一个 PR 讨论里定稿。

@@ -126,26 +126,16 @@ describe('端到端 demo（可观测）', () => {
         },
       };
 
-      // 4. 装配：plugin + 声明式 rules + skills + memory + security(内置工具)
+      // 4. 装配：plugin + rules 插件(经 ContextContributor) + skills + memory + security(内置工具)
       const memory = new ConversationMemory({ maxMessages: 10 });
       const security = makeSecurity(dir);
       const { agent: loop } = await assembleAgentLoop({
         provider,
         registry,
         systemPrompt: {
-          template: '你是 {{role}}。\n\n规则：\n{{rules}}\n\n技能：\n{{skills}}',
+          template: '你是 {{role}}。\n\n技能：\n{{skills}}',
           variables: { role: '天气助手' },
         },
-        rules: [
-          { id: 'r-concise', kind: 'always', description: '简洁', content: '回答要简洁', tags: [] },
-          {
-            id: 'r-weather-format',
-            kind: 'on-demand',
-            description: '天气回答格式规范',
-            content: '报温度时注明摄氏度单位。',
-            tags: ['天气'],
-          },
-        ],
         skills: [
           {
             id: 'weather-qa',
@@ -156,6 +146,19 @@ describe('端到端 demo（可观测）', () => {
         ],
         plugins: [
           weatherPlugin,
+          {
+            name: 'rules-plugin',
+            description: '规则上下文注入（demo 简化：静态规则文本）',
+            version: '1.0.0',
+            install(ctx) {
+              ctx.registerContextContributor({
+                name: 'rules-plugin',
+                async contribute() {
+                  return { text: '回答要简洁\n\n报温度时注明摄氏度单位。' };
+                },
+              });
+            },
+          },
           {
             name: 'files-plugin',
             description: '本地文件读写',

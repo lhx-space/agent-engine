@@ -18,27 +18,23 @@ export function renderTemplate(template: string, variables: Record<string, unkno
 
 /**
  * 组装 system prompt（纯组装，不检索）：
- * 1. 模板渲染（用户变量 + 内置 `rules` / `skills` 变量）；
- * 2. 模板未声明对应占位符时，rules / skills 文本追加到末尾兜底。
+ * 1. 模板渲染（用户变量 + 内置 `skills` 变量）；
+ * 2. 模板未声明 `{{skills}}` 占位符时，skills 文本追加到末尾兜底。
  *
- * `rules` / `skills` 为内置变量：值为 `options.rulesText` / `options.skillsText`。
+ * `skills` 为内置变量：值为 `options.skillsText`。
+ * 规则注入已外放为 `@agent-engine/plugin-rules`，经 `ContextContributor` 追加，不再占用模板占位符。
  */
 export function buildSystemPrompt(options: BuildSystemPromptOptions): string {
-  const rulesText = options.rulesText ?? '';
   const skillsText = options.skillsText ?? '';
 
   const variables: Record<string, unknown> = {
     ...(options.systemPrompt.variables ?? {}),
-    rules: rulesText,
     skills: skillsText,
   };
   const rendered = renderTemplate(options.systemPrompt.template, variables);
 
   const template = options.systemPrompt.template;
   const fallback: string[] = [];
-  if (rulesText && !/\{\{\s*rules\s*\}\}/.test(template)) {
-    fallback.push(rulesText);
-  }
   if (skillsText && !/\{\{\s*skills\s*\}\}/.test(template)) {
     fallback.push(skillsText);
   }

@@ -22,53 +22,42 @@ describe('renderTemplate', () => {
 });
 
 describe('buildSystemPrompt', () => {
-  it('模板渲染 + {{rules}} 占位符注入', () => {
+  it('模板渲染 + {{skills}} 占位符注入', () => {
     const prompt = buildSystemPrompt({
       systemPrompt: {
-        template: '你是 {{role}}。\n必须遵守：\n{{rules}}',
+        template: '你是 {{role}}。\n技能：\n{{skills}}',
         variables: { role: '前端专家' },
       },
-      rulesText: '回答要简洁\n\n使用 <script setup> 语法',
+      skillsText: '## weather-qa\n查询天气后给穿衣建议。',
     });
 
     expect(prompt).toContain('你是 前端专家');
-    expect(prompt).toContain('回答要简洁');
-    expect(prompt).toContain('使用 <script setup> 语法');
-    expect(prompt).not.toContain('{{rules}}');
+    expect(prompt).toContain('穿衣建议');
+    expect(prompt).not.toContain('{{skills}}');
   });
 
-  it('模板无 {{rules}} 占位符时追加规则文本', () => {
+  it('模板无 {{skills}} 占位符时追加技能文本', () => {
     const prompt = buildSystemPrompt({
       systemPrompt: { template: '你是助手' },
-      rulesText: '回答要简洁',
+      skillsText: '查询天气后给穿衣建议。',
     });
 
     expect(prompt).toContain('你是助手');
-    expect(prompt).toContain('回答要简洁');
+    expect(prompt).toContain('穿衣建议');
   });
 
-  it('未提供 rulesText 时不注入规则', () => {
+  it('未提供 skillsText 时不注入技能', () => {
     const prompt = buildSystemPrompt({ systemPrompt: { template: '你是助手' } });
 
     expect(prompt).toBe('你是助手');
   });
 
-  it('无匹配规则时 {{rules}} 替换为空串', () => {
-    const prompt = buildSystemPrompt({
-      systemPrompt: { template: '规则：\n{{rules}}' },
-      rulesText: '',
-    });
-
-    expect(prompt).not.toContain('{{rules}}');
-  });
-
-  it('{{skills}} 占位符注入 + 兜底追加', () => {
+  it('无匹配技能时 {{skills}} 替换为空串', () => {
     const prompt = buildSystemPrompt({
       systemPrompt: { template: '技能：\n{{skills}}' },
-      skillsText: '## weather-qa\n查询天气后给穿衣建议。',
+      skillsText: '',
     });
 
-    expect(prompt).toContain('穿衣建议');
     expect(prompt).not.toContain('{{skills}}');
   });
 });

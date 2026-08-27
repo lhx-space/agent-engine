@@ -28,7 +28,7 @@ describe('EventBus', () => {
 });
 
 describe('assembleAgentLoop 装配期事件', () => {
-  it('发 plugin.installed / tool.registered / rule.loaded', async () => {
+  it('发 plugin.installed / tool.registered', async () => {
     const bus = new EventBus();
     const events: AgentEngineEvent[] = [];
     bus.on((event) => events.push(event));
@@ -58,7 +58,6 @@ describe('assembleAgentLoop 装配期事件', () => {
           },
         },
       ],
-      rules: [{ id: 'r1', kind: 'on-demand', description: 'd', content: 'c', tags: [] }],
       eventBus: bus,
     });
 
@@ -68,6 +67,5 @@ describe('assembleAgentLoop 装配期事件', () => {
     expect(events.some((event) => event.type === 'tool.registered' && event.name === 't1')).toBe(
       true,
     );
-    expect(events.some((event) => event.type === 'rule.loaded' && event.id === 'r1')).toBe(true);
   });
 });

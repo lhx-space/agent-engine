@@ -3,7 +3,6 @@ import type { Rule } from '@agent-engine/config';
 import type { EmbeddingProvider } from '../src/embedding/embedding';
 import { CapabilityLoader } from '../src/retrieval/loader';
 import { CapabilityRegistry } from '../src/retrieval/registry';
-import { loadRulesText } from '../src/rules/load';
 
 /** 确定性 mock embedding：按关键词把「description + tags」映射到 2 维向量。 */
 function makeEmbedding(): EmbeddingProvider {
@@ -55,7 +54,7 @@ describe('CapabilityRegistry 语义召回', () => {
   });
 });
 
-describe('CapabilityLoader + loadRulesText 语义召回', () => {
+describe('CapabilityLoader 语义召回', () => {
   const rules: Rule[] = [
     { id: 'stock', kind: 'on-demand', description: '今天股市大涨', content: '股市内容', tags: [] },
     {
@@ -71,12 +70,5 @@ describe('CapabilityLoader + loadRulesText 语义召回', () => {
     const loader = new CapabilityLoader<Rule>('rule', rules, { embedding: makeEmbedding() });
     const hits = await loader.loadForQuery('维他命怎么补充', 2);
     expect(hits.some((hit) => hit.record.id === 'fruit')).toBe(true);
-  });
-
-  it('loadRulesText 经语义召回注入 content', async () => {
-    const loader = new CapabilityLoader<Rule>('rule', rules, { embedding: makeEmbedding() });
-    const text = await loadRulesText(rules, loader, '维他命怎么补充', 1);
-    expect(text).toContain('水果内容');
-    expect(text).not.toContain('股市内容');
   });
 });

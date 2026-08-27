@@ -1,4 +1,3 @@
-import type { Rule } from '@agent-engine/config';
 import type { CacheBackend } from '../cache/cache-backend';
 import type { ContextCompactor } from '../context/compactor';
 import type { ContextContributor } from '../context/context-contributor';
@@ -10,7 +9,7 @@ import type { Summarizer } from '../memory/summarizer';
 import type { Reranker } from '../retrieval/reranker';
 import type { Retriever } from '../retrieval/retriever';
 import type { VectorStore } from '../retrieval/vector-store';
-import type { GuardrailRule } from '../rules/types';
+import type { GuardrailRule } from '../guardrails';
 import type { Skill } from '../skills/types';
 import type { Tool } from '../tools/types';
 
@@ -24,7 +23,6 @@ export interface CapabilityBundle {
   tools: Tool[];
   skills: Skill[];
   hooks: Hook[];
-  rules: Rule[];
   guardrails: GuardrailRule[];
   promptFragments: string[];
   memoryBackends: MemoryBackend[];

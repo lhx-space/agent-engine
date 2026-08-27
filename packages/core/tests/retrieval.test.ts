@@ -2,7 +2,6 @@ import { describe, expect, it } from '@rstest/core';
 import type { Rule } from '@agent-engine/config';
 import { CapabilityLoader } from '../src/retrieval/loader';
 import { CapabilityRegistry } from '../src/retrieval/registry';
-import { loadRulesText } from '../src/rules/load';
 
 describe('CapabilityRegistry', () => {
   it('注册与按类型过滤', () => {
@@ -37,7 +36,7 @@ describe('CapabilityRegistry', () => {
   });
 });
 
-describe('CapabilityLoader + loadRulesText', () => {
+describe('CapabilityLoader', () => {
   const rules: Rule[] = [
     { id: 'always-concise', kind: 'always', description: '简洁', content: '回答要简洁', tags: [] },
     {
@@ -47,23 +46,7 @@ describe('CapabilityLoader + loadRulesText', () => {
       content: '使用 <script setup> 语法',
       tags: ['vue'],
     },
-    {
-      id: 'db-opt',
-      kind: 'on-demand',
-      description: '数据库优化规范',
-      content: '查询要加索引',
-      tags: ['sql'],
-    },
   ];
-
-  it('always 强制注入 + on-demand 召回', async () => {
-    const loader = new CapabilityLoader<Rule>('rule', rules);
-    const text = await loadRulesText(rules, loader, '帮我写 Vue 组件', 5);
-
-    expect(text).toContain('回答要简洁');
-    expect(text).toContain('<script setup>');
-    expect(text).not.toContain('加索引');
-  });
 
   it('按 type 过滤：只返回 rule 记录', async () => {
     const registry = new CapabilityRegistry();
@@ -73,33 +56,5 @@ describe('CapabilityLoader + loadRulesText', () => {
     const hits = await loader.loadForQuery('帮我写 Vue 组件', 5);
 
     expect(hits.every((h) => h.record.id !== 's1')).toBe(true);
-  });
-
-  it('C1 空集合兜底：无匹配返回空串', async () => {
-    const loader = new CapabilityLoader<Rule>('rule', [
-      {
-        id: 'vue-ts',
-        kind: 'on-demand',
-        description: 'Vue3 TypeScript 编码规范',
-        content: '使用 <script setup>',
-        tags: [],
-      },
-    ]);
-    const text = await loadRulesText(
-      [
-        {
-          id: 'vue-ts',
-          kind: 'on-demand',
-          description: 'Vue3 TypeScript 编码规范',
-          content: '使用 <script setup>',
-          tags: [],
-        },
-      ],
-      loader,
-      '今天天气如何',
-      5,
-    );
-
-    expect(text).toBe('');
   });
 });

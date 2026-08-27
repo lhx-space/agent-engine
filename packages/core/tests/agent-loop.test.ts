@@ -232,7 +232,7 @@ describe('AgentLoop', () => {
     expect(memory.size).toBe(0);
   });
 
-  it('systemPrompt 模板对象 + rules 自动检索注入', async () => {
+  it('systemPrompt 模板对象 + ContextContributor 注入文本', async () => {
     const captured: ChatMessage[][] = [];
     const provider: LLMProvider = {
       name: 'mock',
@@ -244,16 +244,9 @@ describe('AgentLoop', () => {
     const loop = new AgentLoop({
       provider,
       registry: new ToolRegistry(),
-      systemPrompt: { template: '你是 {{role}}。\n{{rules}}', variables: { role: '专家' } },
-      rules: [
-        { id: 'r1', kind: 'always', description: '简洁', content: '回答要简洁', tags: [] },
-        {
-          id: 'r2',
-          kind: 'on-demand',
-          description: 'Vue3 编码规范',
-          content: '使用 script setup',
-          tags: ['vue'],
-        },
+      systemPrompt: { template: '你是 {{role}}。', variables: { role: '专家' } },
+      contextContributors: [
+        { name: 'rules', contribute: async () => ({ text: '回答要简洁\n\n使用 script setup' }) },
       ],
     });
 
@@ -265,7 +258,7 @@ describe('AgentLoop', () => {
     expect(systemMsg?.content).toContain('使用 script setup');
   });
 
-  it('string systemPrompt 兜底追加 rules 文本', async () => {
+  it('string systemPrompt + ContextContributor 注入文本', async () => {
     const captured: ChatMessage[][] = [];
     const provider: LLMProvider = {
       name: 'mock',
@@ -278,7 +271,7 @@ describe('AgentLoop', () => {
       provider,
       registry: new ToolRegistry(),
       systemPrompt: 'you are helpful',
-      rules: [{ id: 'r1', kind: 'always', description: '简洁', content: '回答要简洁', tags: [] }],
+      contextContributors: [{ name: 'rules', contribute: async () => ({ text: '回答要简洁' }) }],
     });
 
     await loop.run('hi');
@@ -288,7 +281,7 @@ describe('AgentLoop', () => {
     expect(systemMsg?.content).toContain('回答要简洁');
   });
 
-  it('函数式 systemPrompt 兜底追加 rules 文本', async () => {
+  it('函数式 systemPrompt + ContextContributor 注入文本', async () => {
     const captured: ChatMessage[][] = [];
     const provider: LLMProvider = {
       name: 'mock',
@@ -301,7 +294,7 @@ describe('AgentLoop', () => {
       provider,
       registry: new ToolRegistry(),
       systemPrompt: async (input: string) => `你是 ${input} 专家`,
-      rules: [{ id: 'r1', kind: 'always', description: '简洁', content: '回答要简洁', tags: [] }],
+      contextContributors: [{ name: 'rules', contribute: async () => ({ text: '回答要简洁' }) }],
     });
 
     await loop.run('Vue');

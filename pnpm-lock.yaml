@@ -179,7 +179,7 @@ importers:
         specifier: ^1.0.39
         version: 1.0.39
 
-  packages/plugins/bash:
+  packages/plugins/plugin-bash:
     dependencies:
       '@agent-engine/config':
         specifier: workspace:*
@@ -188,7 +188,7 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
-  packages/plugins/files:
+  packages/plugins/plugin-files:
     dependencies:
       '@agent-engine/config':
         specifier: workspace:*
@@ -197,7 +197,7 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
-  packages/plugins/git:
+  packages/plugins/plugin-git:
     dependencies:
       '@agent-engine/core':
         specifier: workspace:*
@@ -206,7 +206,16 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
 
-  packages/plugins/otel:
+  packages/plugins/plugin-guardrails:
+    dependencies:
+      '@agent-engine/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@agent-engine/core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/plugins/plugin-otel:
     dependencies:
       '@agent-engine/core':
         specifier: workspace:*
@@ -214,6 +223,18 @@ importers:
       '@opentelemetry/api':
         specifier: ^1.9.0
         version: 1.9.1
+
+  packages/plugins/plugin-rules:
+    dependencies:
+      '@agent-engine/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@agent-engine/core':
+        specifier: workspace:*
+        version: link:../../core
+      minisearch:
+        specifier: ^7.2.0
+        version: 7.2.0
 
   packages/server:
     dependencies:
@@ -225,13 +246,13 @@ importers:
         version: link:../core
       '@agent-engine/plugin-bash':
         specifier: workspace:*
-        version: link:../plugins/bash
+        version: link:../plugins/plugin-bash
       '@agent-engine/plugin-files':
         specifier: workspace:*
-        version: link:../plugins/files
+        version: link:../plugins/plugin-files
       '@agent-engine/plugin-git':
         specifier: workspace:*
-        version: link:../plugins/git
+        version: link:../plugins/plugin-git
       '@hono/node-server':
         specifier: ^2.1.1
         version: 2.1.1(hono@4.13.3)

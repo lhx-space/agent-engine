@@ -78,7 +78,6 @@ describe('文档检索（DocumentIndex + loadDocuments + 注入）', () => {
     ]);
     const composer = new ContextComposer({
       systemPrompt: '你是运维助手。',
-      rules: [],
       documentIndex: index,
     });
     const { systemPrompt } = await composer.compose('k8s 故障怎么排查');

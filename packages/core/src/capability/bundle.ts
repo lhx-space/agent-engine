@@ -1,4 +1,3 @@
-import type { Rule } from '@agent-engine/config';
 import type { CacheBackend } from '../cache/cache-backend';
 import type { ContextCompactor } from '../context/compactor';
 import type { ContextContributor } from '../context/context-contributor';
@@ -10,7 +9,7 @@ import type { Summarizer } from '../memory/summarizer';
 import type { Reranker } from '../retrieval/reranker';
 import type { Retriever } from '../retrieval/retriever';
 import type { VectorStore } from '../retrieval/vector-store';
-import type { GuardrailRule } from '../rules/types';
+import type { GuardrailRule } from '../guardrails';
 import type { Skill } from '../skills/types';
 import type { Tool } from '../tools/types';
 import type { CapabilityBundle } from './types';
@@ -20,7 +19,6 @@ export interface MergedBundles {
   tools: Tool[];
   skills: Skill[];
   hooks: Hook[];
-  rules: Rule[];
   guardrails: GuardrailRule[];
   promptFragments: string[];
   memoryBackends: MemoryBackend[];
@@ -46,7 +44,6 @@ export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
   const tools: Tool[] = [];
   const skills: Skill[] = [];
   const hooks: Hook[] = [];
-  const rules: Rule[] = [];
   const guardrails: GuardrailRule[] = [];
   const promptFragments: string[] = [];
   const memoryBackends: MemoryBackend[] = [];
@@ -65,7 +62,6 @@ export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
     tools.push(...bundle.tools);
     skills.push(...bundle.skills);
     hooks.push(...bundle.hooks);
-    rules.push(...bundle.rules);
     guardrails.push(...bundle.guardrails);
     promptFragments.push(...bundle.promptFragments);
     memoryBackends.push(...bundle.memoryBackends);
@@ -85,7 +81,6 @@ export function mergeBundles(bundles: CapabilityBundle[]): MergedBundles {
     tools,
     skills,
     hooks,
-    rules,
     guardrails,
     promptFragments,
     memoryBackends,

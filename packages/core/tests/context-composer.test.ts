@@ -1,5 +1,4 @@
 import { describe, expect, it } from '@rstest/core';
-import type { Rule } from '@agent-engine/config';
 import { ContextComposer } from '../src/context/context-composer';
 import { HookPipeline } from '../src/hooks/pipeline';
 import { ConversationMemory } from '../src/memory/conversation-memory';
@@ -21,7 +20,6 @@ describe('ContextComposer', () => {
     };
     const composer = new ContextComposer({
       systemPrompt: 'base',
-      rules: [],
       memory,
       longTermMemory: ltm,
     });
@@ -35,21 +33,15 @@ describe('ContextComposer', () => {
     expect(system).toContain('偏好蓝色');
   });
 
-  it('注入 injectedFragment + 规则文本', async () => {
-    const rules: Rule[] = [
-      { id: 'r1', kind: 'always', description: 'x', content: '规则内容', tags: [] },
-    ];
+  it('注入 injectedFragment', async () => {
     const composer = new ContextComposer({
       systemPrompt: 'base',
-      rules,
-      ruleLoader: new CapabilityLoader<Rule>('rule', rules),
     });
 
     const result = await composer.compose('query', '外部素材');
 
     const system = result.messages[0]?.content ?? '';
     expect(system).toContain('外部素材');
-    expect(system).toContain('规则内容');
   });
 
   it('skill 命中随结果返回（供调用方注册捆绑工具）', async () => {
@@ -58,7 +50,6 @@ describe('ContextComposer', () => {
     ];
     const composer = new ContextComposer({
       systemPrompt: 'base',
-      rules: [],
       skillLoader: new CapabilityLoader<Skill>('skill', skills),
     });
 

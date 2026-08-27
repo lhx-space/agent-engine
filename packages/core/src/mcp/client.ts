@@ -88,7 +88,6 @@ export async function connectMcpServers(
     tools: connections.flatMap((connection) => connection.tools),
     skills: [],
     hooks: [],
-    rules: [],
     guardrails: [],
     promptFragments: [],
     memoryBackends: [],
