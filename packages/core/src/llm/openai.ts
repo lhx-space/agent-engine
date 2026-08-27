@@ -136,12 +136,18 @@ export function createOpenAIProvider(config: ModelConfig): LLMProvider {
     baseURL: config.baseURL ?? 'https://api.deepseek.com',
   });
 
+  // 采样参数「配置缺省 + 调用覆盖」：`params.X ?? config.X`；只透传协议支持的字段。
   const baseRequest = (params: ChatCompletionParams) => ({
     model: config.model,
     messages: params.messages.map(toOpenAIMessage),
     tools: params.tools?.map(toOpenAITool),
-    temperature: params.temperature,
-    max_tokens: params.maxTokens,
+    temperature: params.temperature ?? config.temperature,
+    max_tokens: params.maxTokens ?? config.maxTokens,
+    top_p: params.topP ?? config.topP,
+    frequency_penalty: params.frequencyPenalty ?? config.frequencyPenalty,
+    presence_penalty: params.presencePenalty ?? config.presencePenalty,
+    stop: params.stop ?? config.stop,
+    seed: params.seed ?? config.seed,
     ...(params.signal ? { signal: params.signal } : {}),
     ...(params.responseFormat ? { response_format: params.responseFormat } : {}),
   });

@@ -11,8 +11,19 @@ export const ModelConfigSchema = z.object({
   /** 显式 API Key；缺省时回退环境变量（DEEPSEEK_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY）。 */
   apiKey: z.string().optional(),
   model: z.string(),
+  /** 采样温度（0~2）。 */
   temperature: z.number().optional(),
   maxTokens: z.number().int().positive().optional(),
+  /** 核采样 top_p（0~1；openai-compatible / anthropic）。 */
+  topP: z.number().min(0).max(1).optional(),
+  /** 高频 token 惩罚（-2~2；openai-compatible）。 */
+  frequencyPenalty: z.number().min(-2).max(2).optional(),
+  /** 已出现 token 惩罚（-2~2；openai-compatible）。 */
+  presencePenalty: z.number().min(-2).max(2).optional(),
+  /** 停止序列数组；命中即停（openai-compatible / anthropic）。 */
+  stop: z.array(z.string()).optional(),
+  /** 随机种子（openai-compatible 可复现；anthropic 不支持）。 */
+  seed: z.number().int().optional(),
 });
 export type ModelConfig = z.infer<typeof ModelConfigSchema>;
 

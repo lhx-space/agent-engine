@@ -6,6 +6,28 @@ describe('ModelConfigSchema', () => {
     const result = ModelConfigSchema.parse({ model: 'deepseek-chat' });
     expect(result.provider).toBe('openai-compatible');
   });
+
+  it('采样参数声明后按值解析', () => {
+    const result = ModelConfigSchema.parse({
+      model: 'deepseek-chat',
+      topP: 0.7,
+      frequencyPenalty: 0.3,
+      presencePenalty: 0.1,
+      stop: ['END'],
+      seed: 42,
+    });
+    expect(result.topP).toBe(0.7);
+    expect(result.frequencyPenalty).toBe(0.3);
+    expect(result.presencePenalty).toBe(0.1);
+    expect(result.stop).toEqual(['END']);
+    expect(result.seed).toBe(42);
+  });
+
+  it('越界采样参数拒绝（topP>1、frequencyPenalty>2）', () => {
+    expect(ModelConfigSchema.safeParse({ model: 'm', topP: 2 }).success).toBe(false);
+    expect(ModelConfigSchema.safeParse({ model: 'm', frequencyPenalty: 3 }).success).toBe(false);
+    expect(ModelConfigSchema.safeParse({ model: 'm', presencePenalty: -3 }).success).toBe(false);
+  });
 });
 
 describe('AgentConfigSchema', () => {

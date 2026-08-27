@@ -132,14 +132,19 @@ export function createAnthropicProvider(config: ModelConfig): LLMProvider {
       .join('\n\n');
 
     const messages = buildAnthropicMessages(params.messages.filter((m) => m.role !== 'system'));
+    // anthropic 协议支持 temperature / top_p / max_tokens / stop_sequences；其余采样参数（frequency/presence/seed）静默忽略。
+    // stop_sequences 仅当非空数组才透传（anthropic 拒绝空数组）。
+    const stopSequences = params.stop ?? config.stop;
 
     return {
       model: config.model,
-      max_tokens: params.maxTokens ?? 4096,
+      max_tokens: params.maxTokens ?? config.maxTokens ?? 4096,
       system: system || undefined,
       messages,
       tools: params.tools?.map(toAnthropicTool),
-      temperature: params.temperature,
+      temperature: params.temperature ?? config.temperature,
+      top_p: params.topP ?? config.topP,
+      ...(stopSequences && stopSequences.length > 0 ? { stop_sequences: stopSequences } : {}),
     };
   };
 

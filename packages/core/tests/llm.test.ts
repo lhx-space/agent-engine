@@ -103,6 +103,55 @@ describe('OpenAI 兼容实现', () => {
     ).toThrow(/config\.model\.apiKey/);
   });
 
+  it('采样参数从配置透传（含 temperature/maxTokens）', async () => {
+    mocks.openaiCreate.mockResolvedValue({
+      choices: [{ finish_reason: 'stop', message: { role: 'assistant', content: 'ok' } }],
+    });
+
+    const provider = createOpenAIProvider({
+      provider: 'openai-compatible',
+      model: 'deepseek-chat',
+      apiKey: 'test-key',
+      temperature: 0.2,
+      maxTokens: 2048,
+      topP: 0.7,
+      frequencyPenalty: 0.3,
+      presencePenalty: 0.1,
+      stop: ['END'],
+      seed: 42,
+    });
+    await provider.chatCompletion({ messages: [{ role: 'user', content: 'x' }] });
+
+    const req = mocks.openaiCreate.mock.calls[0][0] as Record<string, unknown>;
+    expect(req.temperature).toBe(0.2);
+    expect(req.max_tokens).toBe(2048);
+    expect(req.top_p).toBe(0.7);
+    expect(req.frequency_penalty).toBe(0.3);
+    expect(req.presence_penalty).toBe(0.1);
+    expect(req.stop).toEqual(['END']);
+    expect(req.seed).toBe(42);
+  });
+
+  it('调用级参数覆盖配置缺省', async () => {
+    mocks.openaiCreate.mockResolvedValue({
+      choices: [{ finish_reason: 'stop', message: { role: 'assistant', content: 'ok' } }],
+    });
+
+    const provider = createOpenAIProvider({
+      provider: 'openai-compatible',
+      model: 'deepseek-chat',
+      apiKey: 'test-key',
+      topP: 0.7,
+    });
+    await provider.chatCompletion({
+      messages: [{ role: 'user', content: 'x' }],
+      topP: 0.3,
+    });
+
+    const req = mocks.openaiCreate.mock.calls[0][0] as Record<string, unknown>;
+    expect(req.top_p).toBe(0.3);
+  });
+
   it('响应归一化（含 tool_calls）', async () => {
     mocks.openaiCreate.mockResolvedValue({
       choices: [
@@ -216,6 +265,37 @@ describe('Anthropic 实现', () => {
   it('config.apiKey 生效', () => {
     createAnthropicProvider({ provider: 'anthropic', model: 'claude', apiKey: 'from-config' });
     expect(mocks.anthropicOptions?.apiKey).toBe('from-config');
+  });
+
+  it('采样参数归一化：top_p / stop_sequences 透传，frequencyPenalty 忽略', async () => {
+    mocks.anthropicCreate.mockResolvedValue({
+      content: [{ type: 'text', text: 'ok' }],
+      usage: { input_tokens: 1, output_tokens: 1 },
+      stop_reason: 'end_turn',
+    });
+
+    const provider = createAnthropicProvider({
+      provider: 'anthropic',
+      model: 'claude',
+      apiKey: 'test-key',
+      temperature: 0.2,
+      maxTokens: 2048,
+      topP: 0.7,
+      frequencyPenalty: 0.3,
+      presencePenalty: 0.1,
+      stop: ['END'],
+      seed: 42,
+    });
+    await provider.chatCompletion({ messages: [{ role: 'user', content: 'x' }] });
+
+    const req = mocks.anthropicCreate.mock.calls[0][0] as Record<string, unknown>;
+    expect(req.temperature).toBe(0.2);
+    expect(req.max_tokens).toBe(2048);
+    expect(req.top_p).toBe(0.7);
+    expect(req.stop_sequences).toEqual(['END']);
+    expect(req.frequency_penalty).toBeUndefined();
+    expect(req.presence_penalty).toBeUndefined();
+    expect(req.seed).toBeUndefined();
   });
 
   it('tool_use 归一化为 ToolCall', async () => {

@@ -54,6 +54,16 @@ export interface ChatCompletionParams {
   tools?: ToolDefinition[];
   temperature?: number;
   maxTokens?: number;
+  /** 核采样 top_p（0~1）；缺省取 `ModelConfig.topP`。 */
+  topP?: number;
+  /** 高频 token 惩罚（-2~2，OpenAI 兼容系）；缺省取 `ModelConfig.frequencyPenalty`。 */
+  frequencyPenalty?: number;
+  /** 已出现 token 惩罚（-2~2，OpenAI 兼容系）；缺省取 `ModelConfig.presencePenalty`。 */
+  presencePenalty?: number;
+  /** 停止序列；命中即停；缺省取 `ModelConfig.stop`。 */
+  stop?: string[];
+  /** 随机种子（OpenAI 兼容系可复现）；缺省取 `ModelConfig.seed`。 */
+  seed?: number;
   signal?: AbortSignal;
   /** 请求结构化输出（openai-compatible 透传为 response_format）。 */
   responseFormat?: ResponseFormat;
