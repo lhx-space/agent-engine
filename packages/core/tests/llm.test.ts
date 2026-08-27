@@ -152,6 +152,52 @@ describe('OpenAI 兼容实现', () => {
     expect(req.top_p).toBe(0.3);
   });
 
+  it('工具调用与透传参数从配置透传（tool_choice / parallel_tool_calls / extra）', async () => {
+    mocks.openaiCreate.mockResolvedValue({
+      choices: [{ finish_reason: 'stop', message: { role: 'assistant', content: 'ok' } }],
+    });
+
+    const provider = createOpenAIProvider({
+      provider: 'openai-compatible',
+      model: 'deepseek-chat',
+      apiKey: 'test-key',
+      toolChoice: 'required',
+      parallelToolCalls: false,
+      extra: { beta: true },
+    });
+    await provider.chatCompletion({ messages: [{ role: 'user', content: 'x' }] });
+
+    const req = mocks.openaiCreate.mock.calls[0][0] as Record<string, unknown>;
+    expect(req.tool_choice).toBe('required');
+    expect(req.parallel_tool_calls).toBe(false);
+    expect(req.beta).toBe(true);
+  });
+
+  it('response_format json_schema 透传', async () => {
+    mocks.openaiCreate.mockResolvedValue({
+      choices: [{ finish_reason: 'stop', message: { role: 'assistant', content: '{}' } }],
+    });
+
+    const provider = createOpenAIProvider({
+      provider: 'openai-compatible',
+      model: 'deepseek-chat',
+      apiKey: 'test-key',
+    });
+    await provider.chatCompletion({
+      messages: [{ role: 'user', content: 'x' }],
+      responseFormat: {
+        type: 'json_schema',
+        json_schema: { name: 'answer', schema: { type: 'object' } },
+      },
+    });
+
+    const req = mocks.openaiCreate.mock.calls[0][0] as Record<string, unknown>;
+    expect(req.response_format).toEqual({
+      type: 'json_schema',
+      json_schema: { name: 'answer', schema: { type: 'object' } },
+    });
+  });
+
   it('响应归一化（含 tool_calls）', async () => {
     mocks.openaiCreate.mockResolvedValue({
       choices: [
@@ -296,6 +342,48 @@ describe('Anthropic 实现', () => {
     expect(req.frequency_penalty).toBeUndefined();
     expect(req.presence_penalty).toBeUndefined();
     expect(req.seed).toBeUndefined();
+  });
+
+  it('tool_choice 映射 + extra 透传 + parallel_tool_calls 忽略', async () => {
+    mocks.anthropicCreate.mockResolvedValue({
+      content: [{ type: 'text', text: 'ok' }],
+      usage: { input_tokens: 1, output_tokens: 1 },
+      stop_reason: 'end_turn',
+    });
+
+    const provider = createAnthropicProvider({
+      provider: 'anthropic',
+      model: 'claude',
+      apiKey: 'test-key',
+      toolChoice: { type: 'function', function: { name: 'get_weather' } },
+      parallelToolCalls: false,
+      extra: { beta: true },
+    });
+    await provider.chatCompletion({ messages: [{ role: 'user', content: 'x' }] });
+
+    const req = mocks.anthropicCreate.mock.calls[0][0] as Record<string, unknown>;
+    expect(req.tool_choice).toEqual({ type: 'tool', name: 'get_weather' });
+    expect(req.beta).toBe(true);
+    expect(req.parallel_tool_calls).toBeUndefined();
+  });
+
+  it('tool_choice required 映射为 any', async () => {
+    mocks.anthropicCreate.mockResolvedValue({
+      content: [{ type: 'text', text: 'ok' }],
+      usage: { input_tokens: 1, output_tokens: 1 },
+      stop_reason: 'end_turn',
+    });
+
+    const provider = createAnthropicProvider({
+      provider: 'anthropic',
+      model: 'claude',
+      apiKey: 'test-key',
+      toolChoice: 'required',
+    });
+    await provider.chatCompletion({ messages: [{ role: 'user', content: 'x' }] });
+
+    const req = mocks.anthropicCreate.mock.calls[0][0] as Record<string, unknown>;
+    expect(req.tool_choice).toEqual({ type: 'any' });
   });
 
   it('tool_use 归一化为 ToolCall', async () => {

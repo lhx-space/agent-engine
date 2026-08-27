@@ -28,6 +28,28 @@ describe('ModelConfigSchema', () => {
     expect(ModelConfigSchema.safeParse({ model: 'm', frequencyPenalty: 3 }).success).toBe(false);
     expect(ModelConfigSchema.safeParse({ model: 'm', presencePenalty: -3 }).success).toBe(false);
   });
+
+  it('工具调用与透传参数解析', () => {
+    const result = ModelConfigSchema.parse({
+      model: 'deepseek-chat',
+      toolChoice: 'required',
+      parallelToolCalls: false,
+      extra: { beta: true },
+    });
+    expect(result.toolChoice).toBe('required');
+    expect(result.parallelToolCalls).toBe(false);
+    expect(result.extra).toEqual({ beta: true });
+
+    const byName = ModelConfigSchema.parse({
+      model: 'deepseek-chat',
+      toolChoice: { type: 'function', function: { name: 'get_weather' } },
+    });
+    expect(byName.toolChoice).toEqual({ type: 'function', function: { name: 'get_weather' } });
+  });
+
+  it('非法 toolChoice 拒绝', () => {
+    expect(ModelConfigSchema.safeParse({ model: 'm', toolChoice: 'bogus' }).success).toBe(false);
+  });
 });
 
 describe('AgentConfigSchema', () => {

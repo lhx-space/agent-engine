@@ -148,8 +148,12 @@ export function createOpenAIProvider(config: ModelConfig): LLMProvider {
     presence_penalty: params.presencePenalty ?? config.presencePenalty,
     stop: params.stop ?? config.stop,
     seed: params.seed ?? config.seed,
+    tool_choice: params.toolChoice ?? config.toolChoice,
+    parallel_tool_calls: params.parallelToolCalls ?? config.parallelToolCalls,
     ...(params.signal ? { signal: params.signal } : {}),
     ...(params.responseFormat ? { response_format: params.responseFormat } : {}),
+    // vendor 透传兜底：最后展开，可覆盖同名归一化字段（调用方自行避免冲突）。
+    ...(params.extra ?? config.extra ?? {}),
   });
 
   return {

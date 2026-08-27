@@ -5,6 +5,13 @@ import { z } from 'zod';
 export const ModelProviderSchema = z.enum(['openai-compatible', 'anthropic', 'custom']);
 export type ModelProvider = z.infer<typeof ModelProviderSchema>;
 
+/** 工具调用策略（openai-compatible 语义；anthropic 由适配层映射为 auto/none/any/tool）。 */
+export const ToolChoiceSchema = z.union([
+  z.enum(['auto', 'none', 'required']),
+  z.object({ type: z.literal('function'), function: z.object({ name: z.string() }) }),
+]);
+export type ToolChoice = z.infer<typeof ToolChoiceSchema>;
+
 export const ModelConfigSchema = z.object({
   provider: ModelProviderSchema.default('openai-compatible'),
   baseURL: z.string().optional(),
@@ -24,6 +31,12 @@ export const ModelConfigSchema = z.object({
   stop: z.array(z.string()).optional(),
   /** 随机种子（openai-compatible 可复现；anthropic 不支持）。 */
   seed: z.number().int().optional(),
+  /** 工具调用策略（openai-compatible 透传；anthropic 映射）。 */
+  toolChoice: ToolChoiceSchema.optional(),
+  /** 是否允许并行多工具调用（openai-compatible；anthropic 忽略）。 */
+  parallelToolCalls: z.boolean().optional(),
+  /** vendor 原生参数透传兜底（顶层展开；优先用归一化字段，避免与之冲突）。 */
+  extra: z.record(z.string(), z.unknown()).optional(),
 });
 export type ModelConfig = z.infer<typeof ModelConfigSchema>;
 

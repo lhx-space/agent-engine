@@ -8,6 +8,7 @@ import {
   type FinishReason,
   type LLMProvider,
   type ToolCall,
+  type ToolChoice,
   type ToolDefinition,
 } from './types';
 
@@ -111,6 +112,15 @@ function normalizeAnthropicStopReason(reason: string | null | undefined): Finish
   }
 }
 
+/** openai-compatible `ToolChoice` 语义 → anthropic `tool_choice`（auto/any/tool/none）。 */
+function mapToolChoice(choice: ToolChoice | undefined): Anthropic.ToolChoice | undefined {
+  if (choice === undefined) return undefined;
+  if (choice === 'auto') return { type: 'auto' };
+  if (choice === 'none') return { type: 'none' };
+  if (choice === 'required') return { type: 'any' };
+  return { type: 'tool', name: choice.function.name };
+}
+
 export function createAnthropicProvider(config: ModelConfig): LLMProvider {
   // 内核只消费配置里显式提供的 apiKey；环境变量兜底由上层（server/cli）的 providerFactory 注入。
   const apiKey = config.apiKey ?? '';
@@ -132,9 +142,11 @@ export function createAnthropicProvider(config: ModelConfig): LLMProvider {
       .join('\n\n');
 
     const messages = buildAnthropicMessages(params.messages.filter((m) => m.role !== 'system'));
-    // anthropic 协议支持 temperature / top_p / max_tokens / stop_sequences；其余采样参数（frequency/presence/seed）静默忽略。
+    // anthropic 协议支持 temperature / top_p / max_tokens / stop_sequences / tool_choice；
+    // 其余（frequency/presence/seed/parallel_tool_calls/response_format）静默忽略。
     // stop_sequences 仅当非空数组才透传（anthropic 拒绝空数组）。
     const stopSequences = params.stop ?? config.stop;
+    const toolChoice = mapToolChoice(params.toolChoice ?? config.toolChoice);
 
     return {
       model: config.model,
@@ -145,6 +157,9 @@ export function createAnthropicProvider(config: ModelConfig): LLMProvider {
       temperature: params.temperature ?? config.temperature,
       top_p: params.topP ?? config.topP,
       ...(stopSequences && stopSequences.length > 0 ? { stop_sequences: stopSequences } : {}),
+      ...(toolChoice ? { tool_choice: toolChoice } : {}),
+      // vendor 透传兜底：最后展开，可覆盖同名归一化字段（调用方自行避免冲突）。
+      ...(params.extra ?? config.extra ?? {}),
     };
   };
 

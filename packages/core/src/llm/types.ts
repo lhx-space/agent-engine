@@ -44,10 +44,17 @@ export interface ToolDefinition {
   };
 }
 
-/** 结构化输出格式（首版仅 JSON 对象）。 */
-export interface ResponseFormat {
-  type: 'json_object';
-}
+/** 工具调用策略（openai-compatible 语义；anthropic 由适配层映射）。 */
+export type ToolChoice =
+  'auto' | 'none' | 'required' | { type: 'function'; function: { name: string } };
+
+/** 结构化输出格式（`json_object` 或带 schema 的 `json_schema`）。 */
+export type ResponseFormat =
+  | { type: 'json_object' }
+  | {
+      type: 'json_schema';
+      json_schema: { name: string; schema: Record<string, unknown>; strict?: boolean };
+    };
 
 export interface ChatCompletionParams {
   messages: ChatMessage[];
@@ -64,6 +71,12 @@ export interface ChatCompletionParams {
   stop?: string[];
   /** 随机种子（OpenAI 兼容系可复现）；缺省取 `ModelConfig.seed`。 */
   seed?: number;
+  /** 工具调用策略；缺省取 `ModelConfig.toolChoice`。 */
+  toolChoice?: ToolChoice;
+  /** 是否允许并行多工具调用；缺省取 `ModelConfig.parallelToolCalls`。 */
+  parallelToolCalls?: boolean;
+  /** vendor 原生参数透传兜底（顶层展开）；缺省取 `ModelConfig.extra`。 */
+  extra?: Record<string, unknown>;
   signal?: AbortSignal;
   /** 请求结构化输出（openai-compatible 透传为 response_format）。 */
   responseFormat?: ResponseFormat;
