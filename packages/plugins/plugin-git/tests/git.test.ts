@@ -14,7 +14,6 @@ function makeCtx(): { ctx: PluginContext; tools: Tool[] } {
     registerTool: (tool) => tools.push(tool),
     registerSkill: () => {},
     registerHook: () => {},
-    registerRule: () => {},
     provideSystemPrompt: () => {},
   };
   return { ctx, tools };
