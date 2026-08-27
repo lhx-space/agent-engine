@@ -1,21 +1,229 @@
 # Agent Engine
 
-A universal, configurable **Agent kernel execution engine (harness)**.
+> **Configuration as Agent** — a universal, configurable **Agent kernel execution engine (harness)**.
 
-In one line: **Configuration as Agent** — make `plugins` / `mcp` / `skills` / `tools` / `system-prompt` / `memory` / `rules` / `hooks` all configurable, so building a vertical-domain Agent later only requires **writing constraints and rules, with zero kernel changes**.
+Agent Engine is a TypeScript harness that runs the **full Agent lifecycle** — assembly, the ReAct loop, memory, retrieval, safety — so you build a vertical-domain Agent by **writing config only, with zero kernel changes**.
 
-## Features
+```text
+配置即 Agent：写一份 YAML，得到一个能跑、有记忆、会检索、受约束、可拦截的 Agent。
+```
 
-- **Eight configurable axes**: capabilities (`tools` / `skills` / `mcp`), extensions (`plugins`), controls (`hooks` / `rules` / `guardrails`), context (`system-prompt` / `memory`), all wired from declarative config.
-- **Three config formats**: YAML / JSON5 / TypeScript normalized into a single `AgentConfig` (Zod-validated, deep-frozen).
-- **Pluggable provider / backends**: LLM (DeepSeek by default, OpenAI-compatible; Anthropic / ollama pluggable), memory / cache / vector store / embedding / retrieval / session store / logger — every backend is an interface + in-memory default + injection point.
-- **Single-agent ReAct loop** with hooks lifecycle, guardrail interception, Human-in-the-loop approval, streaming, cancellation and execution budgets.
-- **Three-tier memory**: token-budget window compaction → rolling summary → semantic recall (embedding + vector store).
-- **Document ingestion**: normalize heterogeneous docs (text/md/html/pdf/docx/epub) to Markdown → chunk → lexical BM25 retrieval injected into context; hybrid BM25 + vector semantic recall (RRF fusion) when `embedding` is configured (config `documents` axis).
-- **Execution sandbox**: native commands via docker/nsjail; untrusted WASI code via `FunctionSandbox` (`node:wasi`, zero Docker).
-- **Spec-driven development**: follows OpenSpec (propose → apply → archive).
+## What problem it solves
 
-## Architecture
+| Problem                                                   | How Agent Engine solves it                                                                            |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Every domain Agent reimplements the loop / memory / tools | One self-built kernel (`AgentLoop` + assemble + hooks + rules) reused across domains                  |
+| Capability explosion → huge prompt & distracted LLM       | Unified BM25 (+ vector RRF) retrieval recalls only the top-k relevant rules/skills/tools              |
+| Long conversations overflow the window                    | Three-tier memory: token-budget compaction → rolling summary → semantic recall                        |
+| Untrusted model runs arbitrary commands                   | Four-layer defense: config allowlist → guardrail → docker/nsjail sandbox → limits & audit             |
+| Large document corpora                                    | `documents` axis: normalize → Markdown → chunk → retrieve → inject `[文档]`                           |
+| Vendor lock-in (LangChain etc.)                           | Self-built kernel + official SDKs only (`openai` / `@anthropic-ai/sdk` / `@modelcontextprotocol/sdk`) |
+
+## Quick Start
+
+### 1. Install
+
+```bash
+pnpm add @agent-engine/config @agent-engine/core
+```
+
+> The kernel is ESM, Node.js ≥ 20. The example below runs TypeScript directly with [`tsx`](https://tsx.is).
+
+### 2. Write a config — `agent.yaml`
+
+```yaml
+name: hello-agent
+model:
+  provider: openai-compatible # default DeepSeek (OpenAI-compatible); anthropic / custom also supported
+  baseURL: https://api.deepseek.com/v1
+  model: deepseek-chat
+systemPrompt:
+  template: 你是一个简洁、可靠的助手。
+```
+
+### 3. Run it — `run.ts`
+
+```ts
+import { loadAgentConfig } from '@agent-engine/config';
+import { createProvider, resolveAgentConfig } from '@agent-engine/core';
+
+// 1) load YAML/JSON5/TS → AgentConfig (Zod-validated, deep-frozen)
+const config = await loadAgentConfig('agent.yaml');
+
+// 2) assemble config → a runnable Agent
+const resolved = await resolveAgentConfig(config, {
+  // the kernel only reads `model.apiKey`; inject it from the environment here
+  providerFactory: (model) =>
+    createProvider({ ...model, apiKey: model.apiKey ?? process.env.DEEPSEEK_API_KEY }),
+});
+
+// 3) run one turn (multi-turn: call run() again on the same `resolved.agent`)
+const result = await resolved.agent.run('用一句话介绍你自己');
+console.log(result.finalMessage.content);
+
+// 4) release resources (MCP connections, etc.)
+await resolved.dispose();
+```
+
+```bash
+DEEPSEEK_API_KEY=sk-... npx tsx run.ts
+```
+
+That's it — one YAML + three lines of code produce a working Agent. Every vertical-domain Agent is just a different config file.
+
+## Configuration as Agent
+
+The 8 core axes plus the model/runtime axes — all declarative, all Zod-validated from one `AgentConfig` schema:
+
+| Group               | Axis           | What it configures                                                        |
+| ------------------- | -------------- | ------------------------------------------------------------------------- |
+| 能力 (capabilities) | `tools`        | disable any builtin / plugin / MCP tool (`tools.disabled`)                |
+|                     | `skills`       | reusable skill packs (`path` / `npm` / `git`) loaded on demand            |
+|                     | `mcp`          | external MCP servers normalized into standard tools                       |
+| 扩展 (extension)    | `plugins`      | bundle tools + skills + hooks + rules + backends (files / bash / git / …) |
+| 控制 (control)      | `hooks`        | lifecycle interception (observe / rewrite, never block)                   |
+|                     | `rules`        | context rules: `always` injected or `on-demand` retrieved                 |
+|                     | `guardrails`   | executable safety blocks (deny tools / deny patterns)                     |
+| 上下文 (context)    | `systemPrompt` | template + variables + rules/skills injection                             |
+|                     | `memory`       | session window (compaction + summary) + long-term memory                  |
+|                     | `documents`    | ingest docs (md/html/pdf/docx/epub) → chunk → retrieve → inject           |
+| 模型 (model)        | `model`        | chat LLM (default DeepSeek)                                               |
+|                     | `embedding`    | vector model → semantic recall (memory + rules/skills + docs)             |
+| 运行 (runtime)      | `execution`    | max steps / tool calls / timeout / retry / continuation                   |
+|                     | `security`     | sandbox + bash/file/web policies                                          |
+|                     | `cache`        | cache backend (in-memory default, redis pluggable)                        |
+
+## A complete example
+
+```yaml
+name: devops-agent
+description: 云原生与 CI/CD 领域的 DevOps 助手
+version: 1.0.0
+
+model:
+  provider: openai-compatible
+  baseURL: https://api.deepseek.com/v1
+  model: deepseek-chat
+  temperature: 0.2
+
+systemPrompt:
+  template: |
+    你是 {{role}}，专注于 {{domain}} 领域。
+    必须遵守以下规则：
+    {{rules}}
+  variables:
+    role: DevOps 运维专家
+    domain: 云原生与 CI/CD
+
+# 上下文规则：always 强制注入 / on-demand 按查询语义检索注入
+rules:
+  - id: no-destructive-command
+    kind: always
+    description: 禁止执行破坏性命令
+    content: 禁止执行 rm -rf、DROP TABLE、DROP DATABASE 等破坏性命令。
+    tags: [安全]
+  - id: k8s-diagnosis
+    kind: on-demand
+    description: Kubernetes 故障诊断规范
+    content: 排查顺序：kubectl get events → describe pod → logs。
+    tags: [k8s, kubernetes, 诊断]
+
+# 垂直能力经 plugins 声明加载（文件 / 命令 / git 由 server 层注入工厂）
+plugins:
+  - '@agent-engine/plugin-files'
+  - '@agent-engine/plugin-bash'
+
+# 外部 MCP server → 归一化为标准工具
+mcp:
+  servers:
+    - name: github
+      source: command
+      command: npx
+      args: ['-y', '@modelcontextprotocol/server-github']
+      env:
+        GITHUB_TOKEN: <your-token>
+
+skills:
+  - source: path
+    path: ./skills/incident-response
+
+# 三层记忆：会话窗口（裁剪 + 摘要）+ 长期记忆（语义召回 + 持久化）
+memory:
+  session:
+    maxMessages: 50
+    maxTokens: 8000
+    summary: true
+  longTerm:
+    backend: in-memory # 生产可换 pgvector（经插件注册）
+
+# 向量模型（可选）：配置后 memory / rules / skills / documents 全部启用语义召回（BM25 + 向量 RRF）
+# 需要一个真实的向量模型端点（DeepSeek 不提供 embeddings；可用 OpenAI / 本地 ollama 等）
+embedding:
+  provider: openai-compatible
+  baseURL: https://api.openai.com/v1
+  model: text-embedding-3-small
+
+# 文档摄入：归一化 → 分块 → 检索注入 [文档]
+documents:
+  sources: ['./knowledge'] # 文件或目录（目录递归）
+  chunking:
+    strategy: heading # heading | fixed
+    size: 1000
+    overlap: 0
+  topK: 4
+
+# 声明式安全拦截（可执行，独立于文本类 rules）
+guardrails:
+  - id: deny-rm
+    on: beforeToolCall
+    denyTools: [bash]
+    denyPatterns: ['rm -rf']
+
+# 执行预算 / 重试 / 续写
+execution:
+  maxSteps: 10
+  maxToolCalls: 30
+  timeoutMs: 120000
+  toolRetry:
+    maxRetries: 2
+    baseDelayMs: 500
+
+# 安全默认：bash 默认禁用；开启后经 docker/nsjail 沙箱执行，绝不回退宿主裸奔
+security:
+  bash:
+    enabled: true
+    allowCommands: [kubectl, git, ls, cat]
+    denyPatterns: ['rm -rf', 'DROP TABLE']
+    allowNetwork: true
+  files:
+    roots: [/workspace]
+  webSearch:
+    provider: duckduckgo # searxng | duckduckgo | tavily | serper
+```
+
+## How a run works
+
+```mermaid
+flowchart TD
+    A["loadAgentConfig(path)<br/>YAML/JSON5/TS → AgentConfig"] --> B["resolveAgentConfig(config, deps)"]
+    B --> C["createProvider + install plugins<br/>+ load skills + connect MCP + load documents"]
+    C --> D["assembleAgentLoop: merge capabilities<br/>+ resolve strategies & backends"]
+    D --> E["AgentLoop (ReAct) + SemanticMemory + ConversationMemory"]
+
+    E --> R["run(userInput)"]
+    R --> S["ContextComposer.compose:<br/>retrieve rules/skills (BM25+RRF) + recall memory<br/>+ retrieve documents + assemble system prompt"]
+    S --> V{"steps < maxSteps?"}
+    V -- yes --> W["beforeLLM → LLM → afterLLM"]
+    W --> X{"tool_calls?"}
+    X -- no --> Y["natural end"]
+    X -- yes --> Z["guardrail → human approval → parallel exec + retry"]
+    Z --> V
+    Y --> AB["write back memory → emit done"]
+```
+
+Every node on the loop (`beforeLLM`, `afterLLM`, `beforeToolCall`, `afterToolCall`, `onStepEnd`, …) is a **hook** you can observe or rewrite; **guardrails** are the only things allowed to block.
+
+## Architecture & packages
 
 ```text
                 ┌── cli
@@ -25,48 +233,45 @@ config ← core ←┼── server ──(HTTP API)──▶ apps/web (React 19
 docs/ (Rspress) is a standalone site
 ```
 
-Dependency direction is one-way: `config ← core ← cli / server ←(HTTP API) apps/web`.
+| Package                      | Description                                                                                  | Status         |
+| ---------------------------- | -------------------------------------------------------------------------------------------- | -------------- |
+| `@agent-engine/config`       | Config schema + three-format loader (`loadAgentConfig`)                                      | ✅ implemented |
+| `@agent-engine/core`         | Kernel (`resolveAgentConfig` / `AgentLoop` / hooks / rules / retrieval / memory / documents) | ✅ implemented |
+| `@agent-engine/server`       | HTTP server (REST + streaming) with env-key provider factory                                 | ✅ implemented |
+| `@agent-engine/plugin-files` | `read_file` / `write_file` / `list_files`                                                    | ✅ implemented |
+| `@agent-engine/plugin-bash`  | sandboxed `bash`                                                                             | ✅ implemented |
+| `@agent-engine/plugin-git`   | git tool suite (read-only default, sandboxed)                                                | ✅ implemented |
+| `@agent-engine/plugin-otel`  | OpenTelemetry observability                                                                  | 📦 scaffold    |
+| `@agent-engine/cli`          | CLI entry                                                                                    | 📦 scaffold    |
+| `@agent-engine/web`          | Integrated platform (`apps/web`)                                                             | 🚧 partial     |
 
-## Quick Start
+## Development
 
 ```bash
 pnpm install            # install dependencies
-pnpm build              # build all packages with tsdown
-pnpm test               # run Rstest tests
-pnpm lint               # Rslint lint
-pnpm typecheck          # tsc --noEmit type check
-pnpm spell              # cspell spell check
+pnpm build              # build all packages (tsdown + Turborepo)
+pnpm test               # Rstest tests
+pnpm typecheck          # tsc --noEmit (all packages)
+pnpm lint               # Rslint
+pnpm format             # Prettier
+pnpm spell              # cspell
 pnpm lint:md            # markdownlint
 ```
 
-## Packages
-
-| Package                      | Description                                                  | Status                   |
-| ---------------------------- | ------------------------------------------------------------ | ------------------------ |
-| `@agent-engine/config`       | Config schema + three-format loader                          | ✅ implemented           |
-| `@agent-engine/core`         | Kernel engine (LLM / tools / agent loop / hooks / rules)     | ✅ implemented           |
-| `@agent-engine/server`       | HTTP server (REST + streaming)                               | ✅ implemented           |
-| `@agent-engine/plugin-files` | Local file tools (`read_file` / `write_file` / `list_files`) | ✅ implemented           |
-| `@agent-engine/plugin-bash`  | Sandboxed command execution (`bash`)                         | ✅ implemented           |
-| `@agent-engine/plugin-git`   | Git tool suite (read-only by default, sandboxed)             | ✅ implemented           |
-| `@agent-engine/plugin-otel`  | OpenTelemetry observability plugin                           | 📦 scaffold              |
-| `@agent-engine/cli`          | CLI entry                                                    | 📦 scaffold              |
-| `@agent-engine/web`          | Integrated platform (`apps/web`)                             | 🚧 partially implemented |
-| `@agent-engine/docs`         | Docs site (Rspress)                                          | 📦 scaffold              |
-
 ## Milestones
 
-1. **M1 Kernel skeleton** ✅: monorepo + config (schema/loader) + core (LLM Provider / Tool registry / Agent Loop).
-2. **M2 Configurable capabilities** ✅: hooks / rules / skills / plugins + system-prompt assembly + session memory + built-in tools + execution sandbox.
-3. **M3 Extensions** 🚧: MCP client ✅, resolve layer ✅, streaming ✅, session lifecycle ✅, loop hardening ✅, reasoning transparency ✅, three-tier memory ✅, FunctionSandbox ✅, guardrail config axis ✅, pluggable session store / logger ✅. Remaining: multi-agent orchestration.
-4. **M4 Services** 🚧: server HTTP API ✅. Remaining: CLI.
-5. **M5 Platform & docs** 🚧: `apps/web` ✅. Remaining: docs, Docker orchestration, example agents.
+1. **M1 Kernel skeleton** ✅ — monorepo + config (schema/loader) + core (LLM / tools / Agent Loop).
+2. **M2 Configurable capabilities** ✅ — hooks / rules / skills / plugins + system-prompt assembly + memory + built-in tools + sandbox.
+3. **M3 Extensions** 🚧 — MCP ✅, resolve ✅, streaming ✅, session lifecycle ✅, loop hardening ✅, reasoning transparency ✅, three-tier memory ✅, FunctionSandbox (WASI) ✅, guardrails ✅, semantic recall (RRF) ✅. Remaining: multi-agent orchestration.
+4. **M4 Services** 🚧 — HTTP server ✅. Remaining: CLI.
+5. **M5 Platform & docs** 🚧 — `apps/web` ✅. Remaining: docs site, Docker, example agents.
 
 ## Docs
 
 - [`AGENTS.md`](./AGENTS.md) — authoritative project doc (architecture, conventions); read before developing.
-- [`docs/`](./docs) — Rspress docs site.
+- [`packages/core/README.md`](./packages/core/README.md) — kernel subpath exports & design notes.
 - [`openspec/`](./openspec) — spec-driven development (specs / changes).
+- [`docs/`](./docs) — Rspress docs site (scaffold).
 
 ## License
 
