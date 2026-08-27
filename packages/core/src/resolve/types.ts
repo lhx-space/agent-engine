@@ -1,4 +1,5 @@
 import type { AgentLoop } from '../agent/loop';
+import type { LongTermMemoryFactoryDeps } from '../agent/assemble';
 import type { CacheBackend } from '../cache/cache-backend';
 import type { ContextCompactor } from '../context/compactor';
 import type { TokenCounter } from '../context/token-counter';
@@ -20,6 +21,10 @@ export type PluginFactory = () => Plugin | Promise<Plugin>;
 export interface ResolveDeps {
   /** plugin 名 → 工厂（`@agent-engine/plugin-git` → `() => createGitPlugin()`）。 */
   pluginFactories?: Record<string, PluginFactory>;
+  /** 组合层按 config 切片激活的额外能力插件名（与 `config.plugins` 去重合并；core 不硬编码能力映射）。 */
+  defaultPlugins?: string[];
+  /** 长期记忆工厂（用装配层解析出的后端创建实现，如 `plugin-memory` 的 SemanticMemory）。 */
+  longTermMemoryFactory?: (deps: LongTermMemoryFactoryDeps) => LongTermMemory;
   /** 预置 LLM provider 工厂；缺省用 `createProvider`。 */
   providerFactory?: ProviderFactory;
   /** 预置沙箱后端（bash 启用时；缺省按 security.sandbox.backend 解析）。 */

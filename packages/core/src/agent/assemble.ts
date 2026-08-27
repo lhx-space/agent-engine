@@ -40,6 +40,13 @@ import type { ToolRegistry } from '../tools/registry';
 import { AgentLoop } from './loop';
 import type { SystemPromptInput } from './types';
 
+/** 长期记忆工厂入参（装配层解析出的后端）。 */
+export interface LongTermMemoryFactoryDeps {
+  vectorStore: VectorStore;
+  embedding: EmbeddingProvider | undefined;
+  memoryBackend: MemoryBackend;
+}
+
 export interface AssembleAgentLoopOptions {
   provider: LLMProvider;
   registry: ToolRegistry;
@@ -50,6 +57,8 @@ export interface AssembleAgentLoopOptions {
   memory?: ConversationMemory;
   /** 长期记忆实现（缺省 no-op；语义实现由 `@agent-engine/plugin-memory` 提供）。 */
   longTermMemory?: LongTermMemory;
+  /** 长期记忆工厂（优先于 no-op；用解析出的 vectorStore / embedding / memoryBackend 创建实现）。 */
+  longTermMemoryFactory?: (deps: LongTermMemoryFactoryDeps) => LongTermMemory;
   maxSteps?: number;
   /** 执行预算 / 重试 / 续写策略（可选，缺省对齐现状）。 */
   execution?: ExecutionConfig;
@@ -195,7 +204,14 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     merged.embeddingProviders[0] ?? options.embeddingProvider;
 
   // 5.7 长期记忆：实现已外放为 `@agent-engine/plugin-memory`（SemanticMemory）；core 默认 no-op。
-  const longTermMemory: LongTermMemory = options.longTermMemory ?? noopLongTermMemory;
+  const longTermMemory: LongTermMemory =
+    options.longTermMemory ??
+    options.longTermMemoryFactory?.({
+      vectorStore,
+      embedding: embeddingProvider,
+      memoryBackend,
+    }) ??
+    noopLongTermMemory;
 
   // 5.8 会话记忆：注入的 memory 直接用；否则按 config.memory.session 构造（token 预算 + 滚动摘要）。
   const session = options.sessionMemory;

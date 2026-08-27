@@ -74,5 +74,5 @@ export type { AgentEngineEvent, EventListener } from './events';
 export { PluginManager } from './plugins';
 export { AgentLoop } from './agent/loop';
 export { assembleAgentLoop } from './agent/assemble';
-export type { AssembleAgentLoopOptions } from './agent/assemble';
+export type { AssembleAgentLoopOptions, LongTermMemoryFactoryDeps } from './agent/assemble';
 export type { AgentRunEvent, AgentRunOptions, AgentLoopResult } from './agent/types';

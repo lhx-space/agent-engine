@@ -1,0 +1,44 @@
+{
+  "name": "@agent-engine/preset-default",
+  "version": "0.1.0",
+  "description": "默认全家桶：聚合全部能力插件（rules/skills/documents/memory/web/mcp + files/bash/git + guardrails）",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@agent-engine/config": "workspace:*",
+    "@agent-engine/core": "workspace:*",
+    "@agent-engine/plugin-bash": "workspace:*",
+    "@agent-engine/plugin-documents": "workspace:*",
+    "@agent-engine/plugin-files": "workspace:*",
+    "@agent-engine/plugin-git": "workspace:*",
+    "@agent-engine/plugin-guardrails": "workspace:*",
+    "@agent-engine/plugin-mcp": "workspace:*",
+    "@agent-engine/plugin-memory": "workspace:*",
+    "@agent-engine/plugin-rules": "workspace:*",
+    "@agent-engine/plugin-skills": "workspace:*",
+    "@agent-engine/plugin-web": "workspace:*"
+  }
+}

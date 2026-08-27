@@ -4,7 +4,11 @@ import { resolveAgentConfig } from '@agent-engine/core';
 import type { AgentConfig } from '@agent-engine/config';
 import type { AgentLoop } from '@agent-engine/core';
 import { Hono } from 'hono';
-import { createBuiltinPluginFactories } from './builtin-plugins';
+import {
+  createPresetLongTermMemoryFactory,
+  createPresetPluginFactories,
+  defaultCapabilityPlugins,
+} from '@agent-engine/preset-default';
 import { consoleLogger } from './logger';
 import { envProviderFactory } from './provider';
 import { InMemorySessionStore } from './session-store';
@@ -60,9 +64,11 @@ async function getOrCreateSession(
   const id = randomUUID();
   const resolved = await resolveAgentConfig(config, {
     pluginFactories: {
-      ...createBuiltinPluginFactories(config),
+      ...createPresetPluginFactories(config),
       ...options.pluginFactories,
     },
+    defaultPlugins: defaultCapabilityPlugins(config),
+    longTermMemoryFactory: createPresetLongTermMemoryFactory(),
     providerFactory: options.providerFactory ?? envProviderFactory,
   });
   await store.set(id, { agent: resolved.agent, dispose: resolved.dispose, lastActive: Date.now() });

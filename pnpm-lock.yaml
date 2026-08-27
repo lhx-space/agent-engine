@@ -288,6 +288,45 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
 
+  packages/plugins/preset-default:
+    dependencies:
+      '@agent-engine/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@agent-engine/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@agent-engine/plugin-bash':
+        specifier: workspace:*
+        version: link:../plugin-bash
+      '@agent-engine/plugin-documents':
+        specifier: workspace:*
+        version: link:../plugin-documents
+      '@agent-engine/plugin-files':
+        specifier: workspace:*
+        version: link:../plugin-files
+      '@agent-engine/plugin-git':
+        specifier: workspace:*
+        version: link:../plugin-git
+      '@agent-engine/plugin-guardrails':
+        specifier: workspace:*
+        version: link:../plugin-guardrails
+      '@agent-engine/plugin-mcp':
+        specifier: workspace:*
+        version: link:../plugin-mcp
+      '@agent-engine/plugin-memory':
+        specifier: workspace:*
+        version: link:../plugin-memory
+      '@agent-engine/plugin-rules':
+        specifier: workspace:*
+        version: link:../plugin-rules
+      '@agent-engine/plugin-skills':
+        specifier: workspace:*
+        version: link:../plugin-skills
+      '@agent-engine/plugin-web':
+        specifier: workspace:*
+        version: link:../plugin-web
+
   packages/server:
     dependencies:
       '@agent-engine/config':
@@ -296,15 +335,9 @@ importers:
       '@agent-engine/core':
         specifier: workspace:*
         version: link:../core
-      '@agent-engine/plugin-bash':
+      '@agent-engine/preset-default':
         specifier: workspace:*
-        version: link:../plugins/plugin-bash
-      '@agent-engine/plugin-files':
-        specifier: workspace:*
-        version: link:../plugins/plugin-files
-      '@agent-engine/plugin-git':
-        specifier: workspace:*
-        version: link:../plugins/plugin-git
+        version: link:../plugins/preset-default
       '@hono/node-server':
         specifier: ^2.1.1
         version: 2.1.1(hono@4.13.3)

@@ -22,9 +22,11 @@ export async function resolveAgentConfig(
   const registry = new ToolRegistry();
   const hooks = new HookPipeline();
 
-  // plugins：字符串名 → 工厂实例化（core 不反向依赖各 plugin 包；内置 files/bash/git 由 server 层注入工厂）。
+  // plugins：字符串名 → 工厂实例化（core 不反向依赖各 plugin 包；能力插件由 preset-default 注入工厂）。
+  // `defaultPlugins` 是组合层（preset-default）按 config 切片激活的额外能力插件，与 `config.plugins` 去重合并。
   const plugins: Plugin[] = [];
-  for (const name of config.plugins) {
+  const pluginNames = [...new Set([...config.plugins, ...(deps.defaultPlugins ?? [])])];
+  for (const name of pluginNames) {
     const factory = deps.pluginFactories?.[name];
     if (!factory) {
       throw new Error(
@@ -53,6 +55,7 @@ export async function resolveAgentConfig(
     longTermBackend: config.memory?.longTerm?.backend,
     cacheBackend: config.cache?.backend,
     embeddingProvider,
+    longTermMemoryFactory: deps.longTermMemoryFactory,
   });
 
   const { dispose: disposeAgent } = resolved;
