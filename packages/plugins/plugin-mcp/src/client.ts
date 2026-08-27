@@ -1,5 +1,7 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp';
+import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse';
 import type { Tool } from '@agent-engine/core/tools';
 import { toTool } from './normalize';
 import type { McpConnection, ResolvedMcpServer } from './types';
@@ -19,14 +21,29 @@ function resolveEnv(env: Record<string, string> | undefined): Record<string, str
   return { ...merged, ...env };
 }
 
-/** 连接一个 MCP server（stdio transport），并把其工具归一化为标准 Tool。 */
+/** 构造远程 MCP transport（streamable-http / sse）；headers 作为认证头透传。 */
+function createHttpTransport(
+  server: Extract<ResolvedMcpServer, { kind: 'http' }>,
+): StreamableHTTPClientTransport | SSEClientTransport {
+  const url = new URL(server.url);
+  const requestInit: RequestInit = { headers: server.headers ?? {} };
+  if (server.transport === 'sse') {
+    return new SSEClientTransport(url, { requestInit });
+  }
+  return new StreamableHTTPClientTransport(url, { requestInit });
+}
+
+/** 连接一个 MCP server（stdio 本地 / http 远程），并把其工具归一化为标准 Tool。 */
 export async function connectMcpServer(server: ResolvedMcpServer): Promise<McpConnection> {
   const client = new Client(CLIENT_INFO);
-  const transport = new StdioClientTransport({
-    command: server.command,
-    args: server.args,
-    env: resolveEnv(server.env),
-  });
+  const transport =
+    server.kind === 'http'
+      ? createHttpTransport(server)
+      : new StdioClientTransport({
+          command: server.command,
+          args: server.args,
+          env: resolveEnv(server.env),
+        });
 
   try {
     await client.connect(transport);

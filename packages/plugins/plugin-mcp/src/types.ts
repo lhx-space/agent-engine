@@ -10,10 +10,19 @@ export interface McpConnection {
   close(): Promise<void>;
 }
 
-/** 归一化后的 MCP server（command 形态，registry 来源已转成 npx）。 */
-export interface ResolvedMcpServer {
-  name: string;
-  command: string;
-  args: string[];
-  env?: Record<string, string>;
-}
+/** 归一化后的 MCP server：stdio（本地命令）/ http（远程，streamable-http / sse）。 */
+export type ResolvedMcpServer =
+  | {
+      kind: 'stdio';
+      name: string;
+      command: string;
+      args: string[];
+      env?: Record<string, string>;
+    }
+  | {
+      kind: 'http';
+      name: string;
+      url: string;
+      transport: 'streamable-http' | 'sse';
+      headers?: Record<string, string>;
+    };

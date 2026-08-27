@@ -113,9 +113,14 @@ export type SkillRef = z.infer<typeof SkillRefSchema>;
  * MCP server 来源：
  * - `command` 本地命令（stdio transport）
  * - `registry` 官方 MCP registry / npm 包（归一化为 `npx -y <package>`）
+ * - `http` 远程 MCP（streamable-http / sse transport，经 URL + 可选 headers 认证）
  */
-export const McpServerSourceSchema = z.enum(['command', 'registry']);
+export const McpServerSourceSchema = z.enum(['command', 'registry', 'http']);
 export type McpServerSource = z.infer<typeof McpServerSourceSchema>;
+
+/** 远程 MCP 传输（streamable-http 优先；sse 兼容旧 server）。 */
+export const McpRemoteTransportSchema = z.enum(['streamable-http', 'sse']);
+export type McpRemoteTransport = z.infer<typeof McpRemoteTransportSchema>;
 
 const McpServerCommon = {
   name: z.string(),
@@ -134,6 +139,13 @@ export const McpServerSchema = z.discriminatedUnion('source', [
     source: z.literal('registry'),
     package: z.string(),
     args: z.array(z.string()).default([]),
+  }),
+  z.object({
+    ...McpServerCommon,
+    source: z.literal('http'),
+    url: z.string().url(),
+    transport: McpRemoteTransportSchema.default('streamable-http'),
+    headers: z.record(z.string(), z.string()).optional(),
   }),
 ]);
 export type McpServer = z.infer<typeof McpServerSchema>;
