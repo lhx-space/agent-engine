@@ -1,13 +1,10 @@
 import { readFile, readdir, stat } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import type { DocumentsConfig } from '@agent-engine/config';
+import type { EmbeddingProvider } from '@agent-engine/core/embedding';
+import { hybridRetrieve, InMemoryVectorStore } from '@agent-engine/core/retrieval';
+import type { RankedCandidate, VectorStore } from '@agent-engine/core/retrieval';
 import MiniSearch from 'minisearch';
-import type { EmbeddingProvider } from '../embedding/embedding';
-import { hybridRetrieve } from '../retrieval/hybrid-retriever';
-import { segment } from '../retrieval/registry';
-import type { RankedCandidate } from '../retrieval/rrf';
-import { InMemoryVectorStore } from '../retrieval/vector-store';
-import type { VectorStore } from '../retrieval/vector-store';
 import { FixedSizeChunker, MarkdownHeadingChunker } from './chunker';
 import { DocxNormalizer } from './docx-normalizer';
 import { EpubNormalizer } from './epub-normalizer';
@@ -15,6 +12,12 @@ import { HtmlNormalizer } from './html-normalizer';
 import { PdfNormalizer } from './pdf-normalizer';
 import { TextNormalizer } from './text-normalizer';
 import type { Chunk, Chunker, DocumentNormalizer } from './types';
+
+/** 中文分词（Node 内置 Intl.Segmenter，word 粒度，零依赖）。 */
+function segment(text: string): string[] {
+  const segmenter = new Intl.Segmenter('zh', { granularity: 'word' });
+  return [...segmenter.segment(text)].map((s) => s.segment).filter((s) => s.trim() !== '');
+}
 
 export interface DocumentIndexOptions {
   /** 每次检索的 top-k 数量（默认 4）。 */

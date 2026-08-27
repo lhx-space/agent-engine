@@ -8,17 +8,6 @@ export { AbortError, CompletionError } from './llm/types';
 export { createOpenAIProvider } from './llm/openai';
 export { createAnthropicProvider } from './llm/anthropic';
 export { extractStructured } from './structured-output';
-export {
-  TextNormalizer,
-  HtmlNormalizer,
-  PdfNormalizer,
-  DocxNormalizer,
-  EpubNormalizer,
-  FixedSizeChunker,
-  MarkdownHeadingChunker,
-  DocumentIndex,
-  loadDocuments,
-} from './documents';
 export { ToolRegistry } from './tools/registry';
 export {
   TodoStore,

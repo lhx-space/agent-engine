@@ -1,10 +1,16 @@
-# documents Specification
+## REMOVED Requirements
 
-## Purpose
+### Requirement: 文档归一化层
 
-TBD - created by archiving change add-document-normalization. Update Purpose after archive.
+### Requirement: 分块
 
-## Requirements
+### Requirement: 文档索引与装载
+
+### Requirement: 二进制文档归一化器
+
+### Requirement: 文档混合检索（BM25 + 向量 RRF 融合）
+
+## ADDED Requirements
 
 ### Requirement: documents 能力外放
 

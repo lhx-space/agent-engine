@@ -188,6 +188,34 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/plugins/plugin-documents:
+    dependencies:
+      '@agent-engine/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@agent-engine/core':
+        specifier: workspace:*
+        version: link:../../core
+      epub2:
+        specifier: ^3.0.2
+        version: 3.0.2(ts-toolbelt@9.6.0)
+      mammoth:
+        specifier: ^1.12.1
+        version: 1.12.1
+      minisearch:
+        specifier: ^7.2.0
+        version: 7.2.0
+      turndown:
+        specifier: ^7.2.0
+        version: 7.2.4
+      unpdf:
+        specifier: ^1.8.1
+        version: 1.8.1
+    devDependencies:
+      '@types/turndown':
+        specifier: ^5.0.5
+        version: 5.0.6
+
   packages/plugins/plugin-files:
     dependencies:
       '@agent-engine/config':

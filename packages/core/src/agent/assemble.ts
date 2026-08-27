@@ -5,7 +5,6 @@ import type {
   ToolsConfig,
 } from '@agent-engine/config';
 import { InMemoryCacheBackend } from '../cache/cache-backend';
-import type { DocumentIndex } from '../documents/document-index';
 import type { CacheBackend } from '../cache/cache-backend';
 import { mergeBundles } from '../capability/bundle';
 import type { ResolvedMcpServer } from '../capability-source/types';
@@ -75,8 +74,6 @@ export interface AssembleAgentLoopOptions {
   sessionMemory?: SessionMemory;
   /** 预置滚动摘要策略（插件注册的优先；缺省 `LLMSummarizer(provider)`）。 */
   summarizer?: Summarizer;
-  /** 文档检索索引（`config.documents` 装配产物；run 时注入 `[文档]`）。 */
-  documentIndex?: DocumentIndex;
 }
 
 /** 把 prompt 片段追加到 system prompt（string 追加文本 / 模板对象追加到 template；函数式跳过）。 */
@@ -231,7 +228,6 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     guardrails,
     memory,
     longTermMemory,
-    documentIndex: options.documentIndex,
     embeddingProvider,
     contextContributors: merged.contextContributors,
     maxSteps: options.maxSteps,

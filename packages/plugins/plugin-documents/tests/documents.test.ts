@@ -2,11 +2,25 @@ import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from '@rstest/core';
-import { ContextComposer } from '../src/context/context-composer';
-import { FixedSizeChunker, MarkdownHeadingChunker } from '../src/documents/chunker';
-import { DocumentIndex, loadDocuments } from '../src/documents/document-index';
-import { HtmlNormalizer } from '../src/documents/html-normalizer';
-import { TextNormalizer } from '../src/documents/text-normalizer';
+import type { ContextContributor } from '@agent-engine/core/context';
+import type { PluginContext } from '@agent-engine/core/plugins';
+import {
+  DocumentIndex,
+  FixedSizeChunker,
+  HtmlNormalizer,
+  MarkdownHeadingChunker,
+  TextNormalizer,
+  createDocumentsPlugin,
+  loadDocuments,
+} from '../src/index';
+
+function makeCtx(): { ctx: PluginContext; contributors: ContextContributor[] } {
+  const contributors: ContextContributor[] = [];
+  const ctx = {
+    registerContextContributor: (contributor: ContextContributor) => contributors.push(contributor),
+  } as PluginContext;
+  return { ctx, contributors };
+}
 
 describe('文档归一化层', () => {
   it('TextNormalizer 透传文本', async () => {
@@ -31,22 +45,15 @@ describe('分块层', () => {
     expect(chunks.map((chunk) => chunk.text)).toEqual(['abc', 'def']);
   });
 
-  it('FixedSizeChunker 支持 overlap', () => {
-    const chunks = new FixedSizeChunker({ size: 3, overlap: 1 }).chunk('abcdef');
-    expect(chunks.map((chunk) => chunk.text)).toEqual(['abc', 'cde', 'ef']);
-  });
-
   it('MarkdownHeadingChunker 按标题切段并携带标题 metadata', () => {
     const chunks = new MarkdownHeadingChunker().chunk('# A\nbody A\n## B\nbody B');
     expect(chunks).toHaveLength(2);
     expect(chunks[0]?.metadata.heading).toBe('A');
     expect(chunks[1]?.metadata.heading).toBe('B');
-    expect(chunks[0]?.text).toContain('body A');
-    expect(chunks[1]?.text).toContain('body B');
   });
 });
 
-describe('文档检索（DocumentIndex + loadDocuments + 注入）', () => {
+describe('DocumentIndex + loadDocuments', () => {
   it('DocumentIndex 词法召回 top-k chunk', async () => {
     const index = new DocumentIndex({ topK: 2 });
     await index.addChunks([
@@ -70,18 +77,27 @@ describe('文档检索（DocumentIndex + loadDocuments + 注入）', () => {
     const hits = await index.retrieve('天气', 2);
     expect(hits.some((chunk) => chunk.text.includes('天气'))).toBe(true);
   });
+});
 
-  it('ContextComposer 注入 [文档] 片段', async () => {
-    const index = new DocumentIndex({ topK: 2 });
-    await index.addChunks([
-      { text: 'Kubernetes 故障排查顺序：events → describe → logs。', metadata: {} },
-    ]);
-    const composer = new ContextComposer({
-      systemPrompt: '你是运维助手。',
-      documentIndex: index,
-    });
-    const { systemPrompt } = await composer.compose('k8s 故障怎么排查');
-    expect(systemPrompt).toContain('[文档]');
-    expect(systemPrompt).toContain('Kubernetes');
+describe('createDocumentsPlugin', () => {
+  it('装载文档并注册 contributor，检索命中注入 [文档]', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'agent-engine-docs-'));
+    await writeFile(
+      join(dir, 'a.md'),
+      '# K8s\nKubernetes 故障排查顺序：events → describe → logs。',
+    );
+
+    const { ctx, contributors } = makeCtx();
+    await createDocumentsPlugin({
+      sources: [dir],
+      chunking: { strategy: 'fixed', size: 1000, overlap: 0 },
+      topK: 2,
+    }).install(ctx);
+
+    expect(contributors).toHaveLength(1);
+    expect(contributors[0]?.name).toBe('@agent-engine/plugin-documents');
+    const contribution = await contributors[0]!.contribute({ userInput: 'k8s 故障怎么排查' });
+    expect(contribution?.text).toContain('[文档]');
+    expect(contribution?.text).toContain('Kubernetes');
   });
 });

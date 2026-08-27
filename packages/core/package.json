@@ -68,16 +68,6 @@
         "default": "./dist/context.cjs"
       }
     },
-    "./documents": {
-      "import": {
-        "types": "./dist/documents.d.mts",
-        "default": "./dist/documents.mjs"
-      },
-      "require": {
-        "types": "./dist/documents.d.cts",
-        "default": "./dist/documents.cjs"
-      }
-    },
     "./embedding": {
       "import": {
         "types": "./dist/embedding.d.mts",

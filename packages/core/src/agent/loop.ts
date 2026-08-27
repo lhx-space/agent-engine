@@ -73,7 +73,6 @@ export class AgentLoop {
       systemPrompt: options.systemPrompt,
       memory: this.memory,
       longTermMemory: this.longTermMemory,
-      documentIndex: options.documentIndex,
     });
   }
 

@@ -1,7 +1,6 @@
 import type { AgentConfig } from '@agent-engine/config';
 import { assembleAgentLoop } from '../agent/assemble';
 import { resolveMcpServers } from '../capability-source/mcp';
-import { loadDocuments } from '../documents';
 import { createEmbeddingProvider } from '../embedding/openai';
 import { HookPipeline } from '../hooks/pipeline';
 import { createProvider } from '../llm/provider';
@@ -14,7 +13,7 @@ import type { ResolveDeps, ResolvedAgent } from './types';
  *
  * 装配顺序：provider（可注入 factory）→ 按名实例化 plugins →
  * 建 registry / hooks / memory → 交给 `assembleAgentLoop` 合并 bundles 并构造 AgentLoop。
- * skills 已外放为 `@agent-engine/plugin-skills`（其工厂闭包 config.skills 自行解析加载）。
+ * skills / documents 已外放为 `plugin-skills` / `plugin-documents`（其工厂闭包 config 切片自行装载）。
  */
 export async function resolveAgentConfig(
   config: AgentConfig,
@@ -36,16 +35,10 @@ export async function resolveAgentConfig(
     plugins.push(await factory());
   }
 
-  // embedding：文档语义召回与长期记忆共享同一 provider（插件注入的 provider 在 assemble 内解析，装载阶段不可见）。
+  // embedding：长期记忆语义召回共享同一 provider（插件注入的 provider 在 assemble 内解析，装载阶段不可见）。
   const embeddingProvider = config.embedding
     ? createEmbeddingProvider(config.embedding)
     : undefined;
-
-  // documents：装配时装载文档（归一化 → 分块 → 索引），run 时检索注入。
-  const documentIndex =
-    config.documents && config.documents.sources.length > 0
-      ? await loadDocuments(config.documents, embeddingProvider)
-      : undefined;
 
   const resolved = await assembleAgentLoop({
     provider,
@@ -62,7 +55,6 @@ export async function resolveAgentConfig(
     longTermBackend: config.memory?.longTerm?.backend,
     cacheBackend: config.cache?.backend,
     embeddingProvider,
-    documentIndex,
   });
 
   const { dispose: disposeAgent } = resolved;

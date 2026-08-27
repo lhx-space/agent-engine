@@ -1,4 +1,3 @@
-import type { DocumentIndex } from '../documents/document-index';
 import type { ContextContributor } from '../context/context-contributor';
 import type { SystemPromptInput } from '../context/types';
 import type { EmbeddingProvider } from '../embedding/embedding';
@@ -41,8 +40,6 @@ export interface AgentLoopOptions {
   memory?: ConversationMemory;
   /** 长期记忆（可选），run 开始召回注入、正常结束写回（三层记忆③）。 */
   longTermMemory?: LongTermMemory;
-  /** 文档检索索引（可选），run 时检索 top-k 注入 `[文档]`。 */
-  documentIndex?: DocumentIndex;
   /** 语义召回 provider（可选）：能力包自建索引可传入，升级为 BM25 + 向量 RRF 融合。 */
   embeddingProvider?: EmbeddingProvider;
   /** 上下文贡献者（可选）：run 组装前收集，文本注入 prompt、工具临时注册。 */
