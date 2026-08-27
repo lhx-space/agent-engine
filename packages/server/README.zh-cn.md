@@ -24,7 +24,7 @@ import { createApp, serve } from '@agent-engine/server';
 import { pino } from 'pino'; // 可选
 
 const app = createApp({
-  // 若不用内置插件，可在此注入 pluginFactories / providerFactory
+  // 可在此覆盖/追加预设的 pluginFactories / providerFactory
   sessionStore: mySessionStore, // SessionStoreBackend（默认 InMemorySessionStore）
   logger: pino(), // Logger（默认 consoleLogger）
 });
@@ -39,7 +39,7 @@ serve({/* ServerOptions */}, 8080);
 
 ## 说明
 
-- `createBuiltinPluginFactories(config)` 无需外部工厂即可装配 `@agent-engine/plugin-files` / `plugin-bash` / `plugin-git`。
+- 能力插件默认经 `@agent-engine/preset-default` 装配（`createPresetPluginFactories` + `defaultCapabilityPlugins` + `createPresetLongTermMemoryFactory`）；经 `options.pluginFactories` / `options.longTermMemoryFactory` 覆盖或追加。
 - `envProviderFactory` 从环境变量解析 LLM provider（默认 DeepSeek）。
 
 ## 状态

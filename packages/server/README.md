@@ -24,7 +24,7 @@ import { createApp, serve } from '@agent-engine/server';
 import { pino } from 'pino'; // optional
 
 const app = createApp({
-  // pluginFactories / providerFactory are injected here if not using built-ins
+  // override/extend the preset plugin factories or providerFactory here
   sessionStore: mySessionStore, // SessionStoreBackend (default InMemorySessionStore)
   logger: pino(), // Logger (default consoleLogger)
 });
@@ -39,7 +39,7 @@ serve({/* ServerOptions */}, 8080);
 
 ## Notes
 
-- `createBuiltinPluginFactories(config)` wires `@agent-engine/plugin-files` / `plugin-bash` / `plugin-git` without external factories.
+- Capability plugins are wired by default via `@agent-engine/preset-default` (`createPresetPluginFactories` + `defaultCapabilityPlugins` + `createPresetLongTermMemoryFactory`); override or append via `options.pluginFactories` / `options.longTermMemoryFactory`.
 - `envProviderFactory` resolves the LLM provider from environment variables (DeepSeek default).
 
 ## Status
