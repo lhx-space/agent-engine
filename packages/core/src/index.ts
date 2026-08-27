@@ -37,8 +37,6 @@ export type { ToolSource } from './capability-source';
 export { resolveAgentConfig } from './resolve';
 export { HookPipeline } from './hooks/pipeline';
 export type { Hook, HookPoint, HookTrace } from './hooks/types';
-export { CapabilityRegistry } from './retrieval/registry';
-export { CapabilityLoader } from './retrieval/loader';
 export { renderTemplate, buildSystemPrompt, ContextComposer } from './context';
 export { ApproximateTokenCounter, TokenBudgetCompactor } from './context';
 export type {
@@ -50,7 +48,7 @@ export type {
   ContextContribution,
   ContextContributeInput,
 } from './context';
-export { Bm25Retriever, IdentityReranker, reciprocalRankFusion, hybridRetrieve } from './retrieval';
+export { IdentityReranker, noopRetriever, reciprocalRankFusion, hybridRetrieve } from './retrieval';
 export type {
   Retriever,
   RetrievalCandidate,

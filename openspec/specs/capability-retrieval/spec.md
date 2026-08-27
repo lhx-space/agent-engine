@@ -6,43 +6,6 @@ TBD - created by archiving change add-capability-retrieval. Update Purpose after
 
 ## Requirements
 
-### Requirement: CapabilityRegistry 统一 meta
-
-系统 SHALL 提供 `CapabilityRegistry`，支持 `register`（注册 meta：`id` / `type` / `description` / `tags`），按 type 区分能力类型。
-
-#### Scenario: 注册与区分类型
-
-- **WHEN** 注册一个 `type='rule'` 的 meta
-- **THEN** 该 meta 被纳入索引，可按 type 过滤
-
-### Requirement: BM25 检索
-
-系统 SHALL 提供 `retrieve(query, topK)`（异步），用 minisearch + Intl.Segmenter 分词对 meta（description + tags）打分，返回 top-k 候选（含 `score`）；提供 `embedding` 时融合向量语义召回。
-
-#### Scenario: 关键词召回
-
-- **WHEN** 以「Vue 组件怎么写」检索，存在 description 含「Vue3 TypeScript 编码规范」的 rule
-- **THEN** 该 rule 被召回且 score 较高
-
-#### Scenario: 输出得分
-
-- **WHEN** 检索返回候选
-- **THEN** 每项含 `score`，可用于可观测排查
-
-### Requirement: CapabilityLoader 统一加载
-
-系统 SHALL 提供 `CapabilityLoader<T>`，接收能力记录（含 `id` / `description` / `tags`）与 `type`，统一注册进 `CapabilityRegistry` 并按 query BM25 检索，返回命中的记录（含 `score`）。
-
-#### Scenario: 注册与检索
-
-- **WHEN** 以 `type='rule'` 构造 `CapabilityLoader` 并注册若干记录
-- **THEN** `loadForQuery` 返回命中的 `{ record, score }` 列表
-
-#### Scenario: 按 type 过滤
-
-- **WHEN** 注册表混有 rule / skill 记录
-- **THEN** `CapabilityLoader('rule')` 的 `loadForQuery` 只返回 `type='rule'` 的记录
-
 ### Requirement: 语义检索后端（VectorStore + EmbeddingProvider）
 
 系统 SHALL 定义 `VectorStore` 接口（`name`、`add(records)`、`query(vector, topK)`、`delete(ids)`、`clear()`）与 `EmbeddingProvider` 接口（`name`、`dimension`、`embed(texts)`），并提供 `InMemoryVectorStore`（暴力余弦相似度，`name` 为 `in-memory`）作为开发默认；`EmbeddingProvider` 无内置默认（需真实向量模型）。二者经 `PluginContext.registerVectorStore` / `registerEmbeddingProvider` 注入，装配层取首个注册的 `VectorStore`（缺省回退 `InMemoryVectorStore`）与首个注册的 `EmbeddingProvider`（可缺省为 `undefined`），随 `ResolvedAgent.vectorStore` / `ResolvedAgent.embeddingProvider` 暴露。
@@ -64,12 +27,12 @@ TBD - created by archiving change add-capability-retrieval. Update Purpose after
 
 ### Requirement: 检索策略接口（Retriever / Reranker）
 
-系统 SHALL 定义 `Retriever` 接口（`name`、`retrieve(query, topK): Promise<RetrievalCandidate[]>`，`RetrievalCandidate = { id, score, payload? }`）与 `Reranker` 接口（`name`、`rerank(query, candidates): Promise<RetrievalCandidate[]>`），并提供默认实现 `Bm25Retriever`（复用 `CapabilityRegistry`）与 `IdentityReranker`（保持原序原分）。二者经 `PluginContext.registerRetriever` / `registerReranker` 注入，装配层取插件注册的实例（缺省回退默认），随 `ResolvedAgent.retriever` / `reranker` 暴露。
+系统 SHALL 定义 `Retriever` 接口（`name`、`retrieve(query, topK): Promise<RetrievalCandidate[]>`，`RetrievalCandidate = { id, score, payload? }`）与 `Reranker` 接口（`name`、`rerank(query, candidates): Promise<RetrievalCandidate[]>`）；默认实现为 `noopRetriever`（返回空候选）与 `IdentityReranker`（保持原序原分）。二者经 `PluginContext.registerRetriever` / `registerReranker` 注入，装配层取插件注册的实例（缺省回退默认），随 `ResolvedAgent.retriever` / `reranker` 暴露。
 
-#### Scenario: BM25 检索
+#### Scenario: 无注入时 noop 默认
 
-- **WHEN** `Bm25Retriever` 绑定含能力 meta 的 `CapabilityRegistry` 后 `retrieve(query, topK)`
-- **THEN** 返回带 `score` 的候选（含 `payload` 为 meta）
+- **WHEN** 无插件注册自定义 `Retriever` 时装配
+- **THEN** `ResolvedAgent.retriever.name` 为 `none`，`retrieve` 返回空候选
 
 #### Scenario: 恒等重排
 
@@ -80,25 +43,6 @@ TBD - created by archiving change add-capability-retrieval. Update Purpose after
 
 - **WHEN** 一个 plugin 经 `registerReranker` 注入自定义重排器
 - **THEN** `ResolvedAgent.reranker` 为插件实例；未注入时为 `IdentityReranker`
-
-### Requirement: 能力检索语义化（BM25 + 向量 RRF 融合）
-
-系统 SHALL 使 `CapabilityRegistry` 支持可选 `embedding` 与 `vectorStore`：提供 `embedding` 时，`retrieve(query, topK)` SHALL 并行执行 BM25 词法召回与向量语义召回（嵌入面为 `description` + `tags`），经 `reciprocalRankFusion` 融合后返回 top-k 候选（含 `score`）；未提供 `embedding` 或语义链路失败时 SHALL 回落为纯 BM25。
-
-#### Scenario: 无 embedding 回落 BM25
-
-- **WHEN** `CapabilityRegistry` 未提供 `embedding` 时 `retrieve(query)`
-- **THEN** 返回 BM25 词法召回结果
-
-#### Scenario: 有 embedding 时语义召回补漏
-
-- **WHEN** `CapabilityRegistry` 提供 `embedding` 且 query 与某 meta 用词不同但语义相关
-- **THEN** 该 meta 经向量召回 + RRF 融合后被召回
-
-#### Scenario: 语义链路失败优雅回落
-
-- **WHEN** embedding 调用抛错
-- **THEN** `retrieve` 返回 BM25 召回结果而不抛错
 
 ### Requirement: 统一混合检索原语
 

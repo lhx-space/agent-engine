@@ -200,21 +200,12 @@
   "dependencies": {
     "@agent-engine/config": "workspace:*",
     "@anthropic-ai/sdk": "^0.120.0",
-    "@mozilla/readability": "^0.6.0",
-    "epub2": "^3.0.2",
-    "gray-matter": "^4.0.3",
-    "linkedom": "^0.18.13",
-    "mammoth": "^1.12.1",
-    "minisearch": "^7.2.0",
     "openai": "^7.5.0",
     "picomatch": "^4.0.5",
-    "turndown": "^7.2.0",
-    "unpdf": "^1.8.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/picomatch": "^4.0.3",
-    "@types/turndown": "^5.0.5",
     "wabt": "^1.0.39"
   }
 }

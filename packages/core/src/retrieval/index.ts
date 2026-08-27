@@ -1,11 +1,7 @@
-export { CapabilityRegistry } from './registry';
-export { CapabilityLoader } from './loader';
-export type { CapabilityRecord, CapabilityRecordHit } from './loader';
-export type { CapabilityHit, CapabilityMeta, CapabilityType } from './types';
 export type { VectorStore, VectorRecord, VectorMatch } from './vector-store';
 export { InMemoryVectorStore } from './vector-store';
 export type { Retriever, RetrievalCandidate } from './retriever';
-export { Bm25Retriever } from './retriever';
+export { noopRetriever } from './retriever';
 export type { Reranker } from './reranker';
 export { IdentityReranker } from './reranker';
 export type { RankedCandidate } from './rrf';

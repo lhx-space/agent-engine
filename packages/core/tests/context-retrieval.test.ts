@@ -7,9 +7,6 @@ import type { ChatMessage } from '../src/llm/types';
 import type { LLMProvider } from '../src/llm/types';
 import { IdentityReranker } from '../src/retrieval/reranker';
 import type { Reranker } from '../src/retrieval/reranker';
-import { Bm25Retriever } from '../src/retrieval/retriever';
-import type { Retriever } from '../src/retrieval/retriever';
-import { CapabilityRegistry } from '../src/retrieval/registry';
 import { resolveAgentConfig } from '../src/resolve/resolve';
 
 function makeProvider(): LLMProvider {
@@ -63,22 +60,8 @@ describe('TokenBudgetCompactor', () => {
   });
 });
 
-describe('Bm25Retriever / IdentityReranker', () => {
-  it('BM25 检索返回带分候选', async () => {
-    const registry = new CapabilityRegistry();
-    registry.register({
-      id: 'r1',
-      type: 'rule',
-      description: 'Vue3 TypeScript 编码规范',
-      tags: ['vue'],
-    });
-    const retriever = new Bm25Retriever(registry);
-    const hits = await retriever.retrieve('Vue 组件怎么写', 5);
-    expect(hits[0]?.id).toBe('r1');
-    expect(hits[0]!.score).toBeGreaterThan(0);
-  });
-
-  it('IdentityReranker 保持原序', async () => {
+describe('IdentityReranker', () => {
+  it('保持原序', async () => {
     const reranker = new IdentityReranker();
     const candidates = [
       { id: 'a', score: 2 },
@@ -98,7 +81,7 @@ describe('resolveAgentConfig 上下文/检索接口解析', () => {
     const resolved = await resolveAgentConfig(config, { providerFactory: () => makeProvider() });
     expect(resolved.tokenCounter.name).toBe('approximate');
     expect(resolved.contextCompactor.name).toBe('token-budget');
-    expect(resolved.retriever.name).toBe('bm25');
+    expect(resolved.retriever.name).toBe('none');
     expect(resolved.reranker.name).toBe('identity');
     await resolved.dispose();
   });

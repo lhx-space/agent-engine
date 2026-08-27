@@ -132,36 +132,12 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.120.0
         version: 0.120.0(zod@4.4.3)
-      '@mozilla/readability':
-        specifier: ^0.6.0
-        version: 0.6.0
-      epub2:
-        specifier: ^3.0.2
-        version: 3.0.2(ts-toolbelt@9.6.0)
-      gray-matter:
-        specifier: ^4.0.3
-        version: 4.0.3
-      linkedom:
-        specifier: ^0.18.13
-        version: 0.18.13
-      mammoth:
-        specifier: ^1.12.1
-        version: 1.12.1
-      minisearch:
-        specifier: ^7.2.0
-        version: 7.2.0
       openai:
         specifier: ^7.5.0
         version: 7.5.0(zod@4.4.3)
       picomatch:
         specifier: ^4.0.5
         version: 4.0.5
-      turndown:
-        specifier: ^7.2.0
-        version: 7.2.4
-      unpdf:
-        specifier: ^1.8.1
-        version: 1.8.1
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -169,9 +145,6 @@ importers:
       '@types/picomatch':
         specifier: ^4.0.3
         version: 4.0.3
-      '@types/turndown':
-        specifier: ^5.0.5
-        version: 5.0.6
       wabt:
         specifier: ^1.0.39
         version: 1.0.39

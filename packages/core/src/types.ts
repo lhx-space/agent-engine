@@ -51,8 +51,6 @@ export type { Hook } from './hooks/types';
 // guardrails（协议：GuardrailRule 接口）
 export type { GuardrailContext, GuardrailResult, GuardrailRule } from './guardrails';
 // retrieval
-export type { CapabilityHit, CapabilityMeta, CapabilityType } from './retrieval/types';
-export type { CapabilityRecord, CapabilityRecordHit } from './retrieval/loader';
 export type { VectorStore, VectorRecord, VectorMatch } from './retrieval/vector-store';
 export type { Retriever, RetrievalCandidate } from './retrieval/retriever';
 export type { Reranker } from './retrieval/reranker';

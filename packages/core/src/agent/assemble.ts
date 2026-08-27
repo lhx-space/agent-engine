@@ -28,9 +28,8 @@ import type { Plugin } from '../plugins/types';
 import type { ResolvedAgent } from '../resolve/types';
 import { IdentityReranker } from '../retrieval/reranker';
 import type { Reranker } from '../retrieval/reranker';
-import { Bm25Retriever } from '../retrieval/retriever';
 import type { Retriever } from '../retrieval/retriever';
-import { CapabilityRegistry } from '../retrieval/registry';
+import { noopRetriever } from '../retrieval/retriever';
 import { InMemoryVectorStore } from '../retrieval/vector-store';
 import type { VectorStore } from '../retrieval/vector-store';
 import type { GuardrailRule } from '../guardrails';
@@ -173,7 +172,7 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
   const tokenCounter: TokenCounter = merged.tokenCounters[0] ?? new ApproximateTokenCounter();
   const contextCompactor: ContextCompactor =
     merged.contextCompactors[0] ?? new TokenBudgetCompactor(tokenCounter);
-  const retriever: Retriever = merged.retrievers[0] ?? new Bm25Retriever(new CapabilityRegistry());
+  const retriever: Retriever = merged.retrievers[0] ?? noopRetriever;
   const reranker: Reranker = merged.rerankers[0] ?? new IdentityReranker();
   const summarizer: Summarizer =
     merged.summarizers[0] ?? options.summarizer ?? new LLMSummarizer(options.provider);
