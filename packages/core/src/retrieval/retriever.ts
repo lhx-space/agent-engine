@@ -23,7 +23,7 @@ export class Bm25Retriever implements Retriever {
   constructor(private readonly registry: CapabilityRegistry) {}
 
   async retrieve(query: string, topK: number): Promise<RetrievalCandidate[]> {
-    return this.registry.retrieve(query, topK).map((hit) => ({
+    return (await this.registry.retrieve(query, topK)).map((hit) => ({
       id: hit.meta.id,
       score: hit.score,
       payload: hit.meta,

@@ -1,0 +1,9 @@
+- [x] `retrieval/registry.ts`：`CapabilityRegistry` 混合检索（embedding + vectorStore + RRF，惰性向量化 + 优雅回落）
+- [x] `retrieval/loader.ts`：`CapabilityLoader` 支持 options，`loadForQuery` 转 async
+- [x] `retrieval/retriever.ts`：`Bm25Retriever.retrieve` 补 `await`
+- [x] `rules/load.ts`：`loadRulesText` 转 async
+- [x] `agent/types.ts` + `agent/loop.ts`：`AgentLoopOptions.embeddingProvider` 传入 loader
+- [x] `agent/assemble.ts`：传入 `embeddingProvider`
+- [x] `context/context-composer.ts`：await 能力检索
+- [x] 更新现有调用点/测试 + 新增能力语义召回单测
+- [x] cspell 词表 + 全量校验

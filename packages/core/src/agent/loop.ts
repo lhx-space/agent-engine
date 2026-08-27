@@ -71,10 +71,16 @@ export class AgentLoop {
     this.guardrails = options.guardrails;
     this.rules = options.rules ?? [];
     this.ruleLoader =
-      this.rules.length > 0 ? new CapabilityLoader<Rule>('rule', this.rules) : undefined;
+      this.rules.length > 0
+        ? new CapabilityLoader<Rule>('rule', this.rules, {
+            embedding: options.embeddingProvider,
+          })
+        : undefined;
     this.skillLoader =
       options.skills && options.skills.length > 0
-        ? new CapabilityLoader<Skill>('skill', options.skills)
+        ? new CapabilityLoader<Skill>('skill', options.skills, {
+            embedding: options.embeddingProvider,
+          })
         : undefined;
     this.memory = options.memory;
     this.longTermMemory = options.longTermMemory;

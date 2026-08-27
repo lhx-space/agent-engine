@@ -1,5 +1,10 @@
 import MiniSearch from 'minisearch';
+import type { EmbeddingProvider } from '../embedding/embedding';
+import { reciprocalRankFusion } from './rrf';
+import type { RankedCandidate } from './rrf';
 import type { CapabilityHit, CapabilityMeta, CapabilityType } from './types';
+import { InMemoryVectorStore } from './vector-store';
+import type { VectorStore } from './vector-store';
 
 /** 中文分词（Node 内置 Intl.Segmenter，word 粒度，零依赖）。 */
 export function segment(text: string): string[] {
@@ -7,12 +12,25 @@ export function segment(text: string): string[] {
   return [...segmenter.segment(text)].map((s) => s.segment).filter((s) => s.trim() !== '');
 }
 
-/** 统一能力注册表：注册 meta，BM25 检索召回 top-k（含得分）。 */
+export interface CapabilityRegistryOptions {
+  /** 语义召回的向量化 provider；缺省时仅 BM25 词法检索。 */
+  embedding?: EmbeddingProvider;
+  /** 语义召回的向量库；缺省且提供 `embedding` 时内部建 `InMemoryVectorStore`。 */
+  vectorStore?: VectorStore;
+}
+
+/** 统一能力注册表：注册 meta，检索召回 top-k（含得分）；提供 `embedding` 时融合向量语义召回（RRF）。 */
 export class CapabilityRegistry {
   private readonly metas = new Map<string, CapabilityMeta>();
   private readonly index: MiniSearch;
+  private readonly embedding: EmbeddingProvider | undefined;
+  private readonly vectorStore: VectorStore | undefined;
+  private vectorsBuilt = false;
 
-  constructor() {
+  constructor(options: CapabilityRegistryOptions = {}) {
+    this.embedding = options.embedding;
+    this.vectorStore =
+      options.vectorStore ?? (options.embedding ? new InMemoryVectorStore() : undefined);
     this.index = new MiniSearch({
       fields: ['description', 'tags'],
       tokenize: (text) => segment(text),
@@ -30,23 +48,64 @@ export class CapabilityRegistry {
       description: meta.description,
       tags: meta.tags.join(' '),
     });
+    // 新 meta 注册后需重建向量（惰性，下次 retrieve 触发）。
+    this.vectorsBuilt = false;
   }
 
-  /** BM25 检索，返回 top-k 候选（含得分）。 */
-  retrieve(query: string, topK: number): CapabilityHit[] {
-    const results = this.index.search(query);
-    const hits: CapabilityHit[] = [];
-    for (const result of results.slice(0, topK)) {
-      const meta = this.metas.get(String(result.id));
-      if (meta) {
-        hits.push({ meta, score: result.score });
-      }
+  /** 检索 top-k 候选（含得分）：无 embedding 为 BM25；有 embedding 为 BM25 + 向量 RRF 融合。 */
+  async retrieve(query: string, topK: number): Promise<CapabilityHit[]> {
+    const lexical = this.lexicalCandidates(query, topK * 2);
+    if (!this.embedding || !this.vectorStore) {
+      return this.toHits(lexical.slice(0, topK));
     }
-    return hits;
+    try {
+      await this.ensureVectors();
+      const [vector] = await this.embedding.embed([query]);
+      if (!vector) return this.toHits(lexical.slice(0, topK));
+      const matches = await this.vectorStore.query(vector, topK * 2);
+      const semantic: RankedCandidate[] = matches.map((match) => ({
+        id: match.id,
+        score: match.score,
+      }));
+      return this.toHits(reciprocalRankFusion([lexical, semantic]).slice(0, topK));
+    } catch {
+      // 语义召回是 best-effort：embedding 故障/向量查询失败时优雅回落 BM25，不拖垮能力检索。
+      return this.toHits(lexical.slice(0, topK));
+    }
   }
 
   /** 按类型列出已注册 meta。 */
   listByType(type: CapabilityType): CapabilityMeta[] {
     return [...this.metas.values()].filter((meta) => meta.type === type);
+  }
+
+  private lexicalCandidates(query: string, topK: number): RankedCandidate[] {
+    return this.index
+      .search(query)
+      .slice(0, topK)
+      .map((result) => ({ id: String(result.id), score: result.score }));
+  }
+
+  /** 一次性把所有 meta 的 `description + tags` 向量化入库（惰性，只做一次）。 */
+  private async ensureVectors(): Promise<void> {
+    if (this.vectorsBuilt || !this.embedding || !this.vectorStore) return;
+    this.vectorsBuilt = true;
+    for (const meta of this.metas.values()) {
+      const [vector] = await this.embedding.embed([this.embedText(meta)]);
+      if (vector) await this.vectorStore.add([{ id: meta.id, vector }]);
+    }
+  }
+
+  private embedText(meta: CapabilityMeta): string {
+    return `${meta.description} ${meta.tags.join(' ')}`;
+  }
+
+  private toHits(candidates: readonly RankedCandidate[]): CapabilityHit[] {
+    const hits: CapabilityHit[] = [];
+    for (const candidate of candidates) {
+      const meta = this.metas.get(candidate.id);
+      if (meta) hits.push({ meta, score: candidate.score });
+    }
+    return hits;
   }
 }

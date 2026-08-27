@@ -1,6 +1,7 @@
 import type { Rule } from '@agent-engine/config';
 import type { DocumentIndex } from '../documents/document-index';
 import type { SystemPromptInput } from '../context/types';
+import type { EmbeddingProvider } from '../embedding/embedding';
 import type { EventBus } from '../events/event-bus';
 import type { HookPipeline } from '../hooks/pipeline';
 import type { HookTrace } from '../hooks/types';
@@ -50,6 +51,8 @@ export interface AgentLoopOptions {
   documentIndex?: DocumentIndex;
   /** 可复用能力包（可选），按 query 检索命中后注入指令 + 注册捆绑工具。 */
   skills?: Skill[];
+  /** 语义召回 provider（可选）：配置后 rules/skills 检索升级为 BM25 + 向量 RRF 融合。 */
+  embeddingProvider?: EmbeddingProvider;
   /** 事件总线（可选）：run 期间把总线 `custom` 事件转发到 `onEvent`。 */
   eventBus?: EventBus;
 }

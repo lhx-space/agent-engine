@@ -34,9 +34,9 @@ const k8sSkill: Skill = {
 };
 
 describe('CapabilityLoader<Skill>', () => {
-  it('关键词召回含 score', () => {
+  it('关键词召回含 score', async () => {
     const loader = new CapabilityLoader<Skill>('skill', [incidentSkill, k8sSkill]);
-    const hits = loader.loadForQuery('线上出事故了，怎么处理', 5);
+    const hits = await loader.loadForQuery('线上出事故了，怎么处理', 5);
 
     console.log(
       '\n[CapabilityLoader] 命中的 skills:',
@@ -47,9 +47,9 @@ describe('CapabilityLoader<Skill>', () => {
     expect(hits[0]?.score).toBeGreaterThan(0);
   });
 
-  it('不相关不召回', () => {
+  it('不相关不召回', async () => {
     const loader = new CapabilityLoader<Skill>('skill', [incidentSkill]);
-    const hits = loader.loadForQuery('今天天气如何', 5);
+    const hits = await loader.loadForQuery('今天天气如何', 5);
 
     expect(hits).toEqual([]);
   });

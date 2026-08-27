@@ -14,7 +14,7 @@ describe('CapabilityRegistry', () => {
     expect(registry.listByType('skill')).toHaveLength(1);
   });
 
-  it('关键词召回含得分', () => {
+  it('关键词召回含得分', async () => {
     const registry = new CapabilityRegistry();
     registry.register({
       id: 'r1',
@@ -29,7 +29,7 @@ describe('CapabilityRegistry', () => {
       tags: ['sql'],
     });
 
-    const hits = registry.retrieve('帮我写个 Vue 组件', 5);
+    const hits = await registry.retrieve('帮我写个 Vue 组件', 5);
 
     expect(hits.length).toBeGreaterThan(0);
     expect(hits[0]?.meta.id).toBe('r1');
@@ -56,26 +56,26 @@ describe('CapabilityLoader + loadRulesText', () => {
     },
   ];
 
-  it('always 强制注入 + on-demand 召回', () => {
+  it('always 强制注入 + on-demand 召回', async () => {
     const loader = new CapabilityLoader<Rule>('rule', rules);
-    const text = loadRulesText(rules, loader, '帮我写 Vue 组件', 5);
+    const text = await loadRulesText(rules, loader, '帮我写 Vue 组件', 5);
 
     expect(text).toContain('回答要简洁');
     expect(text).toContain('<script setup>');
     expect(text).not.toContain('加索引');
   });
 
-  it('按 type 过滤：只返回 rule 记录', () => {
+  it('按 type 过滤：只返回 rule 记录', async () => {
     const registry = new CapabilityRegistry();
     registry.register({ id: 's1', type: 'skill', description: 'Vue 编码规范', tags: [] });
-    const loader = new CapabilityLoader<Rule>('rule', rules, registry);
+    const loader = new CapabilityLoader<Rule>('rule', rules, { registry });
 
-    const hits = loader.loadForQuery('帮我写 Vue 组件', 5);
+    const hits = await loader.loadForQuery('帮我写 Vue 组件', 5);
 
     expect(hits.every((h) => h.record.id !== 's1')).toBe(true);
   });
 
-  it('C1 空集合兜底：无匹配返回空串', () => {
+  it('C1 空集合兜底：无匹配返回空串', async () => {
     const loader = new CapabilityLoader<Rule>('rule', [
       {
         id: 'vue-ts',
@@ -85,7 +85,7 @@ describe('CapabilityLoader + loadRulesText', () => {
         tags: [],
       },
     ]);
-    const text = loadRulesText(
+    const text = await loadRulesText(
       [
         {
           id: 'vue-ts',

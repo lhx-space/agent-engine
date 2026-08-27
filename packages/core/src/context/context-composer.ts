@@ -56,8 +56,10 @@ export class ContextComposer {
   }
 
   async compose(userInput: string, injectedFragment = ''): Promise<ComposeContextResult> {
-    const rulesText = this.ruleLoader ? loadRulesText(this.rules, this.ruleLoader, userInput) : '';
-    const skillHits = this.skillLoader?.loadForQuery(userInput) ?? [];
+    const rulesText = this.ruleLoader
+      ? await loadRulesText(this.rules, this.ruleLoader, userInput)
+      : '';
+    const skillHits = this.skillLoader ? await this.skillLoader.loadForQuery(userInput) : [];
     const skillsText = skillHits
       .map((hit) => `## ${hit.record.id}\n${hit.record.instruction}`)
       .join('\n\n');
