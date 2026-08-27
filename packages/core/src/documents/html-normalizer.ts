@@ -1,4 +1,4 @@
-import TurndownService from 'turndown';
+import { htmlToMarkdown } from './html-to-markdown';
 import type { Document, DocumentNormalizer, NormalizeInput } from './types';
 
 function decode(content: string | Uint8Array): string {
@@ -9,12 +9,11 @@ function decode(content: string | Uint8Array): string {
 export class HtmlNormalizer implements DocumentNormalizer {
   readonly name = 'html';
   readonly extensions = ['html', 'htm'] as const;
-  private readonly turndown = new TurndownService({ headingStyle: 'atx' });
 
   async normalize(input: NormalizeInput): Promise<Document> {
     return {
       path: input.path,
-      markdown: this.turndown.turndown(decode(input.content)),
+      markdown: htmlToMarkdown(decode(input.content)),
       metadata: {},
     };
   }

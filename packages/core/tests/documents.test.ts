@@ -47,13 +47,13 @@ describe('分块层', () => {
 });
 
 describe('文档检索（DocumentIndex + loadDocuments + 注入）', () => {
-  it('DocumentIndex 词法召回 top-k chunk', () => {
-    const index = new DocumentIndex(2);
-    index.addChunks([
+  it('DocumentIndex 词法召回 top-k chunk', async () => {
+    const index = new DocumentIndex({ topK: 2 });
+    await index.addChunks([
       { text: '今天天气很好', metadata: {} },
       { text: '股市今天大跌', metadata: {} },
     ]);
-    const hits = index.retrieve('天气');
+    const hits = await index.retrieve('天气');
     expect(hits).toHaveLength(1);
     expect(hits[0]?.text).toContain('天气');
   });
@@ -61,19 +61,19 @@ describe('文档检索（DocumentIndex + loadDocuments + 注入）', () => {
   it('loadDocuments 装载目录并跳过无适配器扩展名', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'agent-engine-docs-'));
     await writeFile(join(dir, 'a.md'), '# 天气\n今天天气很好，适合出门。');
-    await writeFile(join(dir, 'b.pdf'), 'ignored binary');
+    await writeFile(join(dir, 'b.bin'), 'ignored binary');
     const index = await loadDocuments({
       sources: [dir],
       chunking: { strategy: 'heading', size: 1000, overlap: 0 },
       topK: 2,
     });
-    const hits = index.retrieve('天气', 2);
+    const hits = await index.retrieve('天气', 2);
     expect(hits.some((chunk) => chunk.text.includes('天气'))).toBe(true);
   });
 
   it('ContextComposer 注入 [文档] 片段', async () => {
-    const index = new DocumentIndex(2);
-    index.addChunks([
+    const index = new DocumentIndex({ topK: 2 });
+    await index.addChunks([
       { text: 'Kubernetes 故障排查顺序：events → describe → logs。', metadata: {} },
     ]);
     const composer = new ContextComposer({

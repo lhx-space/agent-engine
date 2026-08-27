@@ -64,7 +64,7 @@ export class ContextComposer {
 
     const baseSystem = await this.resolveSystemPrompt(userInput, rulesText, skillsText);
     const memories = (await this.longTermMemory?.recall(userInput)) ?? [];
-    const docChunks = this.documentIndex ? this.documentIndex.retrieve(userInput) : [];
+    const docChunks = this.documentIndex ? await this.documentIndex.retrieve(userInput) : [];
     const docText = docChunks.map((chunk) => chunk.text).join('\n\n');
     const fragments = [
       injectedFragment,

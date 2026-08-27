@@ -11,7 +11,7 @@ In one line: **Configuration as Agent** — make `plugins` / `mcp` / `skills` / 
 - **Pluggable provider / backends**: LLM (DeepSeek by default, OpenAI-compatible; Anthropic / ollama pluggable), memory / cache / vector store / embedding / retrieval / session store / logger — every backend is an interface + in-memory default + injection point.
 - **Single-agent ReAct loop** with hooks lifecycle, guardrail interception, Human-in-the-loop approval, streaming, cancellation and execution budgets.
 - **Three-tier memory**: token-budget window compaction → rolling summary → semantic recall (embedding + vector store).
-- **Document ingestion**: normalize heterogeneous docs to Markdown → chunk → BM25 retrieval injected into context (config `documents` axis; semantic recall deferred to embedding).
+- **Document ingestion**: normalize heterogeneous docs (text/md/html/pdf/docx/epub) to Markdown → chunk → lexical BM25 retrieval injected into context; hybrid BM25 + vector semantic recall (RRF fusion) when `embedding` is configured (config `documents` axis).
 - **Execution sandbox**: native commands via docker/nsjail; untrusted WASI code via `FunctionSandbox` (`node:wasi`, zero Docker).
 - **Spec-driven development**: follows OpenSpec (propose → apply → archive).
 

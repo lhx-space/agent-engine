@@ -25,29 +25,29 @@ await resolved.dispose();
 
 ## Subpath exports
 
-| Subpath                 | Module     | Contents                                                                                                                                                   |
-| ----------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@agent-engine/core`    | —          | `AgentLoop`, `assembleAgentLoop`, `resolveAgentConfig`, `RuleRegistry`, `EventBus`, all backends and types                                                 |
-| `.../llm`               | LLM        | `ProviderFactory`, `createProvider`, `createOpenAIProvider`, `createAnthropicProvider`, normalized message/result types, `FinishReason`, `CompletionError` |
-| `.../tools`             | Tools      | `Tool`, `ToolRegistry`, builtin primitives (`todo` / `datetime` / `web_search` / `web_fetch`), `createBashTool` / `createFileTool`s                        |
-| `.../agent`             | Agent      | `AgentLoop`, `assembleAgentLoop`, run events, `ToolApproval` (Human-in-the-loop), `AgentRunOutcome`                                                        |
-| `.../hooks`             | Hooks      | `Hook` interface + `HookPipeline` (10 lifecycle points; observe/rewrite, never block)                                                                      |
-| `.../rules`             | Rules      | `RuleRegistry`, `GuardrailRule`, `compileGuardrails` (declarative guardrail axis)                                                                          |
-| `.../context`           | Context    | `ContextComposer`, `buildSystemPrompt`, `renderTemplate`, `TokenCounter`, `ContextCompactor`, `SystemPromptInput`                                          |
-| `.../documents`         | Documents  | `DocumentNormalizer`, `Chunker`, `TextNormalizer`, `HtmlNormalizer`, `FixedSizeChunker`, `MarkdownHeadingChunker`, `DocumentIndex`, `loadDocuments`        |
-| `.../memory`            | Memory     | `ConversationMemory` (3-tier window), `MemoryBackend`, `Summarizer`, `LongTermMemory`                                                                      |
-| `.../retrieval`         | Retrieval  | `CapabilityRegistry` (BM25), `CapabilityLoader`, `Retriever`, `Reranker`, `VectorStore`                                                                    |
-| `.../embedding`         | Embedding  | `EmbeddingProvider`, `createEmbeddingProvider` (OpenAI-compatible)                                                                                         |
-| `.../mcp`               | MCP        | `connectMcpServer` / `connectMcpServers`, `toTool`, `normalizeCallToolResult`                                                                              |
-| `.../plugins`           | Plugins    | `Plugin`, `PluginContext`, `PluginManager`                                                                                                                 |
-| `.../capability`        | Capability | `CapabilityBundle`, `mergeBundles`                                                                                                                         |
-| `.../capability-source` | Sources    | `resolveSkill` / `resolveSkills`, `resolveMcpServer` / `resolveMcpServers`                                                                                 |
-| `.../resolve`           | Resolve    | `resolveAgentConfig` (config → `ResolvedAgent`)                                                                                                            |
-| `.../sandbox`           | Sandbox    | `SandboxBackend` (docker/nsjail), `FunctionSandbox` (`WasiFunctionSandbox`)                                                                                |
-| `.../events`            | Events     | `EventBus`, `AgentEngineEvent`                                                                                                                             |
-| `.../skills`            | Skills     | `Skill`, `loadSkillFromPath`                                                                                                                               |
-| `.../structured-output` | Structured | `extractStructured` (JSON mode + Zod validate + retry), `ExtractStructuredInput`                                                                           |
-| `.../cache`             | Cache      | `CacheBackend`, `InMemoryCacheBackend`                                                                                                                     |
+| Subpath                 | Module     | Contents                                                                                                                                                                                                                     |
+| ----------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@agent-engine/core`    | —          | `AgentLoop`, `assembleAgentLoop`, `resolveAgentConfig`, `RuleRegistry`, `EventBus`, all backends and types                                                                                                                   |
+| `.../llm`               | LLM        | `ProviderFactory`, `createProvider`, `createOpenAIProvider`, `createAnthropicProvider`, normalized message/result types, `FinishReason`, `CompletionError`                                                                   |
+| `.../tools`             | Tools      | `Tool`, `ToolRegistry`, builtin primitives (`todo` / `datetime` / `web_search` / `web_fetch`), `createBashTool` / `createFileTool`s                                                                                          |
+| `.../agent`             | Agent      | `AgentLoop`, `assembleAgentLoop`, run events, `ToolApproval` (Human-in-the-loop), `AgentRunOutcome`                                                                                                                          |
+| `.../hooks`             | Hooks      | `Hook` interface + `HookPipeline` (10 lifecycle points; observe/rewrite, never block)                                                                                                                                        |
+| `.../rules`             | Rules      | `RuleRegistry`, `GuardrailRule`, `compileGuardrails` (declarative guardrail axis)                                                                                                                                            |
+| `.../context`           | Context    | `ContextComposer`, `buildSystemPrompt`, `renderTemplate`, `TokenCounter`, `ContextCompactor`, `SystemPromptInput`                                                                                                            |
+| `.../documents`         | Documents  | `DocumentNormalizer`, `Chunker`, `TextNormalizer`, `HtmlNormalizer`, `PdfNormalizer`, `DocxNormalizer`, `EpubNormalizer`, `FixedSizeChunker`, `MarkdownHeadingChunker`, `DocumentIndex` (BM25 + RRF hybrid), `loadDocuments` |
+| `.../memory`            | Memory     | `ConversationMemory` (3-tier window), `MemoryBackend`, `Summarizer`, `LongTermMemory`                                                                                                                                        |
+| `.../retrieval`         | Retrieval  | `CapabilityRegistry` (BM25), `CapabilityLoader`, `Retriever`, `Reranker`, `VectorStore`, `reciprocalRankFusion` (RRF)                                                                                                        |
+| `.../embedding`         | Embedding  | `EmbeddingProvider`, `createEmbeddingProvider` (OpenAI-compatible)                                                                                                                                                           |
+| `.../mcp`               | MCP        | `connectMcpServer` / `connectMcpServers`, `toTool`, `normalizeCallToolResult`                                                                                                                                                |
+| `.../plugins`           | Plugins    | `Plugin`, `PluginContext`, `PluginManager`                                                                                                                                                                                   |
+| `.../capability`        | Capability | `CapabilityBundle`, `mergeBundles`                                                                                                                                                                                           |
+| `.../capability-source` | Sources    | `resolveSkill` / `resolveSkills`, `resolveMcpServer` / `resolveMcpServers`                                                                                                                                                   |
+| `.../resolve`           | Resolve    | `resolveAgentConfig` (config → `ResolvedAgent`)                                                                                                                                                                              |
+| `.../sandbox`           | Sandbox    | `SandboxBackend` (docker/nsjail), `FunctionSandbox` (`WasiFunctionSandbox`)                                                                                                                                                  |
+| `.../events`            | Events     | `EventBus`, `AgentEngineEvent`                                                                                                                                                                                               |
+| `.../skills`            | Skills     | `Skill`, `loadSkillFromPath`                                                                                                                                                                                                 |
+| `.../structured-output` | Structured | `extractStructured` (JSON mode + Zod validate + retry), `ExtractStructuredInput`                                                                                                                                             |
+| `.../cache`             | Cache      | `CacheBackend`, `InMemoryCacheBackend`                                                                                                                                                                                       |
 
 ## Highlights
 
@@ -73,6 +73,10 @@ await resolved.dispose();
 ### Guardrails
 
 Declarative `guardrails` config compiles into executable `GuardrailRule`s (deny/allow tools + deny patterns) via `compileGuardrails`; plugins can also `registerGuardrail`.
+
+### Document ingestion
+
+The `documents` config axis loads heterogeneous sources (text/md/html/pdf/docx/epub) and normalizes them to Markdown (`TextNormalizer` / `HtmlNormalizer` / `PdfNormalizer` / `DocxNormalizer` / `EpubNormalizer`), chunks them (`FixedSizeChunker` / `MarkdownHeadingChunker`), and indexes them into a `DocumentIndex`. At `run` time, `ContextComposer` retrieves the top-k chunks and injects a `[文档]` fragment. Retrieval is lexical BM25 by default; when `embedding` is configured, it becomes BM25 + vector semantic recall fused via `reciprocalRankFusion` (RRF).
 
 ### Context assembly (ContextComposer)
 
@@ -121,6 +125,7 @@ flowchart TD
 - `openai` / `@anthropic-ai/sdk` (LLM SDKs)
 - `@modelcontextprotocol/sdk` (MCP)
 - `minisearch` (BM25), `picomatch`, `zod`, `linkedom` + `@mozilla/readability` (web fetch)
+- `turndown` (HTML → Markdown), `unpdf` (PDF text), `mammoth` (docx), `epub2` (epub)
 
 ## Status
 

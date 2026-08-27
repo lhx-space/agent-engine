@@ -1,1 +1,6 @@
 * text=auto eol=lf
+
+# 二进制 fixtures：不做换行/文本归一化，按二进制处理
+*.pdf binary
+*.docx binary
+*.epub binary

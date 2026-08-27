@@ -1,0 +1,9 @@
+- [x] 依赖：`unpdf` / `mammoth` / `epub2` 加入 `core/package.json`
+- [x] `documents/html-to-markdown.ts`：共享 `htmlToMarkdown`（turndown 单例）
+- [x] `documents/pdf-normalizer.ts`：`PdfNormalizer`（unpdf 抽文本）
+- [x] `documents/docx-normalizer.ts`：`DocxNormalizer`（mammoth → HTML → Markdown）
+- [x] `documents/epub-normalizer.ts`：`EpubNormalizer`（epub2 章节 → Markdown）
+- [x] `document-index.ts`：`loadDocuments` 注册三个新归一化器
+- [x] `documents/index.ts`：导出新归一化器
+- [x] 二进制 fixtures（pdf/docx/epub）+ 单测
+- [x] cspell 词表 + 全量校验

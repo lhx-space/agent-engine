@@ -2,41 +2,93 @@ import { readFile, readdir, stat } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import type { DocumentsConfig } from '@agent-engine/config';
 import MiniSearch from 'minisearch';
+import type { EmbeddingProvider } from '../embedding/embedding';
 import { segment } from '../retrieval/registry';
+import { reciprocalRankFusion } from '../retrieval/rrf';
+import type { RankedCandidate } from '../retrieval/rrf';
+import { InMemoryVectorStore } from '../retrieval/vector-store';
+import type { VectorStore } from '../retrieval/vector-store';
 import { FixedSizeChunker, MarkdownHeadingChunker } from './chunker';
+import { DocxNormalizer } from './docx-normalizer';
+import { EpubNormalizer } from './epub-normalizer';
 import { HtmlNormalizer } from './html-normalizer';
+import { PdfNormalizer } from './pdf-normalizer';
 import { TextNormalizer } from './text-normalizer';
 import type { Chunk, Chunker, DocumentNormalizer } from './types';
 
-/** 文档检索索引：MiniSearch 索引 chunk 文本，按 query 词法（BM25）召回 top-k。 */
+export interface DocumentIndexOptions {
+  /** 每次检索的 top-k 数量（默认 4）。 */
+  topK?: number;
+  /** 语义召回的向量化 provider；缺省时仅 BM25 词法检索。 */
+  embedding?: EmbeddingProvider;
+  /** 语义召回的向量库；缺省且提供 `embedding` 时内部建 `InMemoryVectorStore`。 */
+  vectorStore?: VectorStore;
+}
+
+/** 文档检索索引：BM25 词法检索；提供 `embedding` 时融合向量语义召回（RRF）。 */
 export class DocumentIndex {
   private readonly chunks = new Map<string, Chunk>();
   private readonly index: MiniSearch;
+  private readonly topK: number;
+  private readonly embedding: EmbeddingProvider | undefined;
+  private readonly vectorStore: VectorStore | undefined;
   private nextId = 0;
 
-  constructor(private readonly topK = 4) {
+  constructor(options: DocumentIndexOptions = {}) {
+    this.topK = options.topK ?? 4;
+    this.embedding = options.embedding;
+    this.vectorStore =
+      options.vectorStore ?? (options.embedding ? new InMemoryVectorStore() : undefined);
     this.index = new MiniSearch({
       fields: ['text'],
       tokenize: (text) => segment(text),
     });
   }
 
-  /** 追加 chunk。 */
-  addChunks(chunks: Chunk[]): void {
+  /** 追加 chunk（提供 embedding 时同步向量化入库）。 */
+  async addChunks(chunks: Chunk[]): Promise<void> {
     for (const chunk of chunks) {
       const id = `chunk-${this.nextId}`;
       this.nextId += 1;
       this.chunks.set(id, chunk);
       this.index.add({ id, text: chunk.text });
+      if (this.embedding && this.vectorStore) {
+        const [vector] = await this.embedding.embed([chunk.text]);
+        if (vector) await this.vectorStore.add([{ id, vector, metadata: { text: chunk.text } }]);
+      }
     }
   }
 
-  /** 词法（BM25）召回 top-k chunk。 */
-  retrieve(query: string, topK = this.topK): Chunk[] {
-    const results = this.index.search(query);
+  /** 召回 top-k chunk：无 embedding 为 BM25；有 embedding 为 BM25 + 向量 RRF 融合。 */
+  async retrieve(query: string, topK = this.topK): Promise<Chunk[]> {
+    const lexical = this.lexicalCandidates(query, topK * 2);
+    if (!this.embedding || !this.vectorStore) {
+      return this.toChunks(lexical.slice(0, topK).map((candidate) => candidate.id));
+    }
+
+    const [vector] = await this.embedding.embed([query]);
+    if (!vector) return this.toChunks(lexical.slice(0, topK).map((candidate) => candidate.id));
+    const matches = await this.vectorStore.query(vector, topK * 2);
+    const semantic: RankedCandidate[] = matches.map((match) => ({
+      id: match.id,
+      score: match.score,
+    }));
+
+    const fused = reciprocalRankFusion([lexical, semantic]);
+    return this.toChunks(fused.slice(0, topK).map((candidate) => candidate.id));
+  }
+
+  private lexicalCandidates(query: string, topK: number): RankedCandidate[] {
+    return this.index
+      .search(query)
+      .slice(0, topK)
+      .map((result) => ({ id: String(result.id), score: result.score }));
+  }
+
+  private toChunks(ids: readonly string[]): Chunk[] {
     const out: Chunk[] = [];
-    for (const result of results.slice(0, topK)) {
-      const chunk = this.chunks.get(String(result.id));
+    for (const id of ids) {
+      const chunk = this.chunks.get(id);
       if (chunk) out.push(chunk);
     }
     return out;
@@ -72,9 +124,18 @@ async function listFiles(sources: readonly string[]): Promise<string[]> {
 }
 
 /** 装载文档：枚举 sources → 按扩展名归一化 → 分块 → 索引。 */
-export async function loadDocuments(config: DocumentsConfig): Promise<DocumentIndex> {
-  const index = new DocumentIndex(config.topK);
-  const normalizers: DocumentNormalizer[] = [new TextNormalizer(), new HtmlNormalizer()];
+export async function loadDocuments(
+  config: DocumentsConfig,
+  embedding?: EmbeddingProvider,
+): Promise<DocumentIndex> {
+  const index = new DocumentIndex({ topK: config.topK, embedding });
+  const normalizers: DocumentNormalizer[] = [
+    new TextNormalizer(),
+    new HtmlNormalizer(),
+    new PdfNormalizer(),
+    new DocxNormalizer(),
+    new EpubNormalizer(),
+  ];
   const chunker: Chunker =
     config.chunking.strategy === 'heading'
       ? new MarkdownHeadingChunker({
@@ -88,7 +149,7 @@ export async function loadDocuments(config: DocumentsConfig): Promise<DocumentIn
     if (!normalizer) continue;
     const content = await readFile(file);
     const doc = await normalizer.normalize({ path: file, content });
-    index.addChunks(
+    await index.addChunks(
       chunker.chunk(doc.markdown).map((chunk) => ({
         text: chunk.text,
         metadata: { ...chunk.metadata, path: file },

@@ -70,6 +70,7 @@ export type { CapabilityRecord, CapabilityRecordHit } from './retrieval/loader';
 export type { VectorStore, VectorRecord, VectorMatch } from './retrieval/vector-store';
 export type { Retriever, RetrievalCandidate } from './retrieval/retriever';
 export type { Reranker } from './retrieval/reranker';
+export type { RankedCandidate } from './retrieval/rrf';
 // embedding
 export type { EmbeddingProvider } from './embedding/embedding';
 // events

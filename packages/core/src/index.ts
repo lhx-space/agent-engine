@@ -11,6 +11,9 @@ export { extractStructured } from './structured-output';
 export {
   TextNormalizer,
   HtmlNormalizer,
+  PdfNormalizer,
+  DocxNormalizer,
+  EpubNormalizer,
   FixedSizeChunker,
   MarkdownHeadingChunker,
   DocumentIndex,
@@ -70,8 +73,8 @@ export type {
   ComposeContextInput,
   ComposeContextResult,
 } from './context';
-export { Bm25Retriever, IdentityReranker } from './retrieval';
-export type { Retriever, RetrievalCandidate, Reranker } from './retrieval';
+export { Bm25Retriever, IdentityReranker, reciprocalRankFusion } from './retrieval';
+export type { Retriever, RetrievalCandidate, Reranker, RankedCandidate } from './retrieval';
 export { ConversationMemory, InMemoryMemoryBackend, LLMSummarizer, SemanticMemory } from './memory';
 export type { MemoryBackend, Summarizer, LongTermMemory } from './memory';
 export { InMemoryCacheBackend } from './cache';

@@ -168,7 +168,7 @@ agent-engine/
 │   │       ├── rules/         #   上下文规则加载/检索 + guardrail 拦截
 │   │       ├── context/       #   system-prompt 组装、ContextComposer、上下文窗口管理
 │   │       ├── structured-output/ #  结构化输出原语（extractStructured：JSON 模式 + Zod 校验 + 重试）
-│   │       ├── documents/     #   文档归一化（→ Markdown）+ 分块 + 检索（DocumentNormalizer / Chunker / DocumentIndex）
+│   │       ├── documents/     #   文档摄入：归一化（→ Markdown）+ 分块 + 检索（DocumentNormalizer / Chunker / DocumentIndex，PDF/docx/epub 适配器）
 │   │       ├── retrieval/     #   统一能力检索（CapabilityRegistry / CapabilityLoader，BM25）
 │   │       ├── mcp/           #   MCP client 接入（stdio transport）
 │   │       ├── events/        #   事件总线、可观测（M3 规划）
@@ -319,6 +319,18 @@ rules / skills / mcp tools / plugins 共享「**meta + 按需加载**」的机�
 - **WASM/WASI 边界（明确分离）**：WASI 沙箱的是「编译成 wasm 的代码」，**不能**沙箱原生 `bash`/`kubectl`/`git`。不可信**用户代码/工具函数**的沙箱是另一个正交需求——已落地 `FunctionSandbox` 接口 + `WasiFunctionSandbox` 默认（复用 Node 内置 `node:wasi`，子进程隔离 + 超时 + 输出截断，零 Docker 依赖），**不要用 wasm 替代 bash 的沙箱**。
 
 > 落地矩阵：`bash` 沙箱 = 有 Docker 用 docker；Linux 无 Docker 用 nsjail；macOS 无 Docker 则禁用 bash（只保留 read/write/web_search/todo）。
+
+### 5.7 文档摄入（documents 配置轴）
+
+「归一化层 md 后 在处理」——先把异构文档统一成 Markdown，再走分块/检索，统一由 `core/documents/` 落地：
+
+- **归一化（`DocumentNormalizer`）**：`TextNormalizer`（text/md 透传）、`HtmlNormalizer`（`turndown` HTML→Markdown）、`PdfNormalizer`（`unpdf` 抽文本层）、`DocxNormalizer`（`mammoth` → HTML → `turndown` 转 Markdown）、`EpubNormalizer`（`epub2` 解析章节 → `turndown` 转 Markdown）。docx/epub 走 HTML→Markdown 保留标题/列表结构，契合「归一化到 md」。
+- **分块（`Chunker`）**：`FixedSizeChunker`（size + overlap，换行边界切）与 `MarkdownHeadingChunker`（按 `#` 标题切段，超 size 回落固定切）。
+- **索引与检索（`DocumentIndex` + `loadDocuments`）**：`loadDocuments(config, embedding?)` 枚举 sources（文件/目录递归）→ 按扩展名归一化 → 分块 → 索引；`retrieve(query, topK)` 词法 BM25 召回。配置 `embedding` 时升级为 **BM25 + 向量语义召回（RRF 融合）**——`addChunks` 向量化入库（`VectorStore`），`retrieve` 双路召回 + `reciprocalRankFusion` 融合。
+- **注入**：run 时 `ContextComposer` 按 userInput 检索 top-k chunk，拼成 `[文档]` 片段注入 system prompt（与 `[长期记忆]` 同级）。
+- **配置**：`documents: { sources: string[], chunking: { strategy: 'heading'|'fixed', size, overlap }, topK }`；语义召回由顶层 `embedding` 配置自动启用（无 embedding 回落纯 BM25）。
+
+> 复用优先：PDF/docx/epub 解析复用 `unpdf` / `mammoth` / `epub2`，不自研解析器；RRF 融合原语 `reciprocalRankFusion` 为通用检索原语（`retrieval/rrf.ts`），未来能力检索（rules/skills）RRF 可复用。
 
 ---
 
@@ -496,6 +508,21 @@ memory:
     maxMessages: 50
   longTerm:
     backend: pgvector # 生产默认；开发用 in-memory
+
+# 文档摄入（可选）：归一化 → 分块 → 检索注入
+documents:
+  sources: ['./knowledge'] # 文件或目录（目录递归）
+  chunking:
+    strategy: heading # heading | fixed
+    size: 1000
+    overlap: 0
+  topK: 4
+
+# 向量模型（可选）：配置后文档检索升级为 BM25 + 向量 RRF 融合，长期记忆也用它
+embedding:
+  provider: openai-compatible
+  baseURL: https://api.deepseek.com/v1
+  model: text-embedding-3-small
 
 hooks:
   - plugin: builtin.logger

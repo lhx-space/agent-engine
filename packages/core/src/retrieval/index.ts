@@ -8,3 +8,5 @@ export type { Retriever, RetrievalCandidate } from './retriever';
 export { Bm25Retriever } from './retriever';
 export type { Reranker } from './reranker';
 export { IdentityReranker } from './reranker';
+export type { RankedCandidate } from './rrf';
+export { reciprocalRankFusion } from './rrf';

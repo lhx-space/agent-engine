@@ -11,7 +11,7 @@
 - **可插拔 Provider / 后端**：LLM（默认 DeepSeek，OpenAI 兼容；Anthropic / ollama 可插拔）、记忆 / 缓存 / 向量库 / embedding / 检索 / 会话存储 / 日志——每个后端都是「接口 + in-memory 默认 + 注入点」。
 - **单 Agent ReAct 循环**：hooks 生命周期、guardrail 拦截、Human-in-the-loop 审批、流式输出、取消与执行预算。
 - **三层记忆**：token 预算窗口裁剪 → 滚动摘要 → 语义召回（embedding + 向量库）。
-- **文档摄入**：异构文档归一化为 Markdown → 分块 → BM25 检索注入上下文（`documents` 配置轴；语义召回待 embedding）。
+- **文档摄入**：异构文档（text/md/html/pdf/docx/epub）归一化为 Markdown → 分块 → BM25 词法检索注入上下文；配置 `embedding` 时升级为 BM25 + 向量语义召回（RRF 融合）（`documents` 配置轴）。
 - **执行沙箱**：原生命令经 docker/nsjail；不可信 WASI 代码经 `FunctionSandbox`（`node:wasi`，零 Docker）。
 - **规格驱动开发**：遵循 OpenSpec（propose → apply → archive）。
 

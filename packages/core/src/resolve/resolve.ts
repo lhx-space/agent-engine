@@ -39,10 +39,15 @@ export async function resolveAgentConfig(
   // skills：按来源（path / npm / git）解析加载，并聚合临时资源清理。
   const { skills, dispose: disposeSkills } = await resolveSkills(config.skills);
 
+  // embedding：文档语义召回与长期记忆共享同一 provider（插件注入的 provider 在 assemble 内解析，装载阶段不可见）。
+  const embeddingProvider = config.embedding
+    ? createEmbeddingProvider(config.embedding)
+    : undefined;
+
   // documents：装配时装载文档（归一化 → 分块 → 索引），run 时检索注入。
   const documentIndex =
     config.documents && config.documents.sources.length > 0
-      ? await loadDocuments(config.documents)
+      ? await loadDocuments(config.documents, embeddingProvider)
       : undefined;
 
   const resolved = await assembleAgentLoop({
@@ -62,7 +67,7 @@ export async function resolveAgentConfig(
     sandbox: deps.sandbox,
     longTermBackend: config.memory?.longTerm?.backend,
     cacheBackend: config.cache?.backend,
-    embeddingProvider: config.embedding ? createEmbeddingProvider(config.embedding) : undefined,
+    embeddingProvider,
     documentIndex,
   });
 

@@ -1,0 +1,8 @@
+- [x] `retrieval/rrf.ts`：`reciprocalRankFusion` 通用原语
+- [x] `retrieval/index.ts`：导出 RRF 原语
+- [x] `documents/document-index.ts`：`DocumentIndex` 混合检索（embedding + vectorStore + RRF），签名转 async
+- [x] `loadDocuments(config, embedding?)`：传入 embedding
+- [x] `resolve/resolve.ts`：装配前解析 embedding provider 并传入 `loadDocuments`
+- [x] `context/context-composer.ts`：`await documentIndex.retrieve(...)`
+- [x] 更新现有调用点/测试 + 新增 RRF 单测 + 混合召回单测
+- [x] cspell 词表 + 全量校验
