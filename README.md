@@ -13,7 +13,7 @@ Agent Engine is a TypeScript harness that runs the **full Agent lifecycle** — 
 | Problem                                                   | How Agent Engine solves it                                                                            |
 | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | Every domain Agent reimplements the loop / memory / tools | One self-built kernel (`AgentLoop` + assemble + hooks + rules) reused across domains                  |
-| Capability explosion → huge prompt & distracted LLM       | Unified BM25 (+ vector RRF) retrieval recalls only the top-k relevant rules/skills/tools              |
+| Capability explosion → huge prompt & distracted LLM       | Unified `hybridRetrieve` (BM25 + vector RRF) recalls only the top-k relevant rules/skills/documents   |
 | Long conversations overflow the window                    | Three-tier memory: token-budget compaction → rolling summary → semantic recall                        |
 | Untrusted model runs arbitrary commands                   | Four-layer defense: config allowlist → guardrail → docker/nsjail sandbox → limits & audit             |
 | Large document corpora                                    | `documents` axis: normalize → Markdown → chunk → retrieve → inject `[文档]`                           |
@@ -84,7 +84,7 @@ The 8 core axes plus the model/runtime axes — all declarative, all Zod-validat
 | 控制 (control)      | `hooks`        | lifecycle interception (observe / rewrite, never block)                   |
 |                     | `rules`        | context rules: `always` injected or `on-demand` retrieved                 |
 |                     | `guardrails`   | executable safety blocks (deny tools / deny patterns)                     |
-| 上下文 (context)    | `systemPrompt` | template + variables + rules/skills injection                             |
+| 上下文 (context)    | `systemPrompt` | template + variables (rules/skills/docs inject via `ContextContributor`)  |
 |                     | `memory`       | session window (compaction + summary) + long-term memory                  |
 |                     | `documents`    | ingest docs (md/html/pdf/docx/epub) → chunk → retrieve → inject           |
 | 模型 (model)        | `model`        | chat LLM (default DeepSeek)                                               |
@@ -105,12 +105,17 @@ model:
   baseURL: https://api.deepseek.com/v1
   model: deepseek-chat
   temperature: 0.2
+  # 采样参数（均可选，缺省走模型默认；anthropic 仅支持 topP / stop）
+  topP: 0.9 # 核采样（0~1）
+  frequencyPenalty: 0.0 # 高频 token 惩罚（-2~2）
+  presencePenalty: 0.0 # 已出现 token 惩罚（-2~2）
+  stop: [] # 停止序列数组
+  seed: 42 # 随机种子（可复现）
 
+# rules / skills / documents 经能力插件（ContextContributor）自动注入，无需 {{rules}} 占位符
 systemPrompt:
   template: |
     你是 {{role}}，专注于 {{domain}} 领域。
-    必须遵守以下规则：
-    {{rules}}
   variables:
     role: DevOps 运维专家
     domain: 云原生与 CI/CD
@@ -128,7 +133,8 @@ rules:
     content: 排查顺序：kubectl get events → describe pod → logs。
     tags: [k8s, kubernetes, 诊断]
 
-# 垂直能力经 plugins 声明加载（文件 / 命令 / git 由 server 层注入工厂）
+# 能力插件（rules/skills/documents/memory/web/mcp/guardrails）由 @agent-engine/preset-default
+# 按配置切片自动激活；文件 / 命令 / git 仍按需在 plugins 声明（server 层注入工厂）
 plugins:
   - '@agent-engine/plugin-files'
   - '@agent-engine/plugin-bash'
@@ -206,12 +212,12 @@ security:
 ```mermaid
 flowchart TD
     A["loadAgentConfig(path)<br/>YAML/JSON5/TS → AgentConfig"] --> B["resolveAgentConfig(config, deps)"]
-    B --> C["createProvider + install plugins<br/>+ load skills + connect MCP + load documents"]
-    C --> D["assembleAgentLoop: merge capabilities<br/>+ resolve strategies & backends"]
-    D --> E["AgentLoop (ReAct) + SemanticMemory + ConversationMemory"]
+    B --> C["createProvider + 安装能力插件<br/>（rules/skills/docs/mcp/web/…）"]
+    C --> D["assembleAgentLoop: mergeBundles<br/>+ 解析策略与后端"]
+    D --> E["AgentLoop（ReAct）+ LongTermMemory + ConversationMemory"]
 
     E --> R["run(userInput)"]
-    R --> S["ContextComposer.compose:<br/>retrieve rules/skills (BM25+RRF) + recall memory<br/>+ retrieve documents + assemble system prompt"]
+    R --> S["ContextComposer.compose:<br/>ContextContributor 注入 rules/skills/docs<br/>+ 召回长期记忆 + 组装 system prompt"]
     S --> V{"steps < maxSteps?"}
     V -- yes --> W["beforeLLM → LLM → afterLLM"]
     W --> X{"tool_calls?"}
@@ -233,17 +239,25 @@ config ← core ←┼── server ──(HTTP API)──▶ apps/web (React 19
 docs/ (Rspress) is a standalone site
 ```
 
-| Package                      | Description                                                                                  | Status         |
-| ---------------------------- | -------------------------------------------------------------------------------------------- | -------------- |
-| `@agent-engine/config`       | Config schema + three-format loader (`loadAgentConfig`)                                      | ✅ implemented |
-| `@agent-engine/core`         | Kernel (`resolveAgentConfig` / `AgentLoop` / hooks / rules / retrieval / memory / documents) | ✅ implemented |
-| `@agent-engine/server`       | HTTP server (REST + streaming) with env-key provider factory                                 | ✅ implemented |
-| `@agent-engine/plugin-files` | `read_file` / `write_file` / `list_files`                                                    | ✅ implemented |
-| `@agent-engine/plugin-bash`  | sandboxed `bash`                                                                             | ✅ implemented |
-| `@agent-engine/plugin-git`   | git tool suite (read-only default, sandboxed)                                                | ✅ implemented |
-| `@agent-engine/plugin-otel`  | OpenTelemetry observability                                                                  | 📦 scaffold    |
-| `@agent-engine/cli`          | CLI entry                                                                                    | 📦 scaffold    |
-| `@agent-engine/web`          | Integrated platform (`apps/web`)                                                             | 🚧 partial     |
+| Package                           | Description                                                                                                        | Status         |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------ | -------------- |
+| `@agent-engine/config`            | Config schema + three-format loader (`loadAgentConfig`)                                                            | ✅ implemented |
+| `@agent-engine/core`              | Kernel: engine (AgentLoop / assemble / hooks / backends) + protocols (retrieval / ToolSource / ContextContributor) | ✅ implemented |
+| `@agent-engine/server`            | HTTP server (REST + streaming) with env-key provider factory + preset-default                                      | ✅ implemented |
+| `@agent-engine/preset-default`    | Aggregates all capability plugins + config-slice activation + long-term memory factory                             | ✅ implemented |
+| `@agent-engine/plugin-rules`      | context rules: `always` inject + on-demand `hybridRetrieve`                                                        | ✅ implemented |
+| `@agent-engine/plugin-skills`     | skill packs (path/npm/git): load + retrieve + bundle tools                                                         | ✅ implemented |
+| `@agent-engine/plugin-documents`  | document ingestion (md/html/pdf/docx/epub) → chunk → `hybridRetrieve`                                              | ✅ implemented |
+| `@agent-engine/plugin-memory`     | semantic long-term memory (`SemanticMemory`)                                                                       | ✅ implemented |
+| `@agent-engine/plugin-web`        | `web_search` / `web_fetch` (multi search provider)                                                                 | ✅ implemented |
+| `@agent-engine/plugin-mcp`        | MCP client (stdio) → normalized tools                                                                              | ✅ implemented |
+| `@agent-engine/plugin-guardrails` | compile declarative `guardrails` config → executable rules                                                         | ✅ implemented |
+| `@agent-engine/plugin-files`      | `read_file` / `write_file` / `list_files`                                                                          | ✅ implemented |
+| `@agent-engine/plugin-bash`       | sandboxed `bash`                                                                                                   | ✅ implemented |
+| `@agent-engine/plugin-git`        | git tool suite (read-only default, sandboxed)                                                                      | ✅ implemented |
+| `@agent-engine/plugin-otel`       | OpenTelemetry observability                                                                                        | 📦 scaffold    |
+| `@agent-engine/cli`               | CLI entry                                                                                                          | 📦 scaffold    |
+| `@agent-engine/web`               | Integrated platform (`apps/web`)                                                                                   | 🚧 partial     |
 
 ## Development
 

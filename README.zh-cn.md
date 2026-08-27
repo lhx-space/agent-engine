@@ -10,14 +10,14 @@ Agent Engine 是一个 TypeScript 内核，跑通 Agent 的**完整生命周期*
 
 ## 解决什么问题
 
-| 痛点                                        | Agent Engine 怎么解                                                                     |
-| ------------------------------------------- | --------------------------------------------------------------------------------------- |
-| 每个领域 Agent 都重写一遍循环 / 记忆 / 工具 | 一套自研内核（`AgentLoop` + 装配 + hooks + rules）跨领域复用                            |
-| 能力太多 → prompt 爆炸 + 模型注意力分散     | 统一 BM25（+ 向量 RRF）检索，只召回 top-k 相关的 rules/skills/tools                     |
-| 长对话撑爆上下文窗口                        | 三层记忆：token 预算裁剪 → 滚动摘要 → 语义召回                                          |
-| 不可信模型乱跑命令                          | 四层防御：配置 allowlist → guardrail → docker/nsjail 沙箱 → 限额 & 审计                 |
-| 大量文档要喂给 Agent                        | `documents` 轴：归一化 → Markdown → 分块 → 检索 → 注入 `[文档]`                         |
-| 被 LangChain 等框架绑架                     | 内核自研 + 只用官方 SDK（`openai` / `@anthropic-ai/sdk` / `@modelcontextprotocol/sdk`） |
+| 痛点                                        | Agent Engine 怎么解                                                                      |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| 每个领域 Agent 都重写一遍循环 / 记忆 / 工具 | 一套自研内核（`AgentLoop` + 装配 + hooks + rules）跨领域复用                             |
+| 能力太多 → prompt 爆炸 + 模型注意力分散     | 统一 `hybridRetrieve`（BM25 + 向量 RRF）检索，只召回 top-k 相关的 rules/skills/documents |
+| 长对话撑爆上下文窗口                        | 三层记忆：token 预算裁剪 → 滚动摘要 → 语义召回                                           |
+| 不可信模型乱跑命令                          | 四层防御：配置 allowlist → guardrail → docker/nsjail 沙箱 → 限额 & 审计                  |
+| 大量文档要喂给 Agent                        | `documents` 轴：归一化 → Markdown → 分块 → 检索 → 注入 `[文档]`                          |
+| 被 LangChain 等框架绑架                     | 内核自研 + 只用官方 SDK（`openai` / `@anthropic-ai/sdk` / `@modelcontextprotocol/sdk`）  |
 
 ## 快速开始
 
@@ -84,7 +84,7 @@ DEEPSEEK_API_KEY=sk-... npx tsx run.ts
 | 控制   | `hooks`        | 生命周期拦截（观察 / 改写，从不阻断）                                   |
 |        | `rules`        | 上下文规则：`always` 强制注入 / `on-demand` 按需检索                    |
 |        | `guardrails`   | 可执行安全拦截（deny 工具 / deny 正则）                                 |
-| 上下文 | `systemPrompt` | 模板 + 变量 + rules/skills 注入                                         |
+| 上下文 | `systemPrompt` | 模板 + 变量（rules/skills/docs 经 `ContextContributor` 注入）           |
 |        | `memory`       | 会话窗口（裁剪 + 摘要）+ 长期记忆                                       |
 |        | `documents`    | 文档摄入（md/html/pdf/docx/epub）→ 分块 → 检索 → 注入                   |
 | 模型   | `model`        | 对话 LLM（默认 DeepSeek）                                               |
@@ -105,12 +105,17 @@ model:
   baseURL: https://api.deepseek.com/v1
   model: deepseek-chat
   temperature: 0.2
+  # 采样参数（均可选，缺省走模型默认；anthropic 仅支持 topP / stop）
+  topP: 0.9 # 核采样（0~1）
+  frequencyPenalty: 0.0 # 高频 token 惩罚（-2~2）
+  presencePenalty: 0.0 # 已出现 token 惩罚（-2~2）
+  stop: [] # 停止序列数组
+  seed: 42 # 随机种子（可复现）
 
+# rules / skills / documents 经能力插件（ContextContributor）自动注入，无需 {{rules}} 占位符
 systemPrompt:
   template: |
     你是 {{role}}，专注于 {{domain}} 领域。
-    必须遵守以下规则：
-    {{rules}}
   variables:
     role: DevOps 运维专家
     domain: 云原生与 CI/CD
@@ -128,7 +133,8 @@ rules:
     content: 排查顺序：kubectl get events → describe pod → logs。
     tags: [k8s, kubernetes, 诊断]
 
-# 垂直能力经 plugins 声明加载（文件 / 命令 / git 由 server 层注入工厂）
+# 能力插件（rules/skills/documents/memory/web/mcp/guardrails）由 @agent-engine/preset-default
+# 按配置切片自动激活；文件 / 命令 / git 仍按需在 plugins 声明（server 层注入工厂）
 plugins:
   - '@agent-engine/plugin-files'
   - '@agent-engine/plugin-bash'
@@ -206,12 +212,12 @@ security:
 ```mermaid
 flowchart TD
     A["loadAgentConfig(path)<br/>YAML/JSON5/TS → AgentConfig"] --> B["resolveAgentConfig(config, deps)"]
-    B --> C["createProvider + 安装 plugins<br/>+ 加载 skills + 连接 MCP + 装载 documents"]
-    C --> D["assembleAgentLoop：合并能力<br/>+ 解析策略与后端"]
-    D --> E["AgentLoop（ReAct）+ SemanticMemory + ConversationMemory"]
+    B --> C["createProvider + 安装能力插件<br/>（rules/skills/docs/mcp/web/…）"]
+    C --> D["assembleAgentLoop：mergeBundles<br/>+ 解析策略与后端"]
+    D --> E["AgentLoop（ReAct）+ LongTermMemory + ConversationMemory"]
 
     E --> R["run(userInput)"]
-    R --> S["ContextComposer.compose：<br/>检索 rules/skills（BM25+RRF）+ 召回记忆<br/>+ 检索文档 + 组装 system prompt"]
+    R --> S["ContextComposer.compose：<br/>ContextContributor 注入 rules/skills/docs<br/>+ 召回长期记忆 + 组装 system prompt"]
     S --> V{"steps < maxSteps?"}
     V -- 是 --> W["beforeLLM → LLM → afterLLM"]
     W --> X{"有 tool_calls?"}
@@ -233,17 +239,25 @@ config ← core ←┼── server ──(HTTP API)──▶ apps/web（React 1
 docs/（Rspress）为独立站点
 ```
 
-| 包                           | 说明                                                                            | 状态        |
-| ---------------------------- | ------------------------------------------------------------------------------- | ----------- |
-| `@agent-engine/config`       | 配置 Schema + 三格式加载（`loadAgentConfig`）                                   | ✅ 已实现   |
-| `@agent-engine/core`         | 内核（`resolveAgentConfig` / `AgentLoop` / hooks / rules / 检索 / 记忆 / 文档） | ✅ 已实现   |
-| `@agent-engine/server`       | HTTP 服务（REST + 流式），内置环境变量密钥工厂                                  | ✅ 已实现   |
-| `@agent-engine/plugin-files` | `read_file` / `write_file` / `list_files`                                       | ✅ 已实现   |
-| `@agent-engine/plugin-bash`  | 沙箱 `bash`                                                                     | ✅ 已实现   |
-| `@agent-engine/plugin-git`   | git 工具套件（只读默认、经沙箱）                                                | ✅ 已实现   |
-| `@agent-engine/plugin-otel`  | OpenTelemetry 可观测插件                                                        | 📦 骨架     |
-| `@agent-engine/cli`          | 命令行入口                                                                      | 📦 骨架     |
-| `@agent-engine/web`          | 一体化平台（`apps/web`）                                                        | 🚧 部分实现 |
+| 包                                | 说明                                                                                              | 状态        |
+| --------------------------------- | ------------------------------------------------------------------------------------------------- | ----------- |
+| `@agent-engine/config`            | 配置 Schema + 三格式加载（`loadAgentConfig`）                                                     | ✅ 已实现   |
+| `@agent-engine/core`              | 内核：引擎（AgentLoop / assemble / hooks / 后端）+ 协议（检索 / ToolSource / ContextContributor） | ✅ 已实现   |
+| `@agent-engine/server`            | HTTP 服务（REST + 流式），内置环境变量密钥工厂 + preset-default                                   | ✅ 已实现   |
+| `@agent-engine/preset-default`    | 聚合全部能力插件 + 按配置切片激活 + 长期记忆工厂                                                  | ✅ 已实现   |
+| `@agent-engine/plugin-rules`      | 上下文规则：`always` 注入 + on-demand `hybridRetrieve`                                            | ✅ 已实现   |
+| `@agent-engine/plugin-skills`     | 技能包（path/npm/git）：加载 + 检索 + 捆绑工具                                                    | ✅ 已实现   |
+| `@agent-engine/plugin-documents`  | 文档摄入（md/html/pdf/docx/epub）→ 分块 → `hybridRetrieve`                                        | ✅ 已实现   |
+| `@agent-engine/plugin-memory`     | 语义长期记忆（`SemanticMemory`）                                                                  | ✅ 已实现   |
+| `@agent-engine/plugin-web`        | `web_search` / `web_fetch`（多搜索 provider）                                                     | ✅ 已实现   |
+| `@agent-engine/plugin-mcp`        | MCP client（stdio）→ 归一化为标准工具                                                             | ✅ 已实现   |
+| `@agent-engine/plugin-guardrails` | 声明式 `guardrails` 配置编译为可执行规则                                                          | ✅ 已实现   |
+| `@agent-engine/plugin-files`      | `read_file` / `write_file` / `list_files`                                                         | ✅ 已实现   |
+| `@agent-engine/plugin-bash`       | 沙箱 `bash`                                                                                       | ✅ 已实现   |
+| `@agent-engine/plugin-git`        | git 工具套件（只读默认、经沙箱）                                                                  | ✅ 已实现   |
+| `@agent-engine/plugin-otel`       | OpenTelemetry 可观测插件                                                                          | 📦 骨架     |
+| `@agent-engine/cli`               | 命令行入口                                                                                        | 📦 骨架     |
+| `@agent-engine/web`               | 一体化平台（`apps/web`）                                                                          | 🚧 部分实现 |
 
 ## 开发
 

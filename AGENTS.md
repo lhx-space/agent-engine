@@ -41,21 +41,21 @@
 
 据此分三档：
 
-| 状态                                  | 能力                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | 说明                                                                                                                                         |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| ✅ 已达标（有接口 + 有默认 + 可注入） | LLM（`LLMProvider` + openai/anthropic + `providerFactory`）、搜索（`SearchProvider` + searxng/ddg/tavily/serper + fallback）、沙箱（`SandboxBackend` + docker/nsjail/auto）、MCP（`connectMcpServer`）、Skills（path/npm/git）、**长期记忆 `MemoryBackend` + `InMemoryMemoryBackend`**（`memory.longTerm.backend` 按名解析）、**缓存 `CacheBackend` + `InMemoryCacheBackend`**（`cache.backend` 按名解析）、**向量库 `VectorStore` + `InMemoryVectorStore`**（余弦默认）、**`EmbeddingProvider`**（接口，无默认需真实模型）、**events 总线（`EventBus` + `AgentEngineEvent`）**、**流式 `custom` 事件**、**Human-in-the-loop 审批（`approveToolCall`）**、**`TokenCounter` / `ContextCompactor`**（token 预算整轮裁剪）、**`Retriever` / `Reranker`**（BM25 默认）、**guardrail 声明式配置轴**（`guardrails` + `compileGuardrails` + `registerGuardrail`）、**SessionStore 可插拔**（`SessionStoreBackend` + `InMemorySessionStore`，server 层）、**三层记忆消费**（token 预算整轮裁剪 + 滚动摘要 `Summarizer` + 语义召回 `SemanticMemory`）、**混合召回 `reciprocalRankFusion`（RRF）**（能力检索 + 文档检索：BM25 + 向量融合）、**`FunctionSandbox` + `WasiFunctionSandbox`**（WASI 隔离不可信代码） | 用户按接口接入自己的实现即可；三层记忆消费已落地（token 预算 / 滚动摘要 / 语义召回）；RRF 混合召回已落地（能力 + 文档）；LLM·检索缓存 属后续 |
-| ⏳ 未落地                             | 多 Agent 编排（`orchestration` 仅 `single`，`spawn` 未实现）、其余待扩展项                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | 见 §2.2 清单                                                                                                                                 |
+| 状态                                  | 能力                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 说明                                                                                                                                                               |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ✅ 已达标（有接口 + 有默认 + 可注入） | LLM（`LLMProvider` + openai/anthropic + `providerFactory`）、web 工具（`plugin-web`：web_search / web_fetch + 多搜索 provider）、沙箱（`SandboxBackend` + docker/nsjail/auto）、MCP 工具来源（`ToolSource` + `plugin-mcp`）、Skills（`plugin-skills`：path/npm/git）、**长期记忆 `MemoryBackend` + `InMemoryMemoryBackend`**（`memory.longTerm.backend` 按名解析）、**缓存 `CacheBackend` + `InMemoryCacheBackend`**（`cache.backend` 按名解析）、**向量库 `VectorStore` + `InMemoryVectorStore`**（余弦默认）、**`EmbeddingProvider`**（接口，无默认需真实模型）、**events 总线（`EventBus` + `AgentEngineEvent`）**、**流式 `custom` 事件**、**Human-in-the-loop 审批（`approveToolCall`）**、**`TokenCounter` / `ContextCompactor`**（token 预算整轮裁剪）、**`Retriever` / `Reranker`**（`hybridRetrieve`，BM25+向量 RRF）、**guardrail 协议**（`GuardrailRule` + `registerGuardrail`；声明式编译外放 `plugin-guardrails`）、**SessionStore 可插拔**（`SessionStoreBackend` + `InMemorySessionStore`，server 层）、**三层记忆消费**（token 预算整轮裁剪 + 滚动摘要 `Summarizer` + 语义召回 `plugin-memory`）、**混合召回 `hybridRetrieve`（RRF）**（能力插件自建索引复用：BM25 + 向量融合）、**`FunctionSandbox` + `WasiFunctionSandbox`**（WASI 隔离不可信代码） | 用户按接口接入自己的实现即可；三层记忆消费已落地（token 预算 / 滚动摘要 / 语义召回）；**能力实现已外放为 `plugin-*`，core 只留协议 + 注入点**；LLM·检索缓存 属后续 |
+| ⏳ 未落地                             | 多 Agent 编排（`orchestration` 仅 `single`，`spawn` 未实现）、其余待扩展项                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | 见 §2.2 清单                                                                                                                                                       |
 
 ### 2.2 动态扩展面：四个扩展出口 + 待扩展清单
 
 内核对外扩展的出口只有四个，任何「用户可动态扩展」的能力/后端都必须落到其中之一：
 
-1. **`PluginContext`（注入点）**：registerTool / registerSkill / registerHook / registerRule / registerGuardrail / provideSystemPrompt / registerMemoryBackend / registerCacheBackend / registerVectorStore / registerEmbeddingProvider / registerTokenCounter / registerContextCompactor / registerRetriever / registerReranker / registerSummarizer。
-2. **`CapabilityBundle`（能力汇聚）**：tools / skills / hooks / rules / guardrails / promptFragments / 各后端 / 各策略（tokenCounter / contextCompactor / retriever / reranker / summarizer），经 `mergeBundles` 单一汇聚。
-3. **`ResolveDeps`（装配依赖）**：providerFactory / pluginFactories / sandbox 等。
+1. **`PluginContext`（注入点）**：registerTool / registerToolSource / registerHook / registerGuardrail / provideSystemPrompt / registerMemoryBackend / registerCacheBackend / registerVectorStore / registerEmbeddingProvider / registerTokenCounter / registerContextCompactor / registerRetriever / registerReranker / registerSummarizer / registerContextContributor。
+2. **`CapabilityBundle`（能力汇聚）**：tools / toolSources / hooks / guardrails / promptFragments / contextContributors / 各后端 / 各策略（tokenCounter / contextCompactor / retriever / reranker / summarizer），经 `mergeBundles` 单一汇聚。
+3. **`ResolveDeps`（装配依赖）**：providerFactory / pluginFactories / defaultPlugins / longTermMemoryFactory / sandbox 等。
 4. **`ResolvedAgent`（运行时产物）**：agent / memoryBackend / cacheBackend / vectorStore / embeddingProvider / longTermMemory / tokenCounter / contextCompactor / retriever / reranker / eventBus / dispose。
 
-**已可插拔**：LLM / 搜索 / 沙箱（bash）/ FunctionSandbox（WASI）/ MCP / Skills / Tools / Plugin / MemoryBackend / CacheBackend / VectorStore / EmbeddingProvider / SessionStoreBackend / events 总线 / 流式 `custom` 事件 / Human-in-the-loop 审批 / guardrail 声明式配置轴 / `TokenCounter` / `ContextCompactor` / `Retriever` / `Reranker` / `Summarizer` / `SemanticMemory`。
+**已可插拔**：LLM / 搜索 / 沙箱（bash）/ FunctionSandbox（WASI）/ MCP / Skills / Tools / Plugin / MemoryBackend / CacheBackend / VectorStore / EmbeddingProvider / SessionStoreBackend / events 总线 / 流式 `custom` 事件 / Human-in-the-loop 审批 / guardrail 协议 / `TokenCounter` / `ContextCompactor` / `Retriever` / `Reranker` / `Summarizer` / `LongTermMemory`（语义实现 `plugin-memory`）。
 
 **待扩展清单（按价值优先级）**：
 
@@ -150,28 +150,27 @@ agent-engine/
 ├── apps/
 │   └── web/                   # @agent-engine/web —— WebApp（React 19 + Rsbuild）
 ├── packages/
-│   ├── core/                  # @agent-engine/core   —— 内核执行引擎（最核心）
+│   ├── core/                  # @agent-engine/core   —— 内核执行引擎（最核心；只留引擎 + 协议）
 │   │   └── src/
 │   │       ├── agent/         #   Agent Loop（单 Agent 原语；多 Agent 编排在独立 orchestration 包，M3）
 │   │       ├── capability/    #   CapabilityBundle 统一能力束 + mergeBundles 汇聚
+│   │       ├── capability-source/ #   ToolSource 协议（外部工具来源，如 MCP）
 │   │       ├── resolve/       #   resolveAgentConfig（AgentConfig→AgentLoop 一键装配）
 │   │       ├── llm/           #   Provider 抽象（OpenAI/Anthropic/自定义）
 │   │       ├── tools/         #   Tool 注册表、工具工厂与执行器
-│   │       │   ├── builtin/   #   内置通用原语（todo/datetime/web_search/web_fetch）
-│   │       │   ├── utils/     #   非 tool 支撑（http/搜索/路径/domain/html/store/policy）
-│   │       │   └── {file,bash}.ts # 文件/命令工具工厂（供 plugin-files/bash 使用）
+│   │       │   ├── builtin/   #   内置通用原语（todo/datetime）
+│   │       │   └── utils/     #   非 tool 支撑（http/路径/bash-policy/todo-store）
 │   │       ├── sandbox/       #   SandboxBackend（docker / nsjail 执行沙箱）
-│   │       ├── memory/        #   会话上下文 + 长期记忆抽象
-│   │       ├── skills/        #   Skill 加载/注册/触发
+│   │       ├── memory/        #   会话上下文（ConversationMemory）+ 长期记忆协议（LongTermMemory）+ Summarizer
 │   │       ├── plugins/       #   插件系统与 PluginContext
 │   │       ├── hooks/         #   生命周期钩子管线
-│   │       ├── rules/         #   上下文规则加载/检索 + guardrail 拦截
-│   │       ├── context/       #   system-prompt 组装、ContextComposer、上下文窗口管理
+│   │       ├── guardrails/    #   GuardrailRule 协议（声明式编译外放 plugin-guardrails）
+│   │       ├── context/       #   system-prompt 组装、ContextComposer、ContextContributor、窗口预算原语
 │   │       ├── structured-output/ #  结构化输出原语（extractStructured：JSON 模式 + Zod 校验 + 重试）
-│   │       ├── documents/     #   文档摄入：归一化（→ Markdown）+ 分块 + 检索（DocumentNormalizer / Chunker / DocumentIndex，PDF/docx/epub 适配器）
-│   │       ├── retrieval/     #   统一能力检索（CapabilityRegistry / CapabilityLoader，BM25）
-│   │       ├── mcp/           #   MCP client 接入（stdio transport）
-│   │       ├── events/        #   事件总线、可观测（M3 规划）
+│   │       ├── retrieval/     #   检索协议（Retriever / Reranker / hybridRetrieve / InMemoryVectorStore）
+│   │       ├── embedding/     #   EmbeddingProvider（openai-compatible /embeddings 工厂）
+│   │       ├── cache/         #   CacheBackend + InMemoryCacheBackend
+│   │       ├── events/        #   事件总线、可观测
 │   │       └── types.ts       #   对外核心类型
 │   ├── config/                # @agent-engine/config —— 配置加载 + Schema
 │   │   └── src/
@@ -180,7 +179,7 @@ agent-engine/
 │   │       └── resolve/       #   配置级归一化（env 插值 / $ref / extends，后续）
 │   ├── cli/                   # @agent-engine/cli   —— 命令行入口
 │   ├── server/                # @agent-engine/server —— HTTP 服务（Docker 部署）
-│   └── plugins/               # 内置插件（otel、git 等）
+│   └── plugins/               # 能力插件（plugin-rules/skills/documents/memory/web/mcp/guardrails/files/bash/git/otel）+ preset-default
 ├── examples/                  # 垂直领域 Agent 配置示例
 │   ├── devops-agent/
 │   └── code-review-agent/
@@ -215,45 +214,47 @@ docs/（Rspress）为独立站点，无运行时依赖
 
 依赖方向：**上层依赖下层，反向禁止**（包级已锁 `config ← core ← cli/server`）。
 
-| 层                         | 模块（`core/src/`）                                      | 职责                             |
-| -------------------------- | -------------------------------------------------------- | -------------------------------- |
-| 引擎层                     | `agent/`（loop / assemble）、`llm/`                      | 执行循环 + 模型接入              |
-| 能力层（横向拓展）         | `tools/`、`skills/`、`mcp/`                              | 原子能力 / 能力包 / 外部能力来源 |
-| 扩展层                     | `plugins/`                                               | 能力的打包与分发                 |
-| 控制层                     | `hooks/`、`rules/`（guardrail）                          | 生命周期拦截 + 规则约束          |
-| 上下文层                   | `context/`（system-prompt / ContextComposer）、`memory/` | 提示词组装 + 会话/长期记忆       |
-| 基建层（leaf，被上层依赖） | `sandbox/`、`retrieval/`、`capability/`、`resolve/`      | 隔离 / 检索 / 能力束 / 装配      |
+| 层                         | 模块（`core/src/`）                                                                    | 职责                               |
+| -------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------- |
+| 引擎层                     | `agent/`（loop / assemble）、`llm/`                                                    | 执行循环 + 模型接入                |
+| 能力层（横向拓展）         | `tools/`、`capability-source/`（ToolSource）                                           | 原子能力 / 外部工具来源协议        |
+| 扩展层                     | `plugins/`                                                                             | 能力的打包与分发                   |
+| 控制层                     | `hooks/`、`guardrails/`                                                                | 生命周期拦截 + 安全拦截协议        |
+| 上下文层                   | `context/`（system-prompt / ContextComposer / ContextContributor）、`memory/`          | 提示词组装 + 会话/长期记忆         |
+| 基建层（leaf，被上层依赖） | `sandbox/`、`retrieval/`、`capability/`、`resolve/`、`embedding/`、`cache/`、`events/` | 隔离 / 检索 / 能力束 / 装配 / 后端 |
+
+能力实现（rules / skills / documents / 语义记忆 / web / mcp / 声明式 guardrail 编译）已全部外放为 `packages/plugins/plugin-*`，core 只留协议 + 注入点；`@agent-engine/preset-default` 聚合它们并据 config 切片激活。
 
 > 目录是「呈现」不是「约束」：真正的分层靠依赖方向与未来的 import 边界 lint，而非目录嵌套深度。
 
 ### 5.1 能力层（Agent 能「做什么」）
 
-- **tools**：原子能力单元，一个函数即一个工具（如 `read_file`、`bash`、`web_search`）。注册进 **Tool Registry**。已落地**内置通用原语** `todo` / `datetime` / `web_search` / `web_fetch`（`core/tools/builtin/`）；`web_search` 支持多 provider（`searxng` 默认 / `duckduckgo` 兜底 / `tavily` / `serper`，经 `webSearch.endpoint` / `apiKey` / `fallback` 配置，缺失必需配置或运行期失败按序回退）；垂直能力 `read_file` / `write_file` / `list_files` / `bash` 迁出为内置 plugin `@agent-engine/plugin-files` / `@agent-engine/plugin-bash`（经 `config.plugins` 声明加载，bash 经 `SandboxBackend` 沙箱执行，见 5.6）；`tools.disabled`（配置轴）在装配末按名禁用任意内置 / plugin / MCP 工具；`sitesearch` / `calculator` / `json` / `base64` 已彻底移除（源码亦删除）。非 tool 的支撑代码（http/搜索后端/路径/domain/html/store/policy）统一在 `core/tools/utils/`。
-- **skills**：可复用能力包 = 一份指令（`SKILL.md`）+ 可选捆绑的 tools/资源。按需动态加载，加载后将其指令注入上下文、工具并入注册表。已落地 `Skill` 类型 + 统一 `CapabilityLoader`（BM25 检索，复用 `CapabilityRegistry`）+ `loadSkillFromPath`（gray-matter 解析 SKILL.md）；`AgentLoop.skills` 注入后按需注入指令 + 注册捆绑工具。
-- **mcp**：通过 Model Context Protocol 接入的**外部能力来源**。一个外部 MCP server 的 `tools/resources` 会被归一化为标准 Tool，纳入同一注册表，内核无感知差异。已落地 `core/mcp/`（`connectMcpServer` / `connectMcpServers`，stdio transport 复用 `@modelcontextprotocol/sdk`，tools 归一化为标准 Tool + `jsonSchema` 透传 + 错误隔离 + `dispose` 生命周期）；配置 `mcp.servers`（name/command/args/env）由 resolve 层装配。
+- **tools**：原子能力单元，一个函数即一个工具（如 `read_file`、`bash`、`web_search`）。注册进 **Tool Registry**。已落地**内置通用原语** `todo` / `datetime`（`core/tools/builtin/`）；`web_search` / `web_fetch` 迁出为 `@agent-engine/plugin-web`（多 provider：`searxng` 默认 / `duckduckgo` 兜底 / `tavily` / `serper`，经 `security.webSearch.endpoint` / `apiKey` / `fallback` 配置，缺失必需配置或运行期失败按序回退）；垂直能力 `read_file` / `write_file` / `list_files` / `bash` / `git` 为插件 `@agent-engine/plugin-files` / `@agent-engine/plugin-bash` / `@agent-engine/plugin-git`（经 `config.plugins` 声明加载，bash 经 `SandboxBackend` 沙箱执行，见 5.6）；`tools.disabled`（配置轴）在装配末按名禁用任意 builtin / plugin / MCP 工具；非 tool 的支撑代码统一在 `core/tools/utils/`。
+- **skills**：可复用能力包 = 一份指令（`SKILL.md`）+ 可选捆绑的 tools/资源。外放为 `@agent-engine/plugin-skills`（`loadSkillFromPath` gray-matter 解析 + `resolveSkills` 按 path/npm/git 装载）；经 `ContextContributor` 注入指令 + 注册捆绑工具（run 结束还原）。
+- **mcp**：通过 Model Context Protocol 接入的**外部能力来源**。外放为 `@agent-engine/plugin-mcp`（`connectMcpServer` / `connectMcpServers`，stdio transport 复用 `@modelcontextprotocol/sdk`，tools 归一化为标准 Tool + `jsonSchema` 透传 + 错误隔离 + `dispose` 生命周期）；core 只留 `ToolSource` 协议（`registerToolSource`），装配层 resolve 出工具 + 聚合释放；配置 `mcp.servers`（source: command|registry）由插件工厂解释。
 
 ### 5.2 扩展层（能力的「打包与分发」单元）
 
-- **plugins**：最大的扩展单元，可打包「多个 tools + skills + hooks + rules + memory 后端 + system-prompt 片段」整体注册/卸载。插件通过 `PluginContext` 注入能力，是实现「开箱即用领域能力」的载体。已落地 `Plugin` 类型 + `PluginContext`（registerTool / registerSkill / registerHook / registerRule / provideSystemPrompt / registerMemoryBackend / registerCacheBackend / registerVectorStore / registerEmbeddingProvider）+ `PluginManager`（install → `CapabilityBundle`）+ `assembleAgentLoop`（async 装配工厂，安装 plugins 并合并能力）；内置插件包 `@agent-engine/plugin-files`（read_file / write_file / list_files）、`@agent-engine/plugin-bash`（bash，经沙箱）、`@agent-engine/plugin-git`（git 工具套件，只读默认、破坏性子命令阻断、经沙箱）均在 `packages/plugins/` 下，经 `config.plugins` 声明、由 server 层注入工厂加载。
+- **plugins**：最大的扩展单元，可打包「多个 tools + hooks + guardrails + prompt 片段 + context 贡献者 + 各后端」整体注册/卸载。插件通过 `PluginContext` 注入能力，是实现「开箱即用领域能力」的载体。已落地 `Plugin` 类型 + `PluginContext`（registerTool / registerToolSource / registerHook / registerGuardrail / provideSystemPrompt / registerMemoryBackend / registerCacheBackend / registerVectorStore / registerEmbeddingProvider / registerTokenCounter / registerContextCompactor / registerRetriever / registerReranker / registerSummarizer / registerContextContributor）+ `PluginManager`（install → `CapabilityBundle`）+ `assembleAgentLoop`（async 装配工厂，安装 plugins 并合并能力）；能力插件 `plugin-rules` / `plugin-skills` / `plugin-documents` / `plugin-memory` / `plugin-web` / `plugin-mcp` / `plugin-guardrails` 与工具插件 `plugin-files` / `plugin-bash` / `plugin-git` / `plugin-otel` 均在 `packages/plugins/` 下；`@agent-engine/preset-default` 聚合它们，按 config 切片激活（rules/skills/documents/guardrails/mcp 非空才激活、web 常开、files/bash/git 经 `config.plugins` opt-in），由 server 层注入工厂加载。
 
 ### 5.3 执行控制层（Agent「如何做」的约束）
 
 - **hooks**：生命周期事件拦截点，用于无侵入地增强执行流程（日志、审计、限流、埋点、内容过滤）。
-- **rules**：上下文规则，作为「约束文本」注入 system-prompt，按 `kind` 决定加载策略——`always` 强制注入 / `on-demand` 按需检索（BM25）注入；每条规则 = `id` + `description`（匹配面）+ `content`（markdown 正文）+ `tags`（同义词）。
-- **guardrail（安全拦截，独立于 rules）**：在关键节点（如 `beforeToolCall` / `afterToolCall`）做拦截与校验、可阻断危险行为的**可执行代码**（`RuleRegistry` / `GuardrailRule`），与「配置文本类 rules」分离。
+- **rules**：上下文规则，作为「约束文本」经 `ContextContributor` 注入 system-prompt，按 `kind` 决定加载策略——`always` 强制注入 / `on-demand` 按需检索（`hybridRetrieve`：BM25 + 向量 RRF）注入；每条规则 = `id` + `description`（匹配面）+ `content`（markdown 正文）+ `tags`（同义词）。实现外放 `@agent-engine/plugin-rules`（自建 MiniSearch 索引 + 复用 core `hybridRetrieve`）。
+- **guardrail（安全拦截，独立于 rules）**：在关键节点（如 `beforeToolCall` / `afterToolCall`）做拦截与校验、可阻断危险行为的**可执行代码**（core 只留 `GuardrailRule` 协议 + `registerGuardrail`）；声明式 `config.guardrails` 的编译外放 `@agent-engine/plugin-guardrails`（`compileGuardrails` / `createDeclarativeGuardrail`），与「配置文本类 rules」分离。
 
 ### 5.4 上下文层（Agent「知道什么」）
 
-- **system-prompt**：系统提示词，由「模板 + 变量 + 各模块（skills/rules/plugins）注入的片段」组装而成。组装已落地 `context` 模块：`buildSystemPrompt({ systemPrompt, rulesText, skillsText })` 做模板渲染（`renderTemplate`，`{{var}}` 正则替换、未提供变量保留原样、null/undefined 空串）+ rules / skills 注入（`rules` / `skills` 为内置变量，模板用 `{{rules}}` / `{{skills}}` 占位符声明注入点，未声明时兜底追加）；检索 + 组装统一由 `ContextComposer` 完成（`AgentLoop` 只做 ReAct 循环）。`systemPrompt` 支持三种形态——静态字符串 / `SystemPrompt` 模板对象（配 `rules` 每次 `run` 内建检索注入）/ 函数式（完全自定义），每次 `run` 动态解析，使 rules 按需检索结果真正进入 system prompt。
+- **system-prompt**：系统提示词，由「模板 + 变量 + 能力注入片段（`ContextContributor`）」组装而成。组装已落地 `context` 模块：`buildSystemPrompt({ systemPrompt })` 只做模板渲染（`renderTemplate`，`{{var}}` 正则替换、未提供变量保留原样、null/undefined 空串）；rules / skills / documents 注入已外放为各 `plugin-*` 的 `ContextContributor`（追加文本 + 临时工具），不再占用 `{{rules}}` / `{{skills}}` 占位符；检索 + 组装统一由 `ContextComposer` 完成（`AgentLoop` 只做 ReAct 循环）。`systemPrompt` 支持三种形态——静态字符串 / `SystemPrompt` 模板对象 / 函数式（完全自定义），每次 `run` 动态解析。
 - **memory**：记忆管理，分两层：
   - **会话上下文**：单次会话的 message 窗口管理（含窗口裁剪）。已落地 `ConversationMemory`（不存 system——system 每次 run 动态组装）+ `getWindow()`：`maxMessages` 条数裁剪 / `maxTokens` token 预算整轮裁剪（三层记忆①，`ContextCompactor`）/ `summary` 滚动摘要（三层记忆②，`Summarizer`，默认 `LLMSummarizer`）；`AgentLoop.memory` 注入后跨 run 累积历史（异常不回写）。
-  - **长期记忆**：跨会话持久化 + 语义召回。已落地 `LongTermMemory` / `SemanticMemory`（三层记忆③：`EmbeddingProvider` 向量化 + `VectorStore.query` 召回 + `MemoryBackend` 持久化；无 embedding 时优雅 no-op）；`AgentLoop.longTermMemory` 注入后 run 开始召回注入、正常结束写回。
+  - **长期记忆**：跨会话持久化 + 语义召回。core 只留 `LongTermMemory` 协议（默认 no-op）；语义实现 `SemanticMemory` 外放 `@agent-engine/plugin-memory`（三层记忆③：`EmbeddingProvider` 向量化 + `VectorStore.query` 召回 + `MemoryBackend` 持久化；无 embedding 时优雅 no-op）；`AgentLoop.longTermMemory` 注入后 run 开始召回注入、正常结束写回。
 
-  > **三层记忆已落地**：① 正确截取（token 预算 + 整轮边界淘汰，绝不拆散配对，`ContextCompactor`）→ ② 压缩层（滚动摘要，`Summarizer` 摘要旧轮）→ ③ 语义层（embedding 向量化 + 向量召回 + 持久化，`SemanticMemory`）。剩余演进：记忆去重/遗忘、LLM·检索缓存、RRF 融合（见 §2.2 待扩展 P3）。
+  > **三层记忆已落地**：① 正确截取（token 预算 + 整轮边界淘汰，绝不拆散配对，`ContextCompactor`）→ ② 压缩层（滚动摘要，`Summarizer` 摘要旧轮）→ ③ 语义层（embedding 向量化 + 向量召回 + 持久化，`plugin-memory`）。剩余演进：记忆去重/遗忘、LLM·检索缓存。
   >
-  > **context vs memory 职责边界**：`context` = 「加载策略 / 装载」——决定把哪些来源、以什么顺序、多大预算装进发给 LLM 的窗口（`buildSystemPrompt` 组装 + `TokenCounter`/`ContextCompactor` 窗口预算原语）；`memory` = 「记忆状态 / 数据源」——会话窗口（`ConversationMemory`）+ 长期持久化（`MemoryBackend`）+ 摘要策略（`Summarizer`）+ 语义召回（`SemanticMemory`）的持有/裁剪/持久化。**memory 是 context 的数据源之一，不是 context 的子集**：`run` 时 `memory.getWindow()` / `longTermMemory.recall()` 产出的数据，由 context 组装进最终 messages。存储默认全内存——会话窗口是进程级「热工作区」；长期记忆接口面向持久化（pgvector/redis 插件接入），开发默认 in-memory。
+  > **context vs memory 职责边界**：`context` = 「加载策略 / 装载」——决定把哪些来源、以什么顺序、多大预算装进发给 LLM 的窗口（`buildSystemPrompt` 组装 + `TokenCounter`/`ContextCompactor` 窗口预算原语）；`memory` = 「记忆状态 / 数据源」——会话窗口（`ConversationMemory`）+ 长期持久化（`MemoryBackend`）+ 摘要策略（`Summarizer`）+ 语义召回（`plugin-memory`）的持有/裁剪/持久化。**memory 是 context 的数据源之一，不是 context 的子集**：`run` 时 `memory.getWindow()` / `longTermMemory.recall()` 产出的数据，由 context 组装进最终 messages。存储默认全内存——会话窗口是进程级「热工作区」；长期记忆接口面向持久化（pgvector/redis 插件接入），开发默认 in-memory。
   >
-  > **ContextComposer 已落地**：「检索 rules/skills → 召回记忆 → 取窗口 → 拼 messages」的编排已抽为独立 `ContextComposer`（`context/context-composer.ts`），`AgentLoop` 只做 ReAct 循环。`compose(userInput, injectedFragment)` 返回 `{ messages, skillHits, rulesText, skillsText, memories, systemPrompt }`；命中 skill 的捆绑工具由 `AgentLoop` 拿到 `skillHits` 后注册（run 结束还原）。新增 `beforeContextCompose` 钩子（外部素材注入锚点，返回字符串即追加进 system prompt）。
+  > **ContextComposer 已落地**：「召回长期记忆 → 取会话窗口 → 拼 messages」的编排已抽为独立 `ContextComposer`（`context/context-composer.ts`），`AgentLoop` 只做 ReAct 循环；rules/skills/documents 的检索注入由各 `ContextContributor` 负责（`AgentLoop.collectContributions` 收集文本 + 临时工具，run 结束还原）。`compose(userInput, injectedFragment)` 返回 `{ messages, memories, systemPrompt }`；新增 `beforeContextCompose` 钩子（外部素材注入锚点，返回字符串即追加进 system prompt）。
 
 ### 关系速记
 
@@ -269,37 +270,22 @@ system-prompt ← 模板 + variables + skills/rules/plugins 注入片段
 memory       ← 会话上下文 + 长期记忆（后端可插拔）
 ```
 
-### 5.5 统一能力检索调度（Capability Registry）
+### 5.5 能力检索协议（hybridRetrieve + 能力自建索引）
 
-rules / skills / mcp tools / plugins 共享「**meta + 按需加载**」的机制，统一为一个「能力发现 + 调度」pipeline：
+rules / skills / documents 共享同一套「**meta 描述 + 按需加载**」思路，但**不再有 core 里的集中式 `CapabilityRegistry` / `CapabilityLoader`**——每个能力插件自建索引，检索编排复用 core 唯一的 `hybridRetrieve`（D3 检索协议）：
 
-- **统一 meta**：每个能力都有 `id` + `description`（匹配面），注册进统一的 `CapabilityRegistry`。
-- **BM25 检索召回**：user input 进来后，用 BM25 对 meta（description）打分，召回 **top-k** 相关能力——避免让 LLM 理解全部能力（token 爆炸 + 注意力分散）。
-- **LLM 有限范围理解**：只把 top-k 候选给 LLM 理解/选择，而非全量。
-- **差异加载**：检索层统一（meta + BM25），加载层按 `type` 分派——rule 注入 content 文本、skill 注入 SKILL.md + 捆绑工具、mcp 注册工具到 ToolRegistry、plugin 注册能力。
-- **加载策略（kind）**：`always`（强制加载，绕过检索）与 `on-demand`（参与 BM25 检索）。
+- **能力自建索引**：`plugin-rules` / `plugin-skills` / `plugin-documents` 各自用 MiniSearch 建词法索引，可选 `InMemoryVectorStore` 建语义索引。
+- **统一检索编排**：`hybridRetrieve(query, topK, { embedding, vectorStore, lexical, ensureVectors })` 单点编排 BM25 + 向量 RRF 融合（`reciprocalRankFusion` 原语），语义链路失败优雅回落纯 BM25。
+- **统一注入缝**：检索命中的文本 / 工具经 `ContextContributor.contribute({ userInput })` 返回 `{ text?, tools? }`，由 `AgentLoop` 统一注入 system prompt 与工具注册表。
+- **加载策略（kind）**：`always`（强制加载，绕过检索）与 `on-demand`（参与检索）——仅 rules 语义；skills/documents 按查询 top-k 检索。
 
-> 这个统一 pipeline 是 rules / skills / mcp / plugins 复用的「套壳」机制；先以 rules 落地验证（content 为纯文本最简），再推广到 skills / mcp / plugins。
-
-**首版范围（M2）**：
-
-- `CapabilityRegistry` 统一 meta：`id` + `type` + `description`（匹配面）+ `tags`（同义词，缓解漏检）。
-- BM25 检索召回 top-k，**输出每个能力的得分**（可观测，排查漏召回）。
-- 加载策略 `always`（强制，绕过检索）/ `on-demand`（参与 BM25 检索）。
-- **C1 空集合兜底**：无候选时告知「无可用能力」或退化为「无规则注入」。
-- rules 第一个接入（content 纯文本最简），skills 第二个接入（指令注入 + 捆绑工具注册）。
-
-**后续演进（M3+，明确延后）**：
-
-- Reranker 重排序、记忆反馈（历史调用增强查询）、动态 k、缓存、权限校验（meta 预留 tags 字段）。
-
-> ✅ **RRF 融合召回已落地**：`CapabilityRegistry` 支持可选 `embedding`（`retrieve` 为 BM25 + 向量 RRF 融合，语义链路失败优雅回落 BM25）；文档检索 `DocumentIndex` 同构。复用 `retrieval/rrf.ts` 的 `reciprocalRankFusion` 原语。
+> 语义：能力包的「描述 + 检索」是它自己的数据与索引，core 只提供「检索原语（hybridRetrieve）+ 注入协议（ContextContributor）」，彻底移除闭合的 `CapabilityType` 枚举与按 type 硬分派。
 
 **坑点对策**：
 
 - **召回漏检**：meta 加 `tags`（同义词）+ embedding 语义召回（RRF 融合）。
 - **meta 质量是检索核心**：`description` 要精准、不过短不过冗长。
-- **C1 空集合**：必须有兜底分支。
+- **空集合兜底**：无候选时贡献者为 no-op（不注入任何文本/工具）。
 
 ### 5.6 执行沙箱（Execution Sandbox）
 
@@ -323,15 +309,15 @@ rules / skills / mcp tools / plugins 共享「**meta + 按需加载**」的机�
 
 ### 5.7 文档摄入（documents 配置轴）
 
-「归一化层 md 后 在处理」——先把异构文档统一成 Markdown，再走分块/检索，统一由 `core/documents/` 落地：
+「归一化层 md 后 在处理」——先把异构文档统一成 Markdown，再走分块/检索，外放为 `@agent-engine/plugin-documents`：
 
 - **归一化（`DocumentNormalizer`）**：`TextNormalizer`（text/md 透传）、`HtmlNormalizer`（`turndown` HTML→Markdown）、`PdfNormalizer`（`unpdf` 抽文本层）、`DocxNormalizer`（`mammoth` → HTML → `turndown` 转 Markdown）、`EpubNormalizer`（`epub2` 解析章节 → `turndown` 转 Markdown）。docx/epub 走 HTML→Markdown 保留标题/列表结构，契合「归一化到 md」。
 - **分块（`Chunker`）**：`FixedSizeChunker`（size + overlap，换行边界切）与 `MarkdownHeadingChunker`（按 `#` 标题切段，超 size 回落固定切）。
-- **索引与检索（`DocumentIndex` + `loadDocuments`）**：`loadDocuments(config, embedding?)` 枚举 sources（文件/目录递归）→ 按扩展名归一化 → 分块 → 索引；`retrieve(query, topK)` 词法 BM25 召回。配置 `embedding` 时升级为 **BM25 + 向量语义召回（RRF 融合）**——`addChunks` 向量化入库（`VectorStore`），`retrieve` 双路召回 + `reciprocalRankFusion` 融合。
-- **注入**：run 时 `ContextComposer` 按 userInput 检索 top-k chunk，拼成 `[文档]` 片段注入 system prompt（与 `[长期记忆]` 同级）。
-- **配置**：`documents: { sources: string[], chunking: { strategy: 'heading'|'fixed', size, overlap }, topK }`；语义召回由顶层 `embedding` 配置自动启用（无 embedding 回落纯 BM25）。
+- **索引与检索（`DocumentIndex` + `loadDocuments`）**：`loadDocuments(config, embedding?)` 枚举 sources（文件/目录递归）→ 按扩展名归一化 → 分块 → 索引；`retrieve(query, topK)` 复用 core `hybridRetrieve`（词法 MiniSearch + 可选向量 RRF 融合）。
+- **注入**：run 时经 `ContextContributor` 按 userInput 检索 top-k chunk，拼成 `[文档]` 片段注入 system prompt（与 `[长期记忆]` 同级）。
+- **配置**：`documents: { sources: string[], chunking: { strategy: 'heading'|'fixed', size, overlap }, topK }`；语义召回由顶层 `embedding` 配置自动启用（无 embedding 回落纯词法）。
 
-> 复用优先：PDF/docx/epub 解析复用 `unpdf` / `mammoth` / `epub2`，不自研解析器；RRF 融合原语 `reciprocalRankFusion` 为通用检索原语（`retrieval/rrf.ts`），未来能力检索（rules/skills）RRF 可复用。
+> 复用优先：PDF/docx/epub 解析复用 `unpdf` / `mammoth` / `epub2`，不自研解析器；RRF 融合复用 core 的 `hybridRetrieve`（`retrieval/hybrid-retriever.ts`），rules/skills 能力检索同构复用。
 
 ---
 
@@ -346,34 +332,36 @@ rules / skills / mcp tools / plugins 共享「**meta + 按需加载**」的机�
 loadAgentConfig(path)                        # YAML/JSON5/TS → AgentConfig（Zod 校验 + deepFreeze）
 resolveAgentConfig(config, deps)
  ├─ createProvider(model)                    # LLM Provider（默认 DeepSeek）
- ├─ 实例化 plugins（config.plugins → deps.pluginFactories）
- ├─ resolveSkills(path/npm/git)
+ ├─ 实例化 plugins（config.plugins ∪ deps.defaultPlugins → deps.pluginFactories）
+ │     # preset-default 按 config 切片注入能力插件工厂（rules/skills/documents/memory/web/mcp/guardrails）
  └─ assembleAgentLoop(...)                   # 装配工厂（核心）
       ├─ EventBus 新建
-      ├─ 安装 plugins → CapabilityBundle
-      ├─ 注册内置工具（todo/datetime/web_search/web_fetch）
-      ├─ 连接 MCP servers → 工具归一化（单 server 失败隔离，不阻断整体）
+      ├─ 安装 plugins → CapabilityBundle（tools/toolSources/hooks/guardrails/promptFragments/contextContributors/各后端）
+      ├─ 注册内置工具（todo/datetime）
+      ├─ resolve 外部工具来源（ToolSource，如 MCP；单 source 失败隔离）
       ├─ mergeBundles → 扁平化；注册 tools/hooks；应用 tools.disabled
       ├─ 解析策略（tokenCounter/compactor/retriever/reranker/summarizer：插件优先→默认）
       ├─ 解析后端（memory/cache/vector/embedding：按名）
-      ├─ 构造 SemanticMemory（长期记忆③）+ ConversationMemory（会话窗口①②）
-      ├─ 构造 RuleRegistry（插件 guardrail + 声明式 compileGuardrails）
+      ├─ 构造 LongTermMemory（默认 no-op；plugin-memory 的 SemanticMemory 经 factory）+ ConversationMemory（会话窗口①②）
+      ├─ 构造 GuardrailRule[]（插件 registerGuardrail；声明式 config.guardrails 经 plugin-guardrails 注入）
       └─ 构造 AgentLoop（注入以上全部）
 hooks.onInit()                               # 装配完成触发一次
 返回 ResolvedAgent（agent + 各后端 + dispose）
 
 【阶段 B：run】 agent.run(userInput)
  ├─ 1. 外部素材注入：hooks.beforeContextCompose(userInput) → 返回字符串则追加进 system prompt
- ├─ 2. 上下文组装：ContextComposer.compose(userInput, 素材) → { messages, skillHits, ... }
- │      ├─ 检索：rules（always 全量 + on-demand BM25）/ skills（BM25 top-k）
- │      ├─ 组装 system prompt：buildSystemPrompt（模板渲染 + rules/skills 注入）+ 素材片段（injected + 「[长期记忆]」）
- │      ├─ 记忆：③ longTermMemory.recall → 「[长期记忆]」；①② memory.getWindow → 裁剪+摘要后的历史
+ ├─ 2. 能力注入：collectContributions(userInput) → 各 ContextContributor 产出 { text?, tools? }（单失败隔离）
+ │      ├─ plugin-rules：always 全量 + on-demand hybridRetrieve
+ │      ├─ plugin-skills / plugin-documents：hybridRetrieve top-k
+ │      └─ 注册 contributor 工具（run 结束还原，防跨 run 残留）
+ ├─ 3. 上下文组装：ContextComposer.compose(userInput, injected) → { messages, memories, systemPrompt }
+ │      ├─ 组装 system prompt：buildSystemPrompt（只渲染用户变量）+ 素材片段（injected + 「[长期记忆]」）
+ │      ├─ 记忆：longTermMemory.recall → 「[长期记忆]」；memory.getWindow → 裁剪+摘要后的历史
  │      └─ 拼 messages = [system, ...history, user]
- ├─ 3. 注册命中 skill 的捆绑工具（run 结束还原，防跨 run 残留）
  └─ 4. 循环（steps < maxSteps）：
        ├─ 检查 abort / 超时
        ├─ hooks.beforeLLM(messages)          # 可改写
-       ├─ LLM 调用（流式则 emit llm_delta）
+       ├─ LLM 调用（流式则 emit llm_delta；采样参数按「配置缺省 + 调用覆盖」透传）
        ├─ hooks.afterLLM(result)             # 可改写
        ├─ push assistant 消息
        ├─ 无 tool_calls？
@@ -393,7 +381,7 @@ hooks.onInit()                               # 装配完成触发一次
  └─ 7. emit done → 返回 { finalMessage, messages, steps, finishReason }
 
 异常路径：AbortError → emit error + 直接 throw（不回写 memory、不触发 onError hook）；
-          其他错误 → emit error + hooks.onError → throw；finally 卸载订阅 + 还原 skill 工具。
+          其他错误 → emit error + hooks.onError → throw；finally 卸载订阅 + 还原 contributor 工具。
 endSession()：hooks.onSessionEnd() → memory.clear()。
 ```
 
@@ -462,12 +450,17 @@ model:
   model: deepseek-chat
   temperature: 0.2
   maxTokens: 4096
+  # 采样参数（均可选，缺省走模型默认；anthropic 仅支持 topP / stop）
+  topP: 0.9 # 核采样（0~1）
+  frequencyPenalty: 0.0 # 高频 token 惩罚（-2~2）
+  presencePenalty: 0.0 # 已出现 token 惩罚（-2~2）
+  stop: [] # 停止序列数组
+  seed: 42 # 随机种子（可复现）
 
+# rules 经 plugin-rules（ContextContributor）自动注入，无需 {{rules}} 占位符
 systemPrompt:
   template: |
     你是 {{role}}，专注于 {{domain}} 领域。
-    必须遵守以下规则：
-    {{rules}}
   variables:
     role: DevOps 运维专家
     domain: 云原生与 CI/CD
@@ -491,18 +484,21 @@ rules:
 tools:
   disabled: [] # 如 ['builtin.web_search'] 关掉联网搜索
 
-# 垂直能力（文件/命令）经 plugins 声明加载，不再内置
+# 外部 MCP server → 归一化为标准工具（source: command | registry）
 mcp:
   servers:
     - name: github
+      source: command
       command: npx
       args: ['-y', '@modelcontextprotocol/server-github']
       env:
         GITHUB_TOKEN: ${GITHUB_TOKEN}
 
 skills:
-  - path: ./skills/incident-response
-  - path: ./skills/k8s-diagnosis
+  - source: path
+    path: ./skills/incident-response
+  - source: path
+    path: ./skills/k8s-diagnosis
 
 memory:
   session:
@@ -519,16 +515,19 @@ documents:
     overlap: 0
   topK: 4
 
-# 向量模型（可选）：配置后文档检索升级为 BM25 + 向量 RRF 融合，长期记忆也用它
+# 向量模型（可选）：配置后 rules/skills/documents/长期记忆 启用语义召回（BM25 + 向量 RRF）
+# DeepSeek 不提供 embeddings；用 OpenAI / 本地 ollama 等
 embedding:
   provider: openai-compatible
-  baseURL: https://api.deepseek.com/v1
+  baseURL: https://api.openai.com/v1
   model: text-embedding-3-small
 
 hooks:
   - plugin: builtin.logger
     on: [beforeLLM, afterToolCall, onError]
 
+# 能力插件（rules/skills/documents/memory/web/mcp/guardrails）由 preset-default 按 config 切片自动激活；
+# files/bash/git/otel 仍按需在 plugins 声明（server 层注入工厂）
 plugins:
   - '@agent-engine/plugin-files' # 本地文件读写/列举（read_file / write_file / list_files）
   - '@agent-engine/plugin-bash' # 命令执行（bash，需 security.bash.enabled + 沙箱）
@@ -584,7 +583,7 @@ orchestration:
 2. 通过 `ToolRegistry.register()` 或配置文件 `tools` 段注册。
 3. 覆盖 `inputSchema`（Zod），保证 LLM 可正确理解参数。
 
-> 内置**通用原语**（`todo` / `datetime` / `web_search` / `web_fetch`）已提供（`core/tools/builtin/`），通过 `registerBuiltinTools` 统一装配。垂直能力 `read_file` / `write_file` / `list_files` / `bash` 是内置 plugin `@agent-engine/plugin-files` / `@agent-engine/plugin-bash`（工厂在 `core/tools/{file,bash}.ts`，经 `config.plugins` 声明加载，bash 需 `security.bash.enabled` + 沙箱）。非 tool 支撑在 `core/tools/utils/`。
+> 内置**通用原语**（`todo` / `datetime`）已提供（`core/tools/builtin/`），通过 `registerBuiltinTools` 统一装配。`web_search` / `web_fetch` 为 `@agent-engine/plugin-web`；垂直能力 `read_file` / `write_file` / `list_files` / `bash` / `git` 为 `@agent-engine/plugin-files` / `@agent-engine/plugin-bash` / `@agent-engine/plugin-git`（经 `config.plugins` 声明加载，bash 需 `security.bash.enabled` + 沙箱）。非 tool 支撑在 `core/tools/utils/`。
 
 ### 8.2 新增一个 skill
 
@@ -595,7 +594,7 @@ skills/<skill-name>/
 ```
 
 - 在配置 `skills` 段声明路径即可。
-- 内核按需加载：当任务相关时，将 `SKILL.md` 指令注入上下文、捆绑工具并入注册表。
+- `plugin-skills`（经 `ContextContributor`）按需加载：当任务相关时，将 `SKILL.md` 指令注入上下文、捆绑工具并入注册表。
 
 ### 8.3 新增一个 plugin
 
@@ -610,9 +609,8 @@ interface Plugin {
 
 interface PluginContext {
   registerTool(tool: Tool): void;
-  registerSkill(skill: Skill): void;
+  registerToolSource(source: ToolSource): void;
   registerHook(hook: Hook): void;
-  registerRule(rule: Rule): void;
   registerGuardrail(rule: GuardrailRule): void;
   provideSystemPrompt(fragment: string): void;
   registerMemoryBackend(backend: MemoryBackend): void;
@@ -624,6 +622,7 @@ interface PluginContext {
   registerRetriever(retriever: Retriever): void;
   registerReranker(reranker: Reranker): void;
   registerSummarizer(summarizer: Summarizer): void;
+  registerContextContributor(contributor: ContextContributor): void;
 }
 ```
 
@@ -798,6 +797,7 @@ services:
 3. **M3 扩展接入**（**进行中**）：✅ ① MCP client（`connectMcpServer`/`connectMcpServers`，stdio transport）；✅ ④ config resolve 层（`resolveAgentConfig`：AgentConfig→AgentLoop 一键装配 + `CapabilityBundle` 统一）；✅ 流式输出（`chatCompletionStream` + NDJSON 端点）；✅ `onInit`/`onSessionStart`/`onSessionEnd` 三个 hook；✅ 会话生命周期（server `SessionStoreBackend` + `sessionId` 复用 + `DELETE /sessions/:id`）；✅ ReAct loop 强化（并行 tool_calls、工具重试+退避、`AbortSignal` 取消、`finishReason` 续写、`execution` 预算配置）；✅ 真思考透传（DeepSeek R1 `reasoning_content` → `ChatMessage.reasoning` + 前端「思考/回复」分开）；✅ ② 长期记忆（三层记忆：token 预算整轮裁剪 + 滚动摘要 + embedding 语义召回）；✅ ⑤ FunctionSandbox（`FunctionSandbox` + `WasiFunctionSandbox`，WASI）；✅ guardrail 声明式配置轴（`guardrails` + `compileGuardrails`）；✅ SessionStore 可插拔（`SessionStoreBackend` + `InMemorySessionStore`）；✅ 日志可插拔（`Logger` + `consoleLogger` 默认，移除 pino）。剩余：③ 多 Agent 编排（独立 `@agent-engine/orchestration` 包）。
 4. **M4 服务化**（**部分完成**）：✅ server HTTP API（`/api/agent/run` 非流式 + `/api/agent/run/stream` NDJSON + `DELETE /api/agent/sessions/:id`，可插拔 `Logger`（默认 console）、session 复用、`SessionStoreBackend`）。剩余：CLI（`packages/cli` 仍是 stub）。
 5. **M5 平台与文档**（**部分完成**）：✅ apps/web 三栏编辑器 + 流式 chat + 模型供应商预设 + security preset + 配置导出（省略默认值减负）。剩余：docs（Rspress）、Docker 编排、示例垂直领域 Agent。
+6. **内核瘦身（能力外放，✅ 已完成）**：rules / skills / documents / 语义记忆 / web / mcp / 声明式 guardrail 编译 全部外放为 `packages/plugins/plugin-*`，core 只留引擎 + 协议（`Retriever` / `hybridRetrieve` / `ToolSource` / `ContextContributor` / guardrail 协议）；`@agent-engine/preset-default` 聚合并据 config 切片激活；模型采样参数（`topP` / `frequencyPenalty` / `presencePenalty` / `stop` / `seed`）归一化透传（「配置缺省 + 调用覆盖」，顺带修复 `temperature` / `maxTokens` 未生效）。
 
 ### 复盘纪要（截至 M3 中期）
 
