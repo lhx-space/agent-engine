@@ -50,7 +50,7 @@ export interface ResolvedAgent {
   tokenCounter: TokenCounter;
   /** 上下文裁剪器（默认 token 预算整轮淘汰；三层记忆②可替换）。 */
   contextCompactor: ContextCompactor;
-  /** 检索器（默认 BM25；RRF/向量召回可插）。 */
+  /** 检索器（默认 no-op `noopRetriever`；`hybridRetrieve`/向量召回可插）。 */
   retriever: Retriever;
   /** 重排器（默认恒等；cross-encoder/LLM 重排可插）。 */
   reranker: Reranker;

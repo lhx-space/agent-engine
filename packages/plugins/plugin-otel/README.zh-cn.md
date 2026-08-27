@@ -1,12 +1,20 @@
 # @agent-engine/plugin-otel
 
-OpenTelemetry 可观测插件。
+OpenTelemetry 可观测插件——经 `PluginContext.registerHook` 把 Agent 执行链路接入 OpenTelemetry traces。
 
-## 计划
+## 用法
 
-- 通过 `PluginContext.registerHook` 注入 hooks，把 Agent 执行链路接入 OpenTelemetry（trace / span / metrics）。
-- 配合本地已有 `prometheus` + `grafana` 镜像做可观测。
+```ts
+import { createOtelPlugin } from '@agent-engine/plugin-otel';
+
+const plugin = createOtelPlugin({ tracerName: '@agent-engine/plugin-otel' });
+// 经 config.plugins 激活（或注入 pluginFactories）
+```
+
+10 个生命周期 hook 点各映射为一个 span：`agent.init`、`agent.llm`、`agent.tool`、`agent.step`、`agent.session.*`、`agent.context.compose`、`agent.error`。异常经 `recordException` + `status=ERROR` 记录；hook 从不改写任何值（纯观察）。
+
+只依赖 `@opentelemetry/api`——exporter / 采样经 OTel SDK 配置（如 `@opentelemetry/sdk-node`）；未设 tracer provider 时插件为安全 no-op。
 
 ## 状态
 
-📦 骨架（M5 平台与文档时落地）。
+✅ 已实现（仅 traces；metrics / logs 延后）。

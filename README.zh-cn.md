@@ -255,7 +255,7 @@ docs/（Rspress）为独立站点
 | `@agent-engine/plugin-files`      | `read_file` / `write_file` / `list_files`                                                         | ✅ 已实现   |
 | `@agent-engine/plugin-bash`       | 沙箱 `bash`                                                                                       | ✅ 已实现   |
 | `@agent-engine/plugin-git`        | git 工具套件（只读默认、经沙箱）                                                                  | ✅ 已实现   |
-| `@agent-engine/plugin-otel`       | OpenTelemetry 可观测插件                                                                          | 📦 骨架     |
+| `@agent-engine/plugin-otel`       | OpenTelemetry 可观测插件                                                                          | ✅ 已实现   |
 | `@agent-engine/cli`               | 命令行入口                                                                                        | 📦 骨架     |
 | `@agent-engine/web`               | 一体化平台（`apps/web`）                                                                          | 🚧 部分实现 |
 

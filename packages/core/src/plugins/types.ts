@@ -50,7 +50,7 @@ export interface PluginContext {
   registerTokenCounter(counter: TokenCounter): void;
   /** 注册上下文裁剪器（三层记忆②；缺省 token 预算整轮淘汰）。 */
   registerContextCompactor(compactor: ContextCompactor): void;
-  /** 注册检索器（缺省 BM25）。 */
+  /** 注册检索器（缺省 no-op `noopRetriever`；`hybridRetrieve`/向量召回可插）。 */
   registerRetriever(retriever: Retriever): void;
   /** 注册重排器（缺省恒等）。 */
   registerReranker(reranker: Reranker): void;

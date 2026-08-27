@@ -255,7 +255,7 @@ docs/ (Rspress) is a standalone site
 | `@agent-engine/plugin-files`      | `read_file` / `write_file` / `list_files`                                                                          | ✅ implemented |
 | `@agent-engine/plugin-bash`       | sandboxed `bash`                                                                                                   | ✅ implemented |
 | `@agent-engine/plugin-git`        | git tool suite (read-only default, sandboxed)                                                                      | ✅ implemented |
-| `@agent-engine/plugin-otel`       | OpenTelemetry observability                                                                                        | 📦 scaffold    |
+| `@agent-engine/plugin-otel`       | OpenTelemetry observability                                                                                        | ✅ implemented |
 | `@agent-engine/cli`               | CLI entry                                                                                                          | 📦 scaffold    |
 | `@agent-engine/web`               | Integrated platform (`apps/web`)                                                                                   | 🚧 partial     |
 
