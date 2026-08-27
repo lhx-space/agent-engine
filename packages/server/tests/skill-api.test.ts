@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@rstest/core';
 import { createApp } from '../src/app';
-import type { SkillDiscoverer } from '../src/skill-store';
+import type { SkillDiscoverer } from '../src/services/skill-discovery';
 
 function makeDiscoverer(overrides: Partial<SkillDiscoverer> = {}): SkillDiscoverer {
   return {

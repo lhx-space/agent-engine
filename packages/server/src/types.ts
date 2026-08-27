@@ -1,7 +1,7 @@
 import type { PluginFactory, ProviderFactory } from '@agent-engine/core';
 import type { Logger } from './logger';
 import type { SessionStoreBackend } from './session-store';
-import type { SkillDiscoverer } from './skill-store';
+import type { SkillDiscoverer } from './services/skill-discovery';
 
 /** `createApp` / `serve` 的可注入选项。 */
 export interface ServerOptions {

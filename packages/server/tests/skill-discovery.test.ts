@@ -1,5 +1,9 @@
 import { describe, expect, it } from '@rstest/core';
-import { createNpxSkillDiscoverer, parseSkillList, stripAnsi } from '../src/skill-store';
+import {
+  createNpxSkillDiscoverer,
+  parseSkillList,
+  stripAnsi,
+} from '../src/services/skill-discovery';
 
 describe('stripAnsi', () => {
   it('剥离色码与 TUI 控制序列', () => {
