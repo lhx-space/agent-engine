@@ -3,7 +3,7 @@ import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import type { McpServer, McpServerSource } from '@agent-engine/config/schema';
 import { KeyValueEditor, type KVEntry } from './KeyValueEditor';
 
-const SOURCES: McpServerSource[] = ['command', 'registry'];
+const SOURCES: McpServerSource[] = ['command', 'registry', 'http'];
 
 interface McpFormProps {
   servers: McpServer[];
@@ -36,6 +36,15 @@ export function McpForm({ servers, onChange }: McpFormProps) {
             return { name: server.name, source, command: '', args: [], env: server.env };
           case 'registry':
             return { name: server.name, source, package: '', args: [], env: server.env };
+          case 'http':
+            return {
+              name: server.name,
+              source,
+              url: '',
+              transport: 'streamable-http',
+              headers: {},
+              env: server.env,
+            };
         }
       }),
     );
@@ -103,6 +112,33 @@ export function McpForm({ servers, onChange }: McpFormProps) {
                   style={{ width: '50%' }}
                 />
               </Space.Compact>
+            )}
+            {server.source === 'http' && (
+              <Space direction="vertical" style={{ width: '100%' }} size={8}>
+                <Input
+                  placeholder="url（如 https://api.githubcopilot.com/mcp/）"
+                  value={server.url}
+                  onChange={(e) => set(index, { url: e.target.value } as Partial<McpServer>)}
+                />
+                <Select
+                  value={server.transport}
+                  options={[
+                    { value: 'streamable-http', label: 'streamable-http' },
+                    { value: 'sse', label: 'sse' },
+                  ]}
+                  onChange={(transport) => set(index, { transport } as Partial<McpServer>)}
+                  style={{ width: 180 }}
+                />
+                <KeyValueEditor
+                  entries={toKv(server.headers)}
+                  onChange={(entries) =>
+                    set(index, { headers: fromKv(entries) } as Partial<McpServer>)
+                  }
+                  keyPlaceholder="header key（如 Authorization）"
+                  valuePlaceholder="值（如 Bearer ${TOKEN}）"
+                  addLabel="添加 header"
+                />
+              </Space>
             )}
             <KeyValueEditor
               entries={toKv(server.env)}

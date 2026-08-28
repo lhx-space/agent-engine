@@ -394,6 +394,9 @@ importers:
       '@agent-engine/plugin-pgvector':
         specifier: workspace:*
         version: link:../plugin-pgvector
+      '@agent-engine/plugin-redis':
+        specifier: workspace:*
+        version: link:../plugin-redis
       '@agent-engine/plugin-rules':
         specifier: workspace:*
         version: link:../plugin-rules

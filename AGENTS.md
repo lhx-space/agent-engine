@@ -850,6 +850,7 @@ M2 落地及 M3 推进过程中沉淀的坑点与约定，后续开发直接复�
 - **端到端验证通过**：rules（always/on-demand）/skills/hooks 注入 + 远程 mcp 连接失败隔离，均 200 跑通。
 - **`@agent-engine/plugin-pgvector`**：`PgVectorStore`（pgvector + `<=>` 余弦）+ `PgMemoryBackend`（KV jsonb）；接入 preset-default 按需激活；`docker/docker-compose.yml` 补 pgvector + redis。
 - **`@agent-engine/plugin-redis`**：`RedisCacheBackend`（TTL KV，ioredis + 命名空间前缀 + SCAN 清前缀）；接入 preset-default 按需激活。
+- **LLM 容错**：`createResilientProvider`（主模型失败退避重试 + 依次 fallback 到 `model.fallbacks`）；config 加 `model.fallbacks` + `execution.llmRetry`；5xx/429/网络可重试、4xx 不重试。
 
 ### 15.3 引擎缺口清单（待办）
 

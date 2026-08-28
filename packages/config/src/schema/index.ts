@@ -12,7 +12,8 @@ export const ToolChoiceSchema = z.union([
 ]);
 export type ToolChoice = z.infer<typeof ToolChoiceSchema>;
 
-export const ModelConfigSchema = z.object({
+/** 单个模型配置（不含 `fallbacks`；`fallbacks` 里的模型是「叶子」，不能再嵌套 fallback）。 */
+export const BaseModelConfigSchema = z.object({
   provider: ModelProviderSchema.default('openai-compatible'),
   baseURL: z.string().optional(),
   /** 显式 API Key；缺省时回退环境变量（DEEPSEEK_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY）。 */
@@ -37,6 +38,12 @@ export const ModelConfigSchema = z.object({
   parallelToolCalls: z.boolean().optional(),
   /** vendor 原生参数透传兜底（顶层展开；优先用归一化字段，避免与之冲突）。 */
   extra: z.record(z.string(), z.unknown()).optional(),
+});
+export type BaseModelConfig = z.infer<typeof BaseModelConfigSchema>;
+
+export const ModelConfigSchema = BaseModelConfigSchema.extend({
+  /** 备用模型列表（主模型失败重试耗尽后依次 fallback）。 */
+  fallbacks: z.array(BaseModelConfigSchema).default([]),
 });
 export type ModelConfig = z.infer<typeof ModelConfigSchema>;
 
@@ -247,6 +254,8 @@ export const ExecutionConfigSchema = z.object({
   timeoutMs: z.number().int().positive().optional(),
   /** 工具执行失败重试策略。 */
   toolRetry: ToolRetrySchema.default(ToolRetrySchema.parse({})),
+  /** LLM 调用失败重试策略（主模型重试耗尽后 fallback 到 `model.fallbacks`）。 */
+  llmRetry: ToolRetrySchema.default(ToolRetrySchema.parse({})),
   /** `finishReason='length'`（max_tokens 截断）时的自动续写次数上限；0 = 不续写。 */
   maxContinuations: z.number().int().nonnegative().default(1),
 });

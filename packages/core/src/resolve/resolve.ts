@@ -3,6 +3,7 @@ import { assembleAgentLoop } from '../agent/assemble';
 import { createEmbeddingProvider } from '../embedding/openai';
 import { HookPipeline } from '../hooks/pipeline';
 import { createProvider } from '../llm/provider';
+import { createResilientProvider } from '../llm/resilient';
 import type { Plugin } from '../plugins/types';
 import { ToolRegistry } from '../tools/registry';
 import type { ResolveDeps, ResolvedAgent } from './types';
@@ -18,7 +19,13 @@ export async function resolveAgentConfig(
   config: AgentConfig,
   deps: ResolveDeps = {},
 ): Promise<ResolvedAgent> {
-  const provider = (deps.providerFactory ?? createProvider)(config.model);
+  const makeProvider = deps.providerFactory ?? createProvider;
+  const provider = makeProvider(config.model);
+  const fallbackProviders = config.model.fallbacks.map((fallback) => makeProvider(fallback));
+  const resolvedProvider =
+    fallbackProviders.length > 0
+      ? createResilientProvider([provider, ...fallbackProviders], config.execution?.llmRetry)
+      : provider;
   const registry = new ToolRegistry();
   const hooks = new HookPipeline();
 
@@ -42,7 +49,7 @@ export async function resolveAgentConfig(
     : undefined;
 
   const resolved = await assembleAgentLoop({
-    provider,
+    provider: resolvedProvider,
     registry,
     hooks,
     systemPrompt: config.systemPrompt,

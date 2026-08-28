@@ -7,6 +7,8 @@ export type { ProviderFactory } from './llm/provider';
 export { AbortError, CompletionError } from './llm/types';
 export { createOpenAIProvider } from './llm/openai';
 export { createAnthropicProvider } from './llm/anthropic';
+export { createResilientProvider, isRetryableError } from './llm/resilient';
+export type { LLMRetryConfig } from './llm/resilient';
 export { extractStructured } from './structured-output';
 export { ToolRegistry } from './tools/registry';
 export {
