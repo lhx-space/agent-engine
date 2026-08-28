@@ -18,6 +18,11 @@ plugins:
 memory:
   longTerm:
     backend: pg # 选中 PgMemoryBackend；语义召回需配合 embedding（DeepSeek 无 embeddings）
+embedding:
+  provider: openai-compatible
+  baseURL: https://api.openai.com/v1 # 或本地 ollama http://localhost:11434/v1
+  model: text-embedding-3-small # 或 ollama 的 nomic-embed-text
+  # apiKey: sk-... # OpenAI 需配；本地 ollama 无需
 cache:
   backend: redis # 选中 RedisCacheBackend
 guardrails:
@@ -29,6 +34,9 @@ execution:
   maxToolCalls: 30
   timeoutMs: 120000
 security:
+  sandbox:
+    backend: auto
+    workspaceRoot: '${WORKSPACE_ROOT}' # 挂载进沙箱 /workspace（bash/git 访问本仓库）
   bash:
     enabled: true
     allowCommands: [kubectl, git, ls, cat]
@@ -37,7 +45,7 @@ security:
     timeoutMs: 30000
     maxOutputBytes: 65536
   files:
-    roots: [/workspace]
+    roots: ['${WORKSPACE_ROOT}'] # files 工具宿主直读，指向本仓库真实路径
     maxFileBytes: 1048576
   webSearch:
     provider: duckduckgo

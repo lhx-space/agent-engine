@@ -20,10 +20,13 @@ execution:
   maxToolCalls: 30
   timeoutMs: 120000
 security:
+  sandbox:
+    backend: auto
+    workspaceRoot: '${WORKSPACE_ROOT}' # 挂载进沙箱 /workspace（git 读 diff）
   bash:
     enabled: false
   files:
-    roots: [/Users/luhanxin/Desktop/agent-engine]
+    roots: ['${WORKSPACE_ROOT}']
     maxFileBytes: 1048576
   webSearch:
     provider: duckduckgo
