@@ -41,9 +41,26 @@ export const BaseModelConfigSchema = z.object({
 });
 export type BaseModelConfig = z.infer<typeof BaseModelConfigSchema>;
 
+/** 模型路由规则：命中条件则切换到目标模型（复杂度 / 能力标签）。 */
+export const ModelRouteSchema = z.object({
+  name: z.string(),
+  model: BaseModelConfigSchema,
+  when: z
+    .object({
+      /** 输入 token 达到该阈值 → 命中（复杂度路由）。 */
+      minInputTokens: z.number().int().positive().optional(),
+      /** 请求声明的能力标签命中任一 → 命中（能力路由）。 */
+      capabilities: z.array(z.string()).optional(),
+    })
+    .optional(),
+});
+export type ModelRoute = z.infer<typeof ModelRouteSchema>;
+
 export const ModelConfigSchema = BaseModelConfigSchema.extend({
   /** 备用模型列表（主模型失败重试耗尽后依次 fallback）。 */
   fallbacks: z.array(BaseModelConfigSchema).default([]),
+  /** 模型路由规则（按复杂度 / 能力标签切换到不同模型）。 */
+  routes: z.array(ModelRouteSchema).default([]),
 });
 export type ModelConfig = z.infer<typeof ModelConfigSchema>;
 

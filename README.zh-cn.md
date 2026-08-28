@@ -87,11 +87,49 @@ DEEPSEEK_API_KEY=sk-... npx tsx run.ts
 | 上下文 | `systemPrompt` | 模板 + 变量（rules/skills/docs 经 `ContextContributor` 注入）           |
 |        | `memory`       | 会话窗口（裁剪 + 摘要）+ 长期记忆                                       |
 |        | `documents`    | 文档摄入（md/html/pdf/docx/epub）→ 分块 → 检索 → 注入                   |
-| 模型   | `model`        | 对话 LLM（默认 DeepSeek）                                               |
+| 模型   | `model`        | 对话 LLM + fallbacks（容错）+ routes（路由）                            |
 |        | `embedding`    | 向量模型 → 语义召回（记忆 + rules/skills + 文档）                       |
 | 运行   | `execution`    | 最大步数 / 工具调用数 / 超时 / 重试 / 续写                              |
 |        | `security`     | 沙箱 + bash/文件/web 策略                                               |
 |        | `cache`        | 缓存后端（默认 in-memory，redis 可插拔）                                |
+
+## 模型组合
+
+一个 agent 可组合多个模型，按「能力槽 + 路由 + 容错」三层划分：
+
+| 层     | 字段                  | 作用                                  |
+| ------ | --------------------- | ------------------------------------- |
+| 能力槽 | `model` / `embedding` | 协议不同，顶层分字段（chat vs 向量）  |
+| 路由   | `model.routes`        | 协议相同，按复杂度 / 能力标签切换模型 |
+| 容错   | `model.fallbacks`     | 主模型失败重试耗尽后依次降级          |
+
+```yaml
+model:
+  model: deepseek-chat # 默认执行模型（快、便宜）
+  fallbacks: # 容错：挂了换备用
+    - model: glm-4-plus
+      baseURL: https://open.bigmodel.cn/api/paas/v4
+      apiKey: ${GLM_API_KEY}
+  routes: # 路由：复杂任务自动切推理模型
+    - name: reasoning
+      model: deepseek-reasoner
+      when:
+        minInputTokens: 8000
+    - name: vision # 能力路由：带 vision 标签切 VLM
+      model: qwen-vl-max
+      when:
+        capabilities: [vision]
+embedding: # 向量模型（独立能力槽）
+  provider: openai-compatible
+  baseURL: https://api.openai.com/v1
+  model: text-embedding-3-small
+```
+
+划分原则：
+
+- **能力不同（协议不同）才分「槽」**：`model`（chat）与 `embedding`（向量）接口/协议不同，顶层分开。
+- **深度/成本不同（协议相同）只做「路由」**：`thinkLM`（`deepseek-reasoner`）与 `LLM`（`deepseek-chat`）都是 chat，靠 `routes` 按复杂度切换，不额外分槽。
+- **VLM（看图）是能力槽**：协议带图片输入，后续扩展 `vision` 字段；当前经 `routes.when.capabilities: [vision]` 路由到 VLM。
 
 ## 一个完整例子
 

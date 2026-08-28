@@ -87,11 +87,49 @@ The 8 core axes plus the model/runtime axes — all declarative, all Zod-validat
 | 上下文 (context)    | `systemPrompt` | template + variables (rules/skills/docs inject via `ContextContributor`)  |
 |                     | `memory`       | session window (compaction + summary) + long-term memory                  |
 |                     | `documents`    | ingest docs (md/html/pdf/docx/epub) → chunk → retrieve → inject           |
-| 模型 (model)        | `model`        | chat LLM (default DeepSeek)                                               |
+| 模型 (model)        | `model`        | chat LLM + fallbacks (failover) + routes (routing)                        |
 |                     | `embedding`    | vector model → semantic recall (memory + rules/skills + docs)             |
 | 运行 (runtime)      | `execution`    | max steps / tool calls / timeout / retry / continuation                   |
 |                     | `security`     | sandbox + bash/file/web policies                                          |
 |                     | `cache`        | cache backend (in-memory default, redis pluggable)                        |
+
+## Model composition
+
+One agent can combine multiple models across three layers — capability slots, routing, and failover:
+
+| Layer      | Field                 | Role                                                     |
+| ---------- | --------------------- | -------------------------------------------------------- |
+| capability | `model` / `embedding` | different protocols → top-level fields (chat vs vectors) |
+| routing    | `model.routes`        | same protocol → switch by complexity / capability tag    |
+| failover   | `model.fallbacks`     | fall back in order after the primary exhausts retries    |
+
+```yaml
+model:
+  model: deepseek-chat # default execution model (fast / cheap)
+  fallbacks: # failover: switch when the primary fails
+    - model: glm-4-plus
+      baseURL: https://open.bigmodel.cn/api/paas/v4
+      apiKey: ${GLM_API_KEY}
+  routes: # routing: auto-switch to a reasoning model for complex tasks
+    - name: reasoning
+      model: deepseek-reasoner
+      when:
+        minInputTokens: 8000
+    - name: vision # capability routing: switch to a VLM when vision is requested
+      model: qwen-vl-max
+      when:
+        capabilities: [vision]
+embedding: # vector model (separate capability slot)
+  provider: openai-compatible
+  baseURL: https://api.openai.com/v1
+  model: text-embedding-3-small
+```
+
+Rules of thumb:
+
+- **Split into slots only when the protocol differs** — `model` (chat) and `embedding` (vectors) have different interfaces; keep them as top-level fields.
+- **Route, do not slot, when only depth / cost differs** — `thinkLM` (`deepseek-reasoner`) and `LLM` (`deepseek-chat`) are both chat; switch via `routes` by complexity instead of adding a field.
+- **VLM (vision) is a capability slot** — it carries image input; extend a `vision` field later, or route via `routes.when.capabilities: [vision]` for now.
 
 ## A complete example
 

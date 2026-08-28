@@ -80,6 +80,8 @@ export interface ChatCompletionParams {
   signal?: AbortSignal;
   /** 请求结构化输出（openai-compatible 透传为 response_format）。 */
   responseFormat?: ResponseFormat;
+  /** 请求声明的能力标签（供模型路由按能力选模型，如 `vision` / `reasoning`）。 */
+  capabilities?: string[];
 }
 
 export interface TokenUsage {

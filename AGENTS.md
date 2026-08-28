@@ -851,6 +851,7 @@ M2 落地及 M3 推进过程中沉淀的坑点与约定，后续开发直接复�
 - **`@agent-engine/plugin-pgvector`**：`PgVectorStore`（pgvector + `<=>` 余弦）+ `PgMemoryBackend`（KV jsonb）；接入 preset-default 按需激活；`docker/docker-compose.yml` 补 pgvector + redis。
 - **`@agent-engine/plugin-redis`**：`RedisCacheBackend`（TTL KV，ioredis + 命名空间前缀 + SCAN 清前缀）；接入 preset-default 按需激活。
 - **LLM 容错**：`createResilientProvider`（主模型失败退避重试 + 依次 fallback 到 `model.fallbacks`）；config 加 `model.fallbacks` + `execution.llmRetry`；5xx/429/网络可重试、4xx 不重试。
+- **模型路由**：`createRoutingProvider`（`model.routes` 按复杂度 `minInputTokens` / 能力标签 `capabilities` 切换模型）；`ChatCompletionParams` 加 `capabilities`；README 补「模型组合」章节。
 
 ### 15.3 引擎缺口清单（待办）
 

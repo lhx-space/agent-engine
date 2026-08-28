@@ -4,6 +4,7 @@ import { createEmbeddingProvider } from '../embedding/openai';
 import { HookPipeline } from '../hooks/pipeline';
 import { createProvider } from '../llm/provider';
 import { createResilientProvider } from '../llm/resilient';
+import { createRoutingProvider } from '../llm/routing';
 import type { Plugin } from '../plugins/types';
 import { ToolRegistry } from '../tools/registry';
 import type { ResolveDeps, ResolvedAgent } from './types';
@@ -22,10 +23,17 @@ export async function resolveAgentConfig(
   const makeProvider = deps.providerFactory ?? createProvider;
   const provider = makeProvider(config.model);
   const fallbackProviders = config.model.fallbacks.map((fallback) => makeProvider(fallback));
-  const resolvedProvider =
+  const resilientProvider =
     fallbackProviders.length > 0
       ? createResilientProvider([provider, ...fallbackProviders], config.execution?.llmRetry)
       : provider;
+  const routes = config.model.routes.map((route) => ({
+    name: route.name,
+    when: route.when,
+    provider: makeProvider(route.model),
+  }));
+  const resolvedProvider =
+    routes.length > 0 ? createRoutingProvider(resilientProvider, routes) : resilientProvider;
   const registry = new ToolRegistry();
   const hooks = new HookPipeline();
 
