@@ -8,6 +8,7 @@
   "engines": {
     "node": ">=20"
   },
+  "license": "MIT",
   "scripts": {
     "build": "turbo run build --filter './packages/**'",
     "dev": "pnpm -r --parallel --filter './packages/**' run dev",

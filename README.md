@@ -345,4 +345,4 @@ pnpm lint:md            # markdownlint
 
 ## License
 
-TBD.
+MIT.
