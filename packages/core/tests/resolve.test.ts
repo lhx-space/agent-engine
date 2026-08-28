@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@rstest/core';
 import { z } from 'zod';
-import { AgentConfigSchema, type AgentConfig } from '@agent-engine/config';
+import { AgentConfigSchema, type AgentConfig } from '@lhx-agent-engine/config';
 import { mergeBundles } from '../src/capability/bundle';
 import type { CapabilityBundle } from '../src/capability/types';
 import type { ChatMessage, LLMProvider } from '../src/llm/types';

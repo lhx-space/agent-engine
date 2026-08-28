@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, rs } from '@rstest/core';
 import type { Tracer } from '@opentelemetry/api';
-import type { Hook } from '@agent-engine/core/hooks';
+import type { Hook } from '@lhx-agent-engine/core/hooks';
 import { createOtelPlugin } from '../src/index';
 
 const mocks = rs.hoisted(() => ({
@@ -33,9 +33,9 @@ describe('createOtelPlugin', () => {
     const hooks: Hook[] = [];
     await plugin.install({ registerHook: (h: Hook) => hooks.push(h) } as never);
 
-    expect(plugin.name).toBe('@agent-engine/plugin-otel');
+    expect(plugin.name).toBe('@lhx-agent-engine/plugin-otel');
     expect(hooks.length).toBe(1);
-    expect(hooks[0].name).toBe('@agent-engine/plugin-otel');
+    expect(hooks[0].name).toBe('@lhx-agent-engine/plugin-otel');
     expect(hooks[0].beforeLLM).toBeTypeOf('function');
     expect(hooks[0].afterLLM).toBeTypeOf('function');
     expect(hooks[0].beforeToolCall).toBeTypeOf('function');

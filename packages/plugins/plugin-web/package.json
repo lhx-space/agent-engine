@@ -1,9 +1,22 @@
 {
-  "name": "@agent-engine/plugin-web",
+  "name": "@lhx-agent-engine/plugin-web",
   "version": "0.1.0",
   "description": "Web 工具插件（web_search / web_fetch，多搜索 provider + domain 约束）",
+  "keywords": [
+    "lhx-agent-engine"
+  ],
+  "license": "MIT",
+  "author": "luhanxin",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lhx-space/agent-engine.git",
+    "directory": "packages/plugins/plugin-web"
+  },
+  "homepage": "https://github.com/lhx-space/agent-engine/tree/main/packages/plugins/plugin-web#readme",
+  "bugs": {
+    "url": "https://github.com/lhx-space/agent-engine/issues"
+  },
   "type": "module",
-  "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
@@ -22,16 +35,24 @@
   "files": [
     "dist"
   ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@agent-engine/config": "workspace:*",
-    "@agent-engine/core": "workspace:*",
+    "@lhx-agent-engine/config": "workspace:*",
+    "@lhx-agent-engine/core": "workspace:*",
     "@mozilla/readability": "^0.6.0",
     "linkedom": "^0.18.13",
     "zod": "^4.4.3"
+  },
+  "engines": {
+    "node": ">=18.18.0"
   }
 }

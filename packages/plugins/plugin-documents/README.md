@@ -1,4 +1,4 @@
-# @agent-engine/plugin-documents
+# @lhx-agent-engine/plugin-documents
 
 Document RAG plugin: on `install`, loads documents (enumerate sources → normalize → chunk → index) and registers a `ContextContributor` that retrieves matching chunks on every run and injects a `[文档]` block.
 
@@ -7,13 +7,13 @@ Includes `DocumentIndex` (BM25 + optional vector RRF via core's `hybridRetrieve`
 ## Install
 
 ```bash
-pnpm add @agent-engine/plugin-documents
+pnpm add @lhx-agent-engine/plugin-documents
 ```
 
 ## Usage
 
 ```ts
-import { createDocumentsPlugin } from '@agent-engine/plugin-documents';
+import { createDocumentsPlugin } from '@lhx-agent-engine/plugin-documents';
 
 const documentsPlugin = createDocumentsPlugin(config.documents, {
   embedding: embeddingProvider, // optional; BM25-only when omitted

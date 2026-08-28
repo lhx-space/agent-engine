@@ -2,7 +2,7 @@
 
 ### Requirement: git-plugin 包与工厂
 
-系统 SHALL 提供 `@agent-engine/plugin-git` 包，导出 `createGitPlugin(options)` 工厂（`options` 含 `sandbox`（`SandboxBackend`）与可选 `policy`），返回实现 `Plugin` 接口的对象。
+系统 SHALL 提供 `@lhx-agent-engine/plugin-git` 包，导出 `createGitPlugin(options)` 工厂（`options` 含 `sandbox`（`SandboxBackend`）与可选 `policy`），返回实现 `Plugin` 接口的对象。
 
 #### Scenario: 创建插件
 

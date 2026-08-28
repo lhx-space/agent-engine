@@ -1,17 +1,17 @@
-# @agent-engine/plugin-mcp
+# @lhx-agent-engine/plugin-mcp
 
 MCP tool-source plugin: registers a `ToolSource` that connects all `mcp.servers` (stdio transport) at assembly time and injects their normalized tools into the kernel. Core keeps only the `ToolSource` protocol; this plugin owns the MCP client.
 
 ## Install
 
 ```bash
-pnpm add @agent-engine/plugin-mcp
+pnpm add @lhx-agent-engine/plugin-mcp
 ```
 
 ## Usage
 
 ```ts
-import { createMcpPlugin } from '@agent-engine/plugin-mcp';
+import { createMcpPlugin } from '@lhx-agent-engine/plugin-mcp';
 
 const mcpPlugin = createMcpPlugin(config.mcp?.servers ?? []);
 

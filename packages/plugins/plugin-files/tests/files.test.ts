@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@rstest/core';
-import type { FilePolicy } from '@agent-engine/config';
-import { PluginManager } from '@agent-engine/core';
+import type { FilePolicy } from '@lhx-agent-engine/config';
+import { PluginManager } from '@lhx-agent-engine/core';
 import { createFilesPlugin } from '../src/index';
 
 function makeFilePolicy(): FilePolicy {

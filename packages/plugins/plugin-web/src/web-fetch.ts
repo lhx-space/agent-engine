@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import type { WebPolicy } from '@agent-engine/config';
-import type { Tool } from '@agent-engine/core/tools';
+import type { WebPolicy } from '@lhx-agent-engine/config';
+import type { Tool } from '@lhx-agent-engine/core/tools';
 import { isDomainAllowed } from './domain';
 import { extractContent } from './html';
-import { defaultFetch } from '@agent-engine/core';
-import type { FetchLike } from '@agent-engine/core';
+import { defaultFetch } from '@lhx-agent-engine/core';
+import type { FetchLike } from '@lhx-agent-engine/core';
 
 // ============ 类型 ============
 

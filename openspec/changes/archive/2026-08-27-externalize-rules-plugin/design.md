@@ -1,12 +1,12 @@
 ## Context
 
-Phase 1 加了 `ContextContributor` 缝，但 rules 能力仍以 core 一等公民存在：`loadRulesText`（`rules/load.ts`）+ `ContextComposer.ruleLoader` 分支 + `AgentLoop` 内联 `new CapabilityLoader('rule')`。本 change 把 rules 文本注入迁到 `@agent-engine/plugin-rules`，验证「能力包 + ContextContributor 统一缝」模板。
+Phase 1 加了 `ContextContributor` 缝，但 rules 能力仍以 core 一等公民存在：`loadRulesText`（`rules/load.ts`）+ `ContextComposer.ruleLoader` 分支 + `AgentLoop` 内联 `new CapabilityLoader('rule')`。本 change 把 rules 文本注入迁到 `@lhx-agent-engine/plugin-rules`，验证「能力包 + ContextContributor 统一缝」模板。
 
 ## Goals / Non-Goals
 
 **Goals:**
 
-- rules 文本注入外放为 `@agent-engine/plugin-rules`，走 `ContextContributor` 统一缝。
+- rules 文本注入外放为 `@lhx-agent-engine/plugin-rules`，走 `ContextContributor` 统一缝。
 - core 删除 rules 硬路径（`loadRulesText` / `ruleLoader` / `CapabilityLoader('rule')`）与 rules 能力轴（`registerRule` / `bundle.rules` / `rule.loaded`）。
 - `config.rules` 零迁移（D1-A）：字段不变，server 自动装配插件。
 
@@ -27,7 +27,7 @@ Phase 1 加了 `ContextContributor` 缝，但 rules 能力仍以 core 一等公�
 
 ### D2: `config.rules` 由 server 自动装配（D1-A 零迁移）
 
-**选择**：core 新增 `ResolveDeps.defaultPlugins?: string[]`（额外按名实例化的插件，与 `config.plugins` 去重合并）；server 在 `config.rules` 非空时把 `@agent-engine/plugin-rules` 放入 `defaultPlugins`，并在 `createBuiltinPluginFactories` 提供其工厂 `() => createRulesPlugin(config.rules, { embedding })`。
+**选择**：core 新增 `ResolveDeps.defaultPlugins?: string[]`（额外按名实例化的插件，与 `config.plugins` 去重合并）；server 在 `config.rules` 非空时把 `@lhx-agent-engine/plugin-rules` 放入 `defaultPlugins`，并在 `createBuiltinPluginFactories` 提供其工厂 `() => createRulesPlugin(config.rules, { embedding })`。
 
 **理由**：core 保持能力无关（只按名实例化，不硬编码「rules → 插件」映射），「哪个能力切片激活哪个插件」的编排决策留在 server（组合层）。这与 files/bash/git 现有的「server 闭包 config 提供工厂」一致，也为 Phase 4 `preset-default` 铺路。
 

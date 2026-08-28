@@ -1,11 +1,11 @@
-# @agent-engine/config
+# @lhx-agent-engine/config
 
 Config loading and schema. Normalizes YAML / JSON5 / TypeScript into a single `AgentConfig` (Zod-validated, deep-frozen).
 
 ## Install
 
 ```bash
-pnpm add @agent-engine/config
+pnpm add @lhx-agent-engine/config
 ```
 
 ## Capabilities
@@ -16,15 +16,15 @@ pnpm add @agent-engine/config
 
 ## Subpath exports
 
-| Subpath                       | Contents                                                                    |
-| ----------------------------- | --------------------------------------------------------------------------- |
-| `@agent-engine/config`        | `AgentConfigSchema`, `loadAgentConfig`, `deepFreeze`, `sanitizeConfigValue` |
-| `@agent-engine/config/schema` | All Zod schemas + inferred types                                            |
+| Subpath                           | Contents                                                                    |
+| --------------------------------- | --------------------------------------------------------------------------- |
+| `@lhx-agent-engine/config`        | `AgentConfigSchema`, `loadAgentConfig`, `deepFreeze`, `sanitizeConfigValue` |
+| `@lhx-agent-engine/config/schema` | All Zod schemas + inferred types                                            |
 
 ## API
 
 ```ts
-import { AgentConfigSchema, loadAgentConfig } from '@agent-engine/config';
+import { AgentConfigSchema, loadAgentConfig } from '@lhx-agent-engine/config';
 
 const config = await loadAgentConfig('./agents/devops-agent.yaml');
 // config: AgentConfig (type derived from z.infer, deep-frozen / immutable)

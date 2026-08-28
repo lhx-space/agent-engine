@@ -8,7 +8,7 @@ guardrail 的「机制」（工具执行前后拦截）属于内核「怎么拦�
 
 - core 只留 `GuardrailRule` 接口 + `AgentLoop` 拦截机制 + `registerGuardrail` 协议。
 - `RuleRegistry` 删除，`AgentLoop` 依赖 `GuardrailRule[]`（按 `on` 过滤）。
-- 声明式编译外放为 `@agent-engine/plugin-guardrails`。
+- 声明式编译外放为 `@lhx-agent-engine/plugin-guardrails`。
 - `rules/` 目录正名 `guardrails/`。
 
 **Non-Goals:**

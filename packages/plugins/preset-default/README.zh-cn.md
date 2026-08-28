@@ -1,11 +1,11 @@
-# @agent-engine/preset-default
+# @lhx-agent-engine/preset-default
 
 默认全家桶：聚合全部能力插件（rules / skills / documents / memory / web / mcp）+ 安全工具（files / bash / git）+ 声明式 guardrails，一行配置还原今天的能力。
 
 ## 安装
 
 ```bash
-pnpm add @agent-engine/preset-default
+pnpm add @lhx-agent-engine/preset-default
 ```
 
 ## 用法
@@ -15,8 +15,8 @@ import {
   createPresetLongTermMemoryFactory,
   createPresetPluginFactories,
   defaultCapabilityPlugins,
-} from '@agent-engine/preset-default';
-import { resolveAgentConfig } from '@agent-engine/core';
+} from '@lhx-agent-engine/preset-default';
+import { resolveAgentConfig } from '@lhx-agent-engine/core';
 
 const resolved = await resolveAgentConfig(config, {
   pluginFactories: createPresetPluginFactories(config),

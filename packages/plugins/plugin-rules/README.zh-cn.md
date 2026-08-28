@@ -1,4 +1,4 @@
-# @agent-engine/plugin-rules
+# @lhx-agent-engine/plugin-rules
 
 规则上下文注入插件：注册一个 `ContextContributor`，每次 run 把 `always` 规则全量注入、`on-demand` 规则经检索（BM25；提供 embedding 时 BM25 + 向量 RRF）注入 system prompt。
 
@@ -7,13 +7,13 @@
 ## 安装
 
 ```bash
-pnpm add @agent-engine/plugin-rules
+pnpm add @lhx-agent-engine/plugin-rules
 ```
 
 ## 用法
 
 ```ts
-import { createRulesPlugin } from '@agent-engine/plugin-rules';
+import { createRulesPlugin } from '@lhx-agent-engine/plugin-rules';
 
 const rulesPlugin = createRulesPlugin(config.rules, {
   embedding: embeddingProvider, // 可选；不传时仅 BM25
@@ -23,7 +23,7 @@ const rulesPlugin = createRulesPlugin(config.rules, {
 // 装配时传入 plugins: [rulesPlugin]
 ```
 
-> 配置里的 `rules` 切片由本插件解释（D1-A：字段不变、零迁移）。装配由组合层（Phase 4 的 `@agent-engine/preset-default`）提供，core 不装配：
+> 配置里的 `rules` 切片由本插件解释（D1-A：字段不变、零迁移）。装配由组合层（Phase 4 的 `@lhx-agent-engine/preset-default`）提供，core 不装配：
 >
 > ```yaml
 > rules:

@@ -7,7 +7,7 @@ MCP 是「外部工具来源」的典型：连接 server → 归一化工具 →
 **Goals:**
 
 - core 新增 `ToolSource` 协议 + `registerToolSource` + `assemble` resolve。
-- MCP 实现外放 `@agent-engine/plugin-mcp`。
+- MCP 实现外放 `@lhx-agent-engine/plugin-mcp`。
 - 删除 `mcp.connected` / `mcp.failed` 事件（外放后 core 不再感知 MCP 装配）。
 
 **Non-Goals:**

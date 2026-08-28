@@ -1,9 +1,9 @@
 import { readFile, readdir, stat } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
-import { AgentConfigSchema } from '@agent-engine/config';
-import type { AgentConfig, McpServer, Rule, SkillRef } from '@agent-engine/config';
-import type { Hook } from '@agent-engine/core';
-import type { Plugin } from '@agent-engine/core/plugins';
+import { AgentConfigSchema } from '@lhx-agent-engine/config';
+import type { AgentConfig, McpServer, Rule, SkillRef } from '@lhx-agent-engine/config';
+import type { Hook } from '@lhx-agent-engine/core';
+import type { Plugin } from '@lhx-agent-engine/core/plugins';
 import { createJiti } from 'jiti';
 import matter from 'gray-matter';
 import { parse as parseYaml } from 'yaml';

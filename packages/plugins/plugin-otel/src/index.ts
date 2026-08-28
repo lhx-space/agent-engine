@@ -1,5 +1,5 @@
-import type { Hook } from '@agent-engine/core/hooks';
-import type { Plugin } from '@agent-engine/core/plugins';
+import type { Hook } from '@lhx-agent-engine/core/hooks';
+import type { Plugin } from '@lhx-agent-engine/core/plugins';
 import type { Span, SpanStatusCode, Tracer } from '@opentelemetry/api';
 
 /** 对齐 `@opentelemetry/api` 的 `SpanStatusCode.ERROR`（2）；type-only 引用，避免运行时加载其 ESM 构建。 */
@@ -7,7 +7,7 @@ const SPAN_STATUS_ERROR = 2 as SpanStatusCode;
 
 /** `createOtelPlugin` 的可选配置。 */
 export interface OtelPluginOptions {
-  /** OTel tracer 名（默认 `@agent-engine/plugin-otel`；仅未注入 `tracer` 时生效）。 */
+  /** OTel tracer 名（默认 `@lhx-agent-engine/plugin-otel`；仅未注入 `tracer` 时生效）。 */
   tracerName?: string;
   /** 注入的 OTel tracer（测试 / 自定义场景）；缺省时在 install 阶段经全局 `trace.getTracer` 惰性获取。 */
   tracer?: Tracer;
@@ -40,7 +40,7 @@ async function withSpan(
 /** 把 10 个生命周期 hook 点映射为 OTel span（纯观察，不改写入参）。 */
 function createOtelHook(tracer: Tracer): Hook {
   return {
-    name: '@agent-engine/plugin-otel',
+    name: '@lhx-agent-engine/plugin-otel',
     async onInit() {
       await withSpan(tracer, 'agent.init', (span) => {
         span.setAttribute('agent.hook.point', 'onInit');
@@ -114,7 +114,7 @@ function createOtelHook(tracer: Tracer): Hook {
  */
 export function createOtelPlugin(options: OtelPluginOptions = {}): Plugin {
   return {
-    name: '@agent-engine/plugin-otel',
+    name: '@lhx-agent-engine/plugin-otel',
     description: '把 Agent 执行链路接入 OpenTelemetry（hooks → span）',
     version: '0.1.0',
     tags: ['otel', '可观测', 'observability'],
@@ -122,7 +122,7 @@ export function createOtelPlugin(options: OtelPluginOptions = {}): Plugin {
       const tracer =
         options.tracer ??
         (await import('@opentelemetry/api')).trace.getTracer(
-          options.tracerName ?? '@agent-engine/plugin-otel',
+          options.tracerName ?? '@lhx-agent-engine/plugin-otel',
         );
       ctx.registerHook(createOtelHook(tracer));
     },

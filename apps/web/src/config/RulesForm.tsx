@@ -1,6 +1,6 @@
 import { Button, Empty, Input, Select, Space } from 'antd';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import type { Rule, RuleKind } from '@agent-engine/config/schema';
+import type { Rule, RuleKind } from '@lhx-agent-engine/config/schema';
 
 const KINDS: RuleKind[] = ['always', 'on-demand'];
 

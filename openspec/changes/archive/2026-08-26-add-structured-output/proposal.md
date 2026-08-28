@@ -7,7 +7,7 @@
 - `core/src/structured-output/`：`extractStructured({ provider, schema, messages, system?, maxRetries? })` → 强类型值（JSON 模式 + Zod 校验 + 失败重试）。
 - `llm/types.ts`：`ChatCompletionParams` 增 `responseFormat?: { type: 'json_object' }`。
 - `llm/openai.ts`：把 `responseFormat` 透传到请求体 `response_format`；anthropic 忽略（prompt 兜底）。
-- 导出：`@agent-engine/core/structured-output` 子路径 + 根 `index`。
+- 导出：`@lhx-agent-engine/core/structured-output` 子路径 + 根 `index`。
 
 ## Capabilities
 

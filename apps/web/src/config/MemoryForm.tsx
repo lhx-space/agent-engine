@@ -1,5 +1,5 @@
 import { Form, InputNumber, Select } from 'antd';
-import type { MemoryConfig } from '@agent-engine/config/schema';
+import type { MemoryConfig } from '@lhx-agent-engine/config/schema';
 
 const LONG_TERM_BACKENDS = ['in-memory', 'pgvector', 'chroma', 'lanceDB', 'meilisearch'];
 

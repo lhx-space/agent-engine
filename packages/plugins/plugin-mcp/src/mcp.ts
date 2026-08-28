@@ -1,4 +1,4 @@
-import type { McpServer } from '@agent-engine/config';
+import type { McpServer } from '@lhx-agent-engine/config';
 import type { ResolvedMcpServer } from './types';
 
 /**

@@ -8,7 +8,7 @@ AGENTS.md §2.1 刚把「core 只做适配器」立为尺子，并点出两块�
 - 新增 `CacheBackend` 接口（TTL 缓存：`get`/`set(key,value,ttlMs?)`/`delete`/`clear`）+ `InMemoryCacheBackend` 默认实现（新模块 `core/cache/`）。
 - `PluginContext` 增 `registerMemoryBackend` / `registerCacheBackend`；`CapabilityBundle` 携 `memoryBackends` / `cacheBackends`，`mergeBundles` 汇聚。
 - 配置接线：`memory.longTerm.backend`（默认 `in-memory`）与新增 `cache.backend`（默认 `in-memory`）按名解析——内置 `in-memory` + 插件注册的自定义后端；未注册名字抛可读错误。解析出的后端随 `ResolvedAgent` 暴露（`memoryBackend` / `cacheBackend`）。
-- `@agent-engine/core` 新增 `./cache` 子路径（`./memory` 已有）。
+- `@lhx-agent-engine/core` 新增 `./cache` 子路径（`./memory` 已有）。
 
 ## Capabilities
 

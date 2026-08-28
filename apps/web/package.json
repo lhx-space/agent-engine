@@ -1,8 +1,22 @@
 {
-  "name": "@agent-engine/web",
+  "name": "@lhx-agent-engine/web",
   "version": "0.1.0",
-  "private": true,
   "description": "Agent Engine 一体化平台（配置管理 + 运行）",
+  "keywords": [
+    "lhx-agent-engine"
+  ],
+  "license": "MIT",
+  "author": "luhanxin",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lhx-space/agent-engine.git",
+    "directory": "apps/web"
+  },
+  "homepage": "https://github.com/lhx-space/agent-engine/tree/main/apps/web#readme",
+  "bugs": {
+    "url": "https://github.com/lhx-space/agent-engine/issues"
+  },
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "rsbuild dev",
@@ -10,8 +24,14 @@
     "preview": "rsbuild preview",
     "typecheck": "tsc --noEmit"
   },
+  "devDependencies": {
+    "@rsbuild/core": "^2.1.13",
+    "@rsbuild/plugin-react": "^2.1.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0"
+  },
   "dependencies": {
-    "@agent-engine/config": "workspace:*",
+    "@lhx-agent-engine/config": "workspace:*",
     "@ant-design/icons": "^6.3.2",
     "@ant-design/x": "^2.9.0",
     "antd": "^6.6.1",
@@ -23,10 +43,7 @@
     "yaml": "^2.9.0",
     "zustand": "^5.0.15"
   },
-  "devDependencies": {
-    "@rsbuild/core": "^2.1.13",
-    "@rsbuild/plugin-react": "^2.1.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0"
+  "engines": {
+    "node": ">=18.18.0"
   }
 }

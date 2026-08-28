@@ -1,9 +1,22 @@
 {
-  "name": "@agent-engine/core",
+  "name": "@lhx-agent-engine/core",
   "version": "0.1.0",
   "description": "Agent 内核执行引擎 —— Loop/编排/插件/hooks/rules 装配",
+  "keywords": [
+    "lhx-agent-engine"
+  ],
+  "license": "MIT",
+  "author": "luhanxin",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lhx-space/agent-engine.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/lhx-space/agent-engine/tree/main/packages/core#readme",
+  "bugs": {
+    "url": "https://github.com/lhx-space/agent-engine/issues"
+  },
   "type": "module",
-  "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
@@ -192,20 +205,28 @@
   "files": [
     "dist"
   ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit"
   },
+  "devDependencies": {
+    "@types/picomatch": "^4.0.3",
+    "wabt": "^1.0.39"
+  },
   "dependencies": {
-    "@agent-engine/config": "workspace:*",
+    "@lhx-agent-engine/config": "workspace:*",
     "@anthropic-ai/sdk": "^0.120.0",
     "openai": "^7.5.0",
     "picomatch": "^4.0.5",
     "zod": "^4.4.3"
   },
-  "devDependencies": {
-    "@types/picomatch": "^4.0.3",
-    "wabt": "^1.0.39"
+  "engines": {
+    "node": ">=18.18.0"
   }
 }

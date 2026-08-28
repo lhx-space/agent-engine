@@ -1,4 +1,4 @@
-# @agent-engine/plugin-guardrails
+# @lhx-agent-engine/plugin-guardrails
 
 Declarative guardrail plugin: compiles `config.guardrails` (declarative config) into executable `GuardrailRule[]` and registers them into the kernel's interception mechanism via `ctx.registerGuardrail`.
 
@@ -7,13 +7,13 @@ Core only keeps the `GuardrailRule` protocol (interface) and the `AgentLoop` int
 ## Install
 
 ```bash
-pnpm add @agent-engine/plugin-guardrails
+pnpm add @lhx-agent-engine/plugin-guardrails
 ```
 
 ## Usage
 
 ```ts
-import { createGuardrailsPlugin } from '@agent-engine/plugin-guardrails';
+import { createGuardrailsPlugin } from '@lhx-agent-engine/plugin-guardrails';
 
 const guardrailsPlugin = createGuardrailsPlugin(config.guardrails);
 

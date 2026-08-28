@@ -8,7 +8,7 @@ AGENTS.md §2.1 的 ⚠️ 清单里还剩「向量库 `VectorStore` + `Embeddin
 - 新增 `EmbeddingProvider` 接口（`name` / `dimension` / `embed(texts)`，`core/embedding/`）；无默认实现（需真实向量模型）。
 - `PluginContext` 增 `registerVectorStore` / `registerEmbeddingProvider`；`CapabilityBundle` 携 `vectorStores` / `embeddingProviders` 并 `mergeBundles` 汇聚。
 - `assembleAgentLoop` 解析：`vectorStore` = 首个插件注册的 ?? `InMemoryVectorStore`；`embeddingProvider` = 首个插件注册的（可缺省）。随 `ResolvedAgent` 暴露（`vectorStore` 必填、`embeddingProvider` 可选）。
-- `@agent-engine/core` 新增 `./embedding` 子路径（`./retrieval` 已有）。
+- `@lhx-agent-engine/core` 新增 `./embedding` 子路径（`./retrieval` 已有）。
 
 ## Capabilities
 

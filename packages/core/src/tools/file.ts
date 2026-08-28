@@ -2,7 +2,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import picomatch from 'picomatch';
 import { z } from 'zod';
-import type { FilePolicy } from '@agent-engine/config';
+import type { FilePolicy } from '@lhx-agent-engine/config';
 import type { Tool } from './types';
 import { resolveWithinRoot } from './utils/path';
 

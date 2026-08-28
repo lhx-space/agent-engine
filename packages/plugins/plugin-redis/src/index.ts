@@ -1,4 +1,4 @@
-import type { Plugin } from '@agent-engine/core/plugins';
+import type { Plugin } from '@lhx-agent-engine/core/plugins';
 import { createRedis } from './client';
 import type { RedisConfig } from './client';
 import { RedisCacheBackend } from './cache-backend';
@@ -14,7 +14,7 @@ export { RedisCacheBackend } from './cache-backend';
  */
 export function createRedisPlugin(config: RedisConfig = {}): Plugin {
   return {
-    name: '@agent-engine/plugin-redis',
+    name: '@lhx-agent-engine/plugin-redis',
     description: 'Redis 缓存后端（TTL KV）',
     version: '0.1.0',
     tags: ['redis', 'cache'],

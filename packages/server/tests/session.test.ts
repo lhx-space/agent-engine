@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@rstest/core';
-import { AgentConfigSchema } from '@agent-engine/config';
-import type { ChatMessage, LLMProvider, ProviderFactory } from '@agent-engine/core';
+import { AgentConfigSchema } from '@lhx-agent-engine/config';
+import type { ChatMessage, LLMProvider, ProviderFactory } from '@lhx-agent-engine/core';
 import { createApp } from '../src/app';
 import type { SessionStoreBackend } from '../src/infra/session-store';
 

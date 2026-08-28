@@ -4,7 +4,7 @@ import {
   type SecurityConfig,
   type SandboxBackendKind,
   type WebSearchProvider,
-} from '@agent-engine/config/schema';
+} from '@lhx-agent-engine/config/schema';
 
 const SANDBOX_BACKENDS: SandboxBackendKind[] = ['docker', 'nsjail', 'auto'];
 const SEARCH_PROVIDERS: WebSearchProvider[] = ['searxng', 'duckduckgo', 'tavily', 'serper'];

@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@rstest/core';
-import type { SecurityConfig, WebPolicy, WebSearchPolicy } from '@agent-engine/config';
-import type { FetchLike, HttpResponse } from '@agent-engine/core';
-import type { PluginContext, Tool } from '@agent-engine/core';
+import type { SecurityConfig, WebPolicy, WebSearchPolicy } from '@lhx-agent-engine/config';
+import type { FetchLike, HttpResponse } from '@lhx-agent-engine/core';
+import type { PluginContext, Tool } from '@lhx-agent-engine/core';
 import {
   createDuckDuckGoSearchProvider,
   createFallbackSearchProvider,

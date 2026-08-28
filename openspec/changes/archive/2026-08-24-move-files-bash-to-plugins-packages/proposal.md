@@ -1,10 +1,10 @@
 ## Why
 
-上一版把 `@agent-engine/plugin-files` / `@agent-engine/plugin-bash` 做成了 `core/src/plugins/builtin.ts` 里的「core 内置 plugin 工厂」，与 `packages/plugins/` 下的 `plugin-git` / `plugin-otel` 形态不一致。用户指出 plugin 应统一放在 `packages/plugins/` 独立包，对齐 git。
+上一版把 `@lhx-agent-engine/plugin-files` / `@lhx-agent-engine/plugin-bash` 做成了 `core/src/plugins/builtin.ts` 里的「core 内置 plugin 工厂」，与 `packages/plugins/` 下的 `plugin-git` / `plugin-otel` 形态不一致。用户指出 plugin 应统一放在 `packages/plugins/` 独立包，对齐 git。
 
 ## What Changes
 
-- 新建独立包 `@agent-engine/plugin-files`、`@agent-engine/plugin-bash`（对齐 `plugin-git` 的包结构）。
+- 新建独立包 `@lhx-agent-engine/plugin-files`、`@lhx-agent-engine/plugin-bash`（对齐 `plugin-git` 的包结构）。
 - 工具工厂 `createReadFileTool` / `createWriteFileTool` / `createBashTool` 保留在 core 并重新导出，供 plugin 复用。
 - 删除 `core/src/plugins/builtin.ts`；`resolveAgentConfig` 移除内置工厂表，统一走 `deps.pluginFactories`。
 - server 层新增 `createBuiltinPluginFactories(config)`，注入 files / bash / git 的工厂（带 security / sandbox 上下文），**连带解决 git 的 factory 注入死配置**。

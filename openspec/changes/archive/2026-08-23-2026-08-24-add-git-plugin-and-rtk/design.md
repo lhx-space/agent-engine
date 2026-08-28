@@ -7,7 +7,7 @@ git 工具套件是研发 Agent 的高频能力，但属「垂直套件 + 有副
 **Goals:**
 
 - rtk 接入沙箱层（compact 开关），docker / nsjail 后端 `rtk` 包装。
-- `@agent-engine/plugin-git` 包 + `createGitPlugin` 工厂 + `git` 工具。
+- `@lhx-agent-engine/plugin-git` 包 + `createGitPlugin` 工厂 + `git` 工具。
 
 **Non-Goals:**
 

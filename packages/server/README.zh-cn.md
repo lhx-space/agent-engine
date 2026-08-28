@@ -1,11 +1,11 @@
-# @agent-engine/server
+# @lhx-agent-engine/server
 
-Agent Engine HTTP 服务（Docker 部署）。基于 Hono 对外提供 REST + 流式 API，调用 `@agent-engine/core`。
+Agent Engine HTTP 服务（Docker 部署）。基于 Hono 对外提供 REST + 流式 API，调用 `@lhx-agent-engine/core`。
 
 ## 安装
 
 ```bash
-pnpm add @agent-engine/server
+pnpm add @lhx-agent-engine/server
 ```
 
 ## 端点
@@ -20,7 +20,7 @@ pnpm add @agent-engine/server
 ## 用法
 
 ```ts
-import { createApp, serve } from '@agent-engine/server';
+import { createApp, serve } from '@lhx-agent-engine/server';
 import { pino } from 'pino'; // 可选
 
 const app = createApp({
@@ -39,7 +39,7 @@ serve({/* ServerOptions */}, 8080);
 
 ## 说明
 
-- 能力插件默认经 `@agent-engine/preset-default` 装配（`createPresetPluginFactories` + `defaultCapabilityPlugins` + `createPresetLongTermMemoryFactory`）；经 `options.pluginFactories` / `options.longTermMemoryFactory` 覆盖或追加。
+- 能力插件默认经 `@lhx-agent-engine/preset-default` 装配（`createPresetPluginFactories` + `defaultCapabilityPlugins` + `createPresetLongTermMemoryFactory`）；经 `options.pluginFactories` / `options.longTermMemoryFactory` 覆盖或追加。
 - `envProviderFactory` 从环境变量解析 LLM provider（默认 DeepSeek）。
 
 ## 状态

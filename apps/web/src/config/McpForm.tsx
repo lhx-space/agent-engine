@@ -1,6 +1,6 @@
 import { Button, Empty, Input, Select, Space } from 'antd';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import type { McpServer, McpServerSource } from '@agent-engine/config/schema';
+import type { McpServer, McpServerSource } from '@lhx-agent-engine/config/schema';
 import { KeyValueEditor, type KVEntry } from './KeyValueEditor';
 
 const SOURCES: McpServerSource[] = ['command', 'registry', 'http'];

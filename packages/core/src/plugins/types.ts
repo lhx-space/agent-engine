@@ -18,7 +18,7 @@ import type { Tool } from '../tools/types';
  * 通过 `install(ctx)` 一次性注入能力。
  */
 export interface Plugin {
-  /** 唯一标识（如 `@agent-engine/plugin-otel`）。 */
+  /** 唯一标识（如 `@lhx-agent-engine/plugin-otel`）。 */
   name: string;
   /** 匹配面：后续接入统一检索时的 meta description。 */
   description: string;

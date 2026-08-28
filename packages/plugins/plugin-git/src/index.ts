@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import type { Plugin } from '@agent-engine/core/plugins';
-import type { SandboxBackend } from '@agent-engine/core/sandbox';
-import type { Tool } from '@agent-engine/core/tools';
+import type { Plugin } from '@lhx-agent-engine/core/plugins';
+import type { SandboxBackend } from '@lhx-agent-engine/core/sandbox';
+import type { Tool } from '@lhx-agent-engine/core/tools';
 
 // ============ 类型 ============
 
@@ -96,7 +96,7 @@ export function createGitPlugin(options: GitPluginOptions): Plugin {
   };
 
   return {
-    name: '@agent-engine/plugin-git',
+    name: '@lhx-agent-engine/plugin-git',
     description: 'Git 工具套件（只读默认，破坏性子命令阻断，经沙箱执行）',
     version: '0.1.0',
     tags: ['git', 'vcs', '版本控制'],

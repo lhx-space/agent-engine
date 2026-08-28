@@ -1,4 +1,4 @@
-import type { BashPolicy } from '@agent-engine/config';
+import type { BashPolicy } from '@lhx-agent-engine/config';
 
 /** 校验命令策略：黑名单（子串匹配）→ 白名单（空 = 不限制）。返回阻断原因，undefined 表示放行。 */
 export function checkBashPolicy(

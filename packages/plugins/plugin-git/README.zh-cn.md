@@ -1,18 +1,18 @@
-# @agent-engine/plugin-git
+# @lhx-agent-engine/plugin-git
 
 Git 工具套件插件：注册单个 `git` 工具，默认只读子命令（`status` / `diff` / `log` / `show` / `branch` / `remote` / `rev-parse` / `ls-files` / `blame`），破坏性子命令（`commit` / `push` / `checkout` / `reset` / `clean` / `merge` / `rebase` …）阻断；经 `SandboxBackend` 隔离执行，可经 rtk 压缩输出。
 
 ## 安装
 
 ```bash
-pnpm add @agent-engine/plugin-git
+pnpm add @lhx-agent-engine/plugin-git
 ```
 
 ## 用法
 
 ```ts
-import { createGitPlugin } from '@agent-engine/plugin-git';
-import { resolveSandboxBackend } from '@agent-engine/core';
+import { createGitPlugin } from '@lhx-agent-engine/plugin-git';
+import { resolveSandboxBackend } from '@lhx-agent-engine/core';
 
 const resolution = resolveSandboxBackend('auto', { compact: true });
 if (!resolution.available) throw new Error('无可用沙箱');

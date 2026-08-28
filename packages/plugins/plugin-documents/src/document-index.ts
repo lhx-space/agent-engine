@@ -1,9 +1,9 @@
 import { readFile, readdir, stat } from 'node:fs/promises';
 import { extname, join } from 'node:path';
-import type { DocumentsConfig } from '@agent-engine/config';
-import type { EmbeddingProvider } from '@agent-engine/core/embedding';
-import { hybridRetrieve, InMemoryVectorStore } from '@agent-engine/core/retrieval';
-import type { RankedCandidate, VectorStore } from '@agent-engine/core/retrieval';
+import type { DocumentsConfig } from '@lhx-agent-engine/config';
+import type { EmbeddingProvider } from '@lhx-agent-engine/core/embedding';
+import { hybridRetrieve, InMemoryVectorStore } from '@lhx-agent-engine/core/retrieval';
+import type { RankedCandidate, VectorStore } from '@lhx-agent-engine/core/retrieval';
 import MiniSearch from 'minisearch';
 import { FixedSizeChunker, MarkdownHeadingChunker } from './chunker';
 import { DocxNormalizer } from './docx-normalizer';

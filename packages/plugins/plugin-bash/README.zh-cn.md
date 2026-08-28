@@ -1,18 +1,18 @@
-# @agent-engine/plugin-bash
+# @lhx-agent-engine/plugin-bash
 
 沙箱命令执行插件：注册单个 `bash` 工具，受 `security.bash.enabled` 门控、`allowCommands` / `denyPatterns` / `allowNetwork` 约束，经 `SandboxBackend` 隔离执行。
 
 ## 安装
 
 ```bash
-pnpm add @agent-engine/plugin-bash
+pnpm add @lhx-agent-engine/plugin-bash
 ```
 
 ## 用法
 
 ```ts
-import { createBashPlugin } from '@agent-engine/plugin-bash';
-import { resolveSandboxBackend } from '@agent-engine/core';
+import { createBashPlugin } from '@lhx-agent-engine/plugin-bash';
+import { resolveSandboxBackend } from '@lhx-agent-engine/core';
 
 const resolution = resolveSandboxBackend('auto');
 if (!resolution.available) throw new Error('无可用沙箱');
@@ -34,7 +34,7 @@ const bashPlugin = createBashPlugin(
 >
 > ```yaml
 > plugins:
->   - '@agent-engine/plugin-bash'
+>   - '@lhx-agent-engine/plugin-bash'
 > security:
 >   bash:
 >     enabled: true

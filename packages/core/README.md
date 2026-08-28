@@ -1,22 +1,22 @@
-# @agent-engine/core
+# @lhx-agent-engine/core
 
 Agent kernel execution engine (thin kernel): LLM Provider abstraction, Tool registry, single-agent ReAct loop, hooks / guardrails protocol, pluggable memory / retrieval / embedding / cache backends, plugin system, execution sandbox and event bus.
 
-> **Capabilities live in `@agent-engine/plugin-*`, not here.** The kernel only keeps the **engine + protocols** (`LLMProvider` / `Retriever` / `hybridRetrieve` / `ToolSource` / `ContextContributor` / `GuardrailRule` / `LongTermMemory` / backends). rules / skills / documents / semantic memory / web / mcp / declarative-guardrail compilation were externalized — see [Capability map](#capability-map).
+> **Capabilities live in `@lhx-agent-engine/plugin-*`, not here.** The kernel only keeps the **engine + protocols** (`LLMProvider` / `Retriever` / `hybridRetrieve` / `ToolSource` / `ContextContributor` / `GuardrailRule` / `LongTermMemory` / backends). rules / skills / documents / semantic memory / web / mcp / declarative-guardrail compilation were externalized — see [Capability map](#capability-map).
 
 **Design rule**: every extension point is an **interface + in-memory default + injection point** (`PluginContext.register*` + `CapabilityBundle` + `ResolvedAgent`). Concrete backends (pgvector / redis / embedding models / caches) are supplied by users or the ecosystem.
 
 ## Install
 
 ```bash
-pnpm add @agent-engine/core @agent-engine/config
+pnpm add @lhx-agent-engine/core @lhx-agent-engine/config
 ```
 
 ## End-to-end
 
 ```ts
-import { loadAgentConfig } from '@agent-engine/config';
-import { createProvider, resolveAgentConfig } from '@agent-engine/core';
+import { loadAgentConfig } from '@lhx-agent-engine/config';
+import { createProvider, resolveAgentConfig } from '@lhx-agent-engine/core';
 
 const config = await loadAgentConfig('agent.yaml'); // YAML/JSON5/TS → AgentConfig
 const resolved = await resolveAgentConfig(config, {
@@ -53,8 +53,12 @@ systemPrompt: { template: 你是一个简洁、可靠的助手。 }
 Implement the interface (custom protocol), or use a built-in factory.
 
 ```ts
-import { createOpenAIProvider, createAnthropicProvider, createProvider } from '@agent-engine/core';
-import type { LLMProvider } from '@agent-engine/core';
+import {
+  createOpenAIProvider,
+  createAnthropicProvider,
+  createProvider,
+} from '@lhx-agent-engine/core';
+import type { LLMProvider } from '@lhx-agent-engine/core';
 
 // built-in: DeepSeek / OpenAI-compatible
 const openai = createOpenAIProvider({ model: 'deepseek-chat', apiKey: 'sk-...' });
@@ -81,7 +85,7 @@ const result = await provider.chatCompletion({ messages: [{ role: 'user', conten
 **Resilience & routing** (failover + model routing):
 
 ```ts
-import { createResilientProvider, createRoutingProvider } from '@agent-engine/core';
+import { createResilientProvider, createRoutingProvider } from '@lhx-agent-engine/core';
 
 // failover: retry with backoff, then fall through to the next model
 const resilient = createResilientProvider([deepseek, claude, glm], {
@@ -104,7 +108,7 @@ Register a custom tool; `inputSchema` is Zod (validated at runtime + converted t
 
 ```ts
 import { z } from 'zod';
-import { ToolRegistry } from '@agent-engine/core';
+import { ToolRegistry } from '@lhx-agent-engine/core';
 
 const registry = new ToolRegistry();
 registry.register({
@@ -121,15 +125,15 @@ const definitions = registry.toToolDefinitions(); // → LLM tool definitions
 ```
 
 - `registerBuiltinTools(registry, deps?)` registers only the **general primitives** `builtin.todo` / `builtin.datetime`.
-- `createReadFileTool` / `createWriteFileTool` / `createListFilesTool` / `createBashTool` factories live in `core/tools`, but the **plugins** that assemble them are `@agent-engine/plugin-files` / `@agent-engine/plugin-bash`.
-- `web_search` / `web_fetch` moved to `@agent-engine/plugin-web`.
+- `createReadFileTool` / `createWriteFileTool` / `createListFilesTool` / `createBashTool` factories live in `core/tools`, but the **plugins** that assemble them are `@lhx-agent-engine/plugin-files` / `@lhx-agent-engine/plugin-bash`.
+- `web_search` / `web_fetch` moved to `@lhx-agent-engine/plugin-web`.
 
 ### 3. Agent loop runtime options
 
 `agent.run(userInput, options?)` supports streaming, events, Human-in-the-loop approval and cancellation.
 
 ```ts
-import { AbortError } from '@agent-engine/core';
+import { AbortError } from '@lhx-agent-engine/core';
 
 const result = await resolved.agent.run('给我写个脚本', {
   signal: controller.signal,
@@ -151,8 +155,8 @@ const result = await resolved.agent.run('给我写个脚本', {
 Hooks observe/rewrite at 10 lifecycle points; they never block (blocking is guardrails' job).
 
 ```ts
-import { HookPipeline } from '@agent-engine/core';
-import type { Hook } from '@agent-engine/core';
+import { HookPipeline } from '@lhx-agent-engine/core';
+import type { Hook } from '@lhx-agent-engine/core';
 
 const audit: Hook = {
   name: 'audit',
@@ -171,10 +175,10 @@ hooks.onTrace((trace) => console.log(trace)); // which hook, latency, changed?
 
 ### 5. Guardrails (protocol)
 
-The kernel only defines the executable `GuardrailRule` protocol (`validate({ toolName, args?, result? }) → { allowed, reason }`) and injects rules via `PluginContext.registerGuardrail`. **Compiling the declarative `config.guardrails` into rules** lives in `@agent-engine/plugin-guardrails`.
+The kernel only defines the executable `GuardrailRule` protocol (`validate({ toolName, args?, result? }) → { allowed, reason }`) and injects rules via `PluginContext.registerGuardrail`. **Compiling the declarative `config.guardrails` into rules** lives in `@lhx-agent-engine/plugin-guardrails`.
 
 ```ts
-import type { GuardrailRule } from '@agent-engine/core';
+import type { GuardrailRule } from '@lhx-agent-engine/core';
 
 const denyRm: GuardrailRule = {
   on: 'beforeToolCall',
@@ -195,8 +199,8 @@ import {
   renderTemplate,
   TokenBudgetCompactor,
   ApproximateTokenCounter,
-} from '@agent-engine/core';
-import type { ContextContributor } from '@agent-engine/core';
+} from '@lhx-agent-engine/core';
+import type { ContextContributor } from '@lhx-agent-engine/core';
 
 // renderTemplate / buildSystemPrompt only render user variables now —
 // rules/skills/documents inject via ContextContributor (text + run-scoped tools), not template placeholders.
@@ -223,7 +227,7 @@ import {
   InMemoryMemoryBackend,
   LLMSummarizer,
   noopLongTermMemory,
-} from '@agent-engine/core';
+} from '@lhx-agent-engine/core';
 
 // ① 条数裁剪 / ② token 预算 + 滚动摘要
 const memory = new ConversationMemory({
@@ -239,7 +243,7 @@ memory.append([
 const window = await memory.getWindow();
 
 // ③ long-term memory is a protocol here; the semantic implementation (SemanticMemory)
-//    is @agent-engine/plugin-memory, injected via ResolveDeps.longTermMemoryFactory.
+//    is @lhx-agent-engine/plugin-memory, injected via ResolveDeps.longTermMemoryFactory.
 const longTerm = noopLongTermMemory; // core default
 ```
 
@@ -251,7 +255,7 @@ import {
   reciprocalRankFusion,
   InMemoryVectorStore,
   noopRetriever,
-} from '@agent-engine/core';
+} from '@lhx-agent-engine/core';
 
 // each capability plugin builds its own index (MiniSearch lexical + optional InMemoryVectorStore)
 // and reuses hybridRetrieve as the single BM25 + vector RRF orchestrator:
@@ -275,7 +279,7 @@ const fused = reciprocalRankFusion([
 ### 9. Embedding
 
 ```ts
-import { createEmbeddingProvider } from '@agent-engine/core';
+import { createEmbeddingProvider } from '@lhx-agent-engine/core';
 
 const embedding = createEmbeddingProvider({
   baseURL: 'https://api.openai.com/v1',
@@ -291,8 +295,8 @@ console.log(embedding.dimension, vector.length);
 A plugin bundles tools + tool sources + hooks + guardrails + prompt fragments + context contributors + backends, installed via `PluginContext`.
 
 ```ts
-import { PluginManager } from '@agent-engine/core';
-import type { Plugin } from '@agent-engine/core';
+import { PluginManager } from '@lhx-agent-engine/core';
+import type { Plugin } from '@lhx-agent-engine/core';
 
 const plugin: Plugin = {
   name: 'my-plugin',
@@ -323,10 +327,10 @@ const bundle = manager.getAssembly(); // CapabilityBundle
 
 ### 11. Tool source (MCP protocol)
 
-The kernel only defines `ToolSource { name; resolve() → { tools, dispose } }`; the MCP client (`connectMcpServer` / `connectMcpServers`) moved to `@agent-engine/plugin-mcp`.
+The kernel only defines `ToolSource { name; resolve() → { tools, dispose } }`; the MCP client (`connectMcpServer` / `connectMcpServers`) moved to `@lhx-agent-engine/plugin-mcp`.
 
 ```ts
-import type { ToolSource } from '@agent-engine/core';
+import type { ToolSource } from '@lhx-agent-engine/core';
 
 const source: ToolSource = {
   name: 'external',
@@ -339,7 +343,7 @@ const source: ToolSource = {
 ### 12. Sandbox
 
 ```ts
-import { resolveSandboxBackend, WasiFunctionSandbox } from '@agent-engine/core';
+import { resolveSandboxBackend, WasiFunctionSandbox } from '@lhx-agent-engine/core';
 
 const resolution = resolveSandboxBackend('auto', {
   workspaceRoot: '/workspace',
@@ -360,7 +364,7 @@ const out = await wasi.exec({ wasm: compiledWasmBytes, args: ['arg1'], timeoutMs
 ### 13. Events
 
 ```ts
-import { EventBus } from '@agent-engine/core';
+import { EventBus } from '@lhx-agent-engine/core';
 
 const bus = new EventBus();
 const off = bus.on((event) => console.log(event));
@@ -372,7 +376,7 @@ off();
 
 ```ts
 import { z } from 'zod';
-import { extractStructured } from '@agent-engine/core';
+import { extractStructured } from '@lhx-agent-engine/core';
 
 const schema = z.object({ severity: z.enum(['low', 'high']), summary: z.string() });
 const parsed = await extractStructured({
@@ -385,7 +389,7 @@ const parsed = await extractStructured({
 ### 15. Cache
 
 ```ts
-import { InMemoryCacheBackend } from '@agent-engine/core';
+import { InMemoryCacheBackend } from '@lhx-agent-engine/core';
 
 const cache = new InMemoryCacheBackend();
 await cache.set('user:1', { plan: 'basic' }, 60_000); // TTL 60s
@@ -395,43 +399,43 @@ await cache.delete('user:1');
 
 ## Subpath exports
 
-| Subpath                 | Module     | Highlights                                                                                                                                                                                                  |
-| ----------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@agent-engine/core`    | —          | `AgentLoop`, `assembleAgentLoop`, `resolveAgentConfig`, all backends & types                                                                                                                                |
-| `.../llm`               | LLM        | `createProvider` / `createOpenAIProvider` / `createAnthropicProvider`, `createResilientProvider` / `createRoutingProvider`, `LLMProvider`, `FinishReason`, `CompletionError`, `AbortError`, sampling params |
-| `.../tools`             | Tools      | `Tool`, `ToolRegistry`, `registerBuiltinTools` (todo/datetime), `create*FileTool`, `createBashTool`, utils (`defaultFetch`, `resolveWithinRoot`, `TodoStore`, `checkBashPolicy`)                            |
-| `.../agent`             | Agent      | `AgentLoop`, `assembleAgentLoop`, `ToolApproval` (HITL), `AgentRunOutcome`                                                                                                                                  |
-| `.../hooks`             | Hooks      | `Hook`, `HookPipeline`, `HookPoint`, `HookTrace`                                                                                                                                                            |
-| `.../guardrails`        | Guardrails | `GuardrailRule`, `GuardrailContext`, `GuardrailResult` (protocol only)                                                                                                                                      |
-| `.../context`           | Context    | `ContextComposer`, `buildSystemPrompt`, `renderTemplate`, `ContextContributor`, `TokenCounter`, `ContextCompactor`                                                                                          |
-| `.../memory`            | Memory     | `ConversationMemory`, `MemoryBackend`, `Summarizer`, `LongTermMemory`, `noopLongTermMemory`, `LLMSummarizer`                                                                                                |
-| `.../retrieval`         | Retrieval  | `hybridRetrieve`, `Retriever`, `Reranker`, `IdentityReranker`, `noopRetriever`, `reciprocalRankFusion`, `InMemoryVectorStore`, `VectorStore`                                                                |
-| `.../embedding`         | Embedding  | `EmbeddingProvider`, `createEmbeddingProvider`                                                                                                                                                              |
-| `.../plugins`           | Plugins    | `Plugin`, `PluginContext`, `PluginManager`                                                                                                                                                                  |
-| `.../capability`        | Capability | `CapabilityBundle`, `mergeBundles`                                                                                                                                                                          |
-| `.../capability-source` | Sources    | `ToolSource`                                                                                                                                                                                                |
-| `.../resolve`           | Resolve    | `resolveAgentConfig` (config → `ResolvedAgent`)                                                                                                                                                             |
-| `.../sandbox`           | Sandbox    | `SandboxBackend` (docker/nsjail), `WasiFunctionSandbox`                                                                                                                                                     |
-| `.../events`            | Events     | `EventBus`, `AgentEngineEvent`                                                                                                                                                                              |
-| `.../structured-output` | Structured | `extractStructured` (JSON mode + Zod + retry)                                                                                                                                                               |
-| `.../cache`             | Cache      | `CacheBackend`, `InMemoryCacheBackend`                                                                                                                                                                      |
+| Subpath                  | Module     | Highlights                                                                                                                                                                                                  |
+| ------------------------ | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@lhx-agent-engine/core` | —          | `AgentLoop`, `assembleAgentLoop`, `resolveAgentConfig`, all backends & types                                                                                                                                |
+| `.../llm`                | LLM        | `createProvider` / `createOpenAIProvider` / `createAnthropicProvider`, `createResilientProvider` / `createRoutingProvider`, `LLMProvider`, `FinishReason`, `CompletionError`, `AbortError`, sampling params |
+| `.../tools`              | Tools      | `Tool`, `ToolRegistry`, `registerBuiltinTools` (todo/datetime), `create*FileTool`, `createBashTool`, utils (`defaultFetch`, `resolveWithinRoot`, `TodoStore`, `checkBashPolicy`)                            |
+| `.../agent`              | Agent      | `AgentLoop`, `assembleAgentLoop`, `ToolApproval` (HITL), `AgentRunOutcome`                                                                                                                                  |
+| `.../hooks`              | Hooks      | `Hook`, `HookPipeline`, `HookPoint`, `HookTrace`                                                                                                                                                            |
+| `.../guardrails`         | Guardrails | `GuardrailRule`, `GuardrailContext`, `GuardrailResult` (protocol only)                                                                                                                                      |
+| `.../context`            | Context    | `ContextComposer`, `buildSystemPrompt`, `renderTemplate`, `ContextContributor`, `TokenCounter`, `ContextCompactor`                                                                                          |
+| `.../memory`             | Memory     | `ConversationMemory`, `MemoryBackend`, `Summarizer`, `LongTermMemory`, `noopLongTermMemory`, `LLMSummarizer`                                                                                                |
+| `.../retrieval`          | Retrieval  | `hybridRetrieve`, `Retriever`, `Reranker`, `IdentityReranker`, `noopRetriever`, `reciprocalRankFusion`, `InMemoryVectorStore`, `VectorStore`                                                                |
+| `.../embedding`          | Embedding  | `EmbeddingProvider`, `createEmbeddingProvider`                                                                                                                                                              |
+| `.../plugins`            | Plugins    | `Plugin`, `PluginContext`, `PluginManager`                                                                                                                                                                  |
+| `.../capability`         | Capability | `CapabilityBundle`, `mergeBundles`                                                                                                                                                                          |
+| `.../capability-source`  | Sources    | `ToolSource`                                                                                                                                                                                                |
+| `.../resolve`            | Resolve    | `resolveAgentConfig` (config → `ResolvedAgent`)                                                                                                                                                             |
+| `.../sandbox`            | Sandbox    | `SandboxBackend` (docker/nsjail), `WasiFunctionSandbox`                                                                                                                                                     |
+| `.../events`             | Events     | `EventBus`, `AgentEngineEvent`                                                                                                                                                                              |
+| `.../structured-output`  | Structured | `extractStructured` (JSON mode + Zod + retry)                                                                                                                                                               |
+| `.../cache`              | Cache      | `CacheBackend`, `InMemoryCacheBackend`                                                                                                                                                                      |
 
 ## Capability map
 
 Things that **used to be in core** now live in capability plugins (each keeps its own index and reuses `hybridRetrieve` + `ContextContributor`):
 
-| Capability                           | Where it lives now                              |
-| ------------------------------------ | ----------------------------------------------- |
-| rules (load + retrieve + inject)     | `@agent-engine/plugin-rules`                    |
-| skills (load path/npm/git + bundle)  | `@agent-engine/plugin-skills`                   |
-| documents (normalize/chunk/retrieve) | `@agent-engine/plugin-documents`                |
-| semantic long-term memory            | `@agent-engine/plugin-memory`                   |
-| `web_search` / `web_fetch`           | `@agent-engine/plugin-web`                      |
-| MCP client (stdio)                   | `@agent-engine/plugin-mcp`                      |
-| declarative guardrail compilation    | `@agent-engine/plugin-guardrails`               |
-| file / bash / git tool suites        | `@agent-engine/plugin-files` / `-bash` / `-git` |
-| OpenTelemetry observability          | `@agent-engine/plugin-otel`                     |
-| all-of-the-above aggregation         | `@agent-engine/preset-default`                  |
+| Capability                           | Where it lives now                                  |
+| ------------------------------------ | --------------------------------------------------- |
+| rules (load + retrieve + inject)     | `@lhx-agent-engine/plugin-rules`                    |
+| skills (load path/npm/git + bundle)  | `@lhx-agent-engine/plugin-skills`                   |
+| documents (normalize/chunk/retrieve) | `@lhx-agent-engine/plugin-documents`                |
+| semantic long-term memory            | `@lhx-agent-engine/plugin-memory`                   |
+| `web_search` / `web_fetch`           | `@lhx-agent-engine/plugin-web`                      |
+| MCP client (stdio)                   | `@lhx-agent-engine/plugin-mcp`                      |
+| declarative guardrail compilation    | `@lhx-agent-engine/plugin-guardrails`               |
+| file / bash / git tool suites        | `@lhx-agent-engine/plugin-files` / `-bash` / `-git` |
+| OpenTelemetry observability          | `@lhx-agent-engine/plugin-otel`                     |
+| all-of-the-above aggregation         | `@lhx-agent-engine/preset-default`                  |
 
 ## Design notes
 
@@ -442,7 +446,7 @@ Things that **used to be in core** now live in capability plugins (each keeps it
 
 ## Dependencies
 
-- `@agent-engine/config` (schema types)
+- `@lhx-agent-engine/config` (schema types)
 - `openai` / `@anthropic-ai/sdk` (LLM SDKs)
 - `picomatch` (glob matching), `zod` (runtime validation)
 - dev: `wabt` (WASI compile)

@@ -6,7 +6,7 @@ AGENTS.md §2.1 ⚠️ 清单最后一项是「`events/` 事件总线（目录�
 
 - 新增 `core/src/events/`：`EventBus`（`on`/`emit`）+ `AgentEngineEvent` 事件联合（`plugin.installed` / `mcp.connected` / `mcp.failed` / `tool.registered` / `rule.loaded` / `skill.loaded` / `custom`）。
 - `assembleAgentLoop` 建 bus 并发事件（装插件、连 mcp、注册工具、加载规则/技能），随 `ResolvedAgent.eventBus` 暴露。
-- `@agent-engine/core` 新增 `./events` 子路径。
+- `@lhx-agent-engine/core` 新增 `./events` 子路径。
 
 ## Capabilities
 

@@ -1,17 +1,17 @@
-# @agent-engine/plugin-memory
+# @lhx-agent-engine/plugin-memory
 
 长期语义记忆：`SemanticMemory` 实现 core 的 `LongTermMemory` 协议（embedding 向量化 → 向量召回 → 持久化后端）。core 只保留 `LongTermMemory` 接口 + no-op 默认；本插件提供语义实现。
 
 ## 安装
 
 ```bash
-pnpm add @agent-engine/plugin-memory
+pnpm add @lhx-agent-engine/plugin-memory
 ```
 
 ## 用法
 
 ```ts
-import { createSemanticMemory } from '@agent-engine/plugin-memory';
+import { createSemanticMemory } from '@lhx-agent-engine/plugin-memory';
 
 const longTermMemory = createSemanticMemory(vectorStore, embeddingProvider, memoryBackend);
 

@@ -1,10 +1,10 @@
 import { Select } from 'antd';
 
 const KNOWN_PLUGINS = [
-  '@agent-engine/plugin-files',
-  '@agent-engine/plugin-bash',
-  '@agent-engine/plugin-git',
-  '@agent-engine/plugin-otel',
+  '@lhx-agent-engine/plugin-files',
+  '@lhx-agent-engine/plugin-bash',
+  '@lhx-agent-engine/plugin-git',
+  '@lhx-agent-engine/plugin-otel',
 ];
 
 interface PluginsFormProps {
@@ -19,7 +19,7 @@ export function PluginsForm({ plugins, onChange }: PluginsFormProps) {
       value={plugins}
       onChange={onChange}
       options={KNOWN_PLUGINS.map((name) => ({ value: name, label: name }))}
-      placeholder="输入插件名后回车（如 @agent-engine/plugin-git）"
+      placeholder="输入插件名后回车（如 @lhx-agent-engine/plugin-git）"
       style={{ width: '100%' }}
     />
   );

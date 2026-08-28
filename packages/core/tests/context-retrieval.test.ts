@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@rstest/core';
-import { AgentConfigSchema } from '@agent-engine/config';
+import { AgentConfigSchema } from '@lhx-agent-engine/config';
 import { TokenBudgetCompactor } from '../src/context/compactor';
 import { ApproximateTokenCounter } from '../src/context/token-counter';
 import type { TokenCounter } from '../src/context/token-counter';

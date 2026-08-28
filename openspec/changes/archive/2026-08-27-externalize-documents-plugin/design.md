@@ -6,7 +6,7 @@ documents 与 rules / skills 同构：都是「数据 → 索引 → 检索 → 
 
 **Goals:**
 
-- documents 外放 `@agent-engine/plugin-documents`，走 `ContextContributor`（text 注入 `[文档]`）。
+- documents 外放 `@lhx-agent-engine/plugin-documents`，走 `ContextContributor`（text 注入 `[文档]`）。
 - core 删除 `documents/` 目录与 `documentIndex` 硬路径。
 - 保留 `DocumentIndex` 的「BM25 + 可选向量 RRF」检索语义与二进制归一化能力。
 

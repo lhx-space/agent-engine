@@ -1,11 +1,11 @@
-# @agent-engine/config
+# @lhx-agent-engine/config
 
 配置加载与 Schema。将 YAML / JSON5 / TypeScript 三种格式归一化为同一份 `AgentConfig`（Zod 校验、深度冻结）。
 
 ## 安装
 
 ```bash
-pnpm add @agent-engine/config
+pnpm add @lhx-agent-engine/config
 ```
 
 ## 核心能力
@@ -16,15 +16,15 @@ pnpm add @agent-engine/config
 
 ## 子路径导出
 
-| 子路径                        | 内容                                                                        |
-| ----------------------------- | --------------------------------------------------------------------------- |
-| `@agent-engine/config`        | `AgentConfigSchema`、`loadAgentConfig`、`deepFreeze`、`sanitizeConfigValue` |
-| `@agent-engine/config/schema` | 全部 Zod Schema 与衍生类型                                                  |
+| 子路径                            | 内容                                                                        |
+| --------------------------------- | --------------------------------------------------------------------------- |
+| `@lhx-agent-engine/config`        | `AgentConfigSchema`、`loadAgentConfig`、`deepFreeze`、`sanitizeConfigValue` |
+| `@lhx-agent-engine/config/schema` | 全部 Zod Schema 与衍生类型                                                  |
 
 ## API
 
 ```ts
-import { AgentConfigSchema, loadAgentConfig } from '@agent-engine/config';
+import { AgentConfigSchema, loadAgentConfig } from '@lhx-agent-engine/config';
 
 const config = await loadAgentConfig('./agents/devops-agent.yaml');
 // config: AgentConfig（z.infer 衍生类型，深度冻结不可变）

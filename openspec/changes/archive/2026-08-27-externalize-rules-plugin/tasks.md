@@ -1,4 +1,4 @@
-## 1. 新增 @agent-engine/plugin-rules 包
+## 1. 新增 @lhx-agent-engine/plugin-rules 包
 
 - [x] 1.1 `package.json` / `tsconfig.json` / `tsdown.config.ts`
 - [x] 1.2 `src/index.ts`：`createRulesPlugin(rules, options?)` + `loadRulesText` + `RulesPluginOptions`
@@ -22,9 +22,9 @@
 
 ## 4. server 装配
 
-- [x] 4.1 `builtin-plugins.ts` 提供 `@agent-engine/plugin-rules` 工厂 + `defaultCapabilityPlugins`
+- [x] 4.1 `builtin-plugins.ts` 提供 `@lhx-agent-engine/plugin-rules` 工厂 + `defaultCapabilityPlugins`
 - [x] 4.2 `app.ts` 注入 `defaultPlugins`
-- [x] 4.3 `package.json` 加 `@agent-engine/plugin-rules` 依赖
+- [x] 4.3 `package.json` 加 `@lhx-agent-engine/plugin-rules` 依赖
 
 ## 5. 测试迁移
 

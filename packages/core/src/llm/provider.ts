@@ -1,4 +1,4 @@
-import type { BaseModelConfig } from '@agent-engine/config';
+import type { BaseModelConfig } from '@lhx-agent-engine/config';
 import { createAnthropicProvider } from './anthropic';
 import { createOpenAIProvider } from './openai';
 import type { LLMProvider } from './types';

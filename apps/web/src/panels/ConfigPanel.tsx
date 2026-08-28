@@ -1,5 +1,9 @@
 import { Form, Input, Select } from 'antd';
-import type { AgentConfig, Orchestration, OrchestrationMode } from '@agent-engine/config/schema';
+import type {
+  AgentConfig,
+  Orchestration,
+  OrchestrationMode,
+} from '@lhx-agent-engine/config/schema';
 import { HooksForm } from '../config/HooksForm';
 import { McpForm } from '../config/McpForm';
 import { MemoryForm } from '../config/MemoryForm';

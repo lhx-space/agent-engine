@@ -3,7 +3,7 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { z } from 'zod';
-import type { SecurityConfig } from '@agent-engine/config';
+import type { SecurityConfig } from '@lhx-agent-engine/config';
 import { assembleAgentLoop } from '../src/agent/assemble';
 import type { ChatCompletionResult, ChatMessage, LLMProvider } from '../src/llm/types';
 import { ConversationMemory } from '../src/memory/conversation-memory';

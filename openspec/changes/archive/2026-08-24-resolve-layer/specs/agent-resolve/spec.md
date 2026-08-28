@@ -43,7 +43,7 @@
 
 #### Scenario: 按名实例化
 
-- **WHEN** `config.plugins` 含 `@agent-engine/plugin-git` 且 `deps.pluginFactories` 提供其工厂
+- **WHEN** `config.plugins` 含 `@lhx-agent-engine/plugin-git` 且 `deps.pluginFactories` 提供其工厂
 - **THEN** 该 plugin 被实例化并安装，能力进入 registry
 
 #### Scenario: 缺失工厂报错

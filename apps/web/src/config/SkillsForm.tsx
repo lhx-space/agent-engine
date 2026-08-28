@@ -1,6 +1,6 @@
 import { Button, Empty, Input, Select, Space } from 'antd';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import type { SkillRef, SkillSource } from '@agent-engine/config/schema';
+import type { SkillRef, SkillSource } from '@lhx-agent-engine/config/schema';
 
 const SOURCES: SkillSource[] = ['path', 'npm', 'git'];
 
@@ -59,7 +59,7 @@ export function SkillsForm({ skills, onChange }: SkillsFormProps) {
               {skill.source === 'npm' && (
                 <Input
                   value={skill.package}
-                  placeholder="@agent-engine/skill-k8s"
+                  placeholder="@lhx-agent-engine/skill-k8s"
                   onChange={(e) => set(index, { package: e.target.value } as Partial<SkillRef>)}
                 />
               )}

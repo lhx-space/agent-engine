@@ -1,9 +1,22 @@
 {
-  "name": "@agent-engine/plugin-documents",
+  "name": "@lhx-agent-engine/plugin-documents",
   "version": "0.1.0",
   "description": "文档 RAG 插件（归一化 → 分块 → 索引 → 检索注入 [文档]）",
+  "keywords": [
+    "lhx-agent-engine"
+  ],
+  "license": "MIT",
+  "author": "luhanxin",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lhx-space/agent-engine.git",
+    "directory": "packages/plugins/plugin-documents"
+  },
+  "homepage": "https://github.com/lhx-space/agent-engine/tree/main/packages/plugins/plugin-documents#readme",
+  "bugs": {
+    "url": "https://github.com/lhx-space/agent-engine/issues"
+  },
   "type": "module",
-  "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
@@ -22,21 +35,29 @@
   "files": [
     "dist"
   ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit"
   },
+  "devDependencies": {
+    "@types/turndown": "^5.0.5"
+  },
   "dependencies": {
-    "@agent-engine/config": "workspace:*",
-    "@agent-engine/core": "workspace:*",
+    "@lhx-agent-engine/config": "workspace:*",
+    "@lhx-agent-engine/core": "workspace:*",
     "epub2": "^3.0.2",
     "mammoth": "^1.12.1",
     "minisearch": "^7.2.0",
     "turndown": "^7.2.0",
     "unpdf": "^1.8.1"
   },
-  "devDependencies": {
-    "@types/turndown": "^5.0.5"
+  "engines": {
+    "node": ">=18.18.0"
   }
 }

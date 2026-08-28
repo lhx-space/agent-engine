@@ -13,7 +13,7 @@
 
 **Non-Goals:**
 
-- 不实现 `orchestration.mode` 多 Agent 编排（独立 `@agent-engine/orchestration` 包，后续）。
+- 不实现 `orchestration.mode` 多 Agent 编排（独立 `@lhx-agent-engine/orchestration` 包，后续）。
 - 不实现长期记忆后端 / `EmbeddingProvider`（M3 后续）。
 - 不实现 `${ENV}` 插值、`$ref`/`extends` 引用解析（`config/src/resolve/` 配置级归一化，后续 change）。
 - 不实现 hooks 配置（`HookConfigSchema {plugin,on}`）的实例化——目前无 builtin hook 实现，留待 hooks 补齐 change。
@@ -42,7 +42,7 @@
 
 **选择**：`resolveAgentConfig(config, { pluginFactories })`；`pluginFactories: Record<string, () => Plugin | Promise<Plugin>>` 解析 `config.plugins` 的字符串名；缺失报可读错误。
 
-**理由**：core 不能 import 各 plugin 包（会反向依赖）；由 cli/server（同时依赖 core 与 plugin 包）注入 `{ '@agent-engine/plugin-git': () => createGitPlugin() }`。
+**理由**：core 不能 import 各 plugin 包（会反向依赖）；由 cli/server（同时依赖 core 与 plugin 包）注入 `{ '@lhx-agent-engine/plugin-git': () => createGitPlugin() }`。
 
 ### D5: mergeBundles 纯函数 + 单一汇聚点
 

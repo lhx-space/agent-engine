@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@rstest/core';
-import { AgentConfigSchema } from '@agent-engine/config';
+import { AgentConfigSchema } from '@lhx-agent-engine/config';
 import type { EmbeddingProvider } from '../src/embedding/embedding';
 import type { LLMProvider } from '../src/llm/types';
 import { InMemoryVectorStore } from '../src/retrieval/vector-store';

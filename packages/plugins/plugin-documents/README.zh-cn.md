@@ -1,4 +1,4 @@
-# @agent-engine/plugin-documents
+# @lhx-agent-engine/plugin-documents
 
 文档 RAG 插件：`install` 时装载文档（枚举 sources → 归一化 → 分块 → 索引），注册一个 `ContextContributor`，每次 run 检索命中 chunk 并注入 `[文档]` 文本块。
 
@@ -7,13 +7,13 @@
 ## 安装
 
 ```bash
-pnpm add @agent-engine/plugin-documents
+pnpm add @lhx-agent-engine/plugin-documents
 ```
 
 ## 用法
 
 ```ts
-import { createDocumentsPlugin } from '@agent-engine/plugin-documents';
+import { createDocumentsPlugin } from '@lhx-agent-engine/plugin-documents';
 
 const documentsPlugin = createDocumentsPlugin(config.documents, {
   embedding: embeddingProvider, // 可选；不传时仅 BM25

@@ -43,4 +43,4 @@
 
 ## Migration Plan
 
-- 新增 API，零迁移；用户 `config.plugins` 加 `@agent-engine/plugin-otel` 并按需配 exporter。
+- 新增 API，零迁移；用户 `config.plugins` 加 `@lhx-agent-engine/plugin-otel` 并按需配 exporter。

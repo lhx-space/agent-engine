@@ -2,7 +2,7 @@
 
 ### Requirement: system prompt 组装
 
-系统 SHALL 提供 `buildSystemPrompt(options)`，渲染 `systemPrompt.template`（用户变量 + 内置 `skills` 变量），返回本次调用的 system prompt；`skills` 变量值为 `options.skillsText`（调用方检索后传入的文本片段）。规则注入已外放为 `@agent-engine/plugin-rules` 的 `ContextContributor`，SHALL 不再占用 `buildSystemPrompt` 的模板占位符。
+系统 SHALL 提供 `buildSystemPrompt(options)`，渲染 `systemPrompt.template`（用户变量 + 内置 `skills` 变量），返回本次调用的 system prompt；`skills` 变量值为 `options.skillsText`（调用方检索后传入的文本片段）。规则注入已外放为 `@lhx-agent-engine/plugin-rules` 的 `ContextContributor`，SHALL 不再占用 `buildSystemPrompt` 的模板占位符。
 
 #### Scenario: 模板渲染 + skills 占位符注入
 

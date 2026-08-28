@@ -2,7 +2,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse';
-import type { Tool } from '@agent-engine/core/tools';
+import type { Tool } from '@lhx-agent-engine/core/tools';
 import { toTool } from './normalize';
 import type { McpConnection, ResolvedMcpServer } from './types';
 

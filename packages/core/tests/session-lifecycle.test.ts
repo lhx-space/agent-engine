@@ -1,5 +1,5 @@
 import { describe, expect, it, rs } from '@rstest/core';
-import { AgentConfigSchema } from '@agent-engine/config';
+import { AgentConfigSchema } from '@lhx-agent-engine/config';
 import { AgentLoop } from '../src/agent/loop';
 import { HookPipeline } from '../src/hooks/pipeline';
 import type { LLMProvider } from '../src/llm/types';

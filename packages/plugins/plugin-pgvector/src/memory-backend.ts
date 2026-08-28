@@ -1,5 +1,5 @@
 import type { Pool } from 'pg';
-import type { MemoryBackend } from '@agent-engine/core';
+import type { MemoryBackend } from '@lhx-agent-engine/core';
 
 /** 长期记忆 KV 持久化（pg jsonb 表）。 */
 export class PgMemoryBackend implements MemoryBackend {

@@ -1,10 +1,10 @@
 import MiniSearch from 'minisearch';
-import type { Rule } from '@agent-engine/config';
-import type { ContextContributor } from '@agent-engine/core/context';
-import type { EmbeddingProvider } from '@agent-engine/core/embedding';
-import type { Plugin } from '@agent-engine/core/plugins';
-import { hybridRetrieve, InMemoryVectorStore } from '@agent-engine/core/retrieval';
-import type { VectorStore } from '@agent-engine/core/retrieval';
+import type { Rule } from '@lhx-agent-engine/config';
+import type { ContextContributor } from '@lhx-agent-engine/core/context';
+import type { EmbeddingProvider } from '@lhx-agent-engine/core/embedding';
+import type { Plugin } from '@lhx-agent-engine/core/plugins';
+import { hybridRetrieve, InMemoryVectorStore } from '@lhx-agent-engine/core/retrieval';
+import type { VectorStore } from '@lhx-agent-engine/core/retrieval';
 
 /** 中文分词（Node 内置 Intl.Segmenter，word 粒度，零依赖）。 */
 function segment(text: string): string[] {
@@ -101,7 +101,7 @@ export function createRulesPlugin(rules: Rule[], options: RulesPluginOptions = {
   const index = rules.length > 0 ? new RuleIndex(rules, options.embedding) : undefined;
 
   const contributor: ContextContributor = {
-    name: '@agent-engine/plugin-rules',
+    name: '@lhx-agent-engine/plugin-rules',
     async contribute({ userInput }) {
       if (!index) return undefined;
       const onDemand = await index.retrieve(userInput, topK);
@@ -111,7 +111,7 @@ export function createRulesPlugin(rules: Rule[], options: RulesPluginOptions = {
   };
 
   return {
-    name: '@agent-engine/plugin-rules',
+    name: '@lhx-agent-engine/plugin-rules',
     description: '规则上下文注入（always + on-demand BM25/向量 RRF 检索）',
     version: '0.1.0',
     tags: ['rules', '规则', '上下文注入'],

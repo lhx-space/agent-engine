@@ -1,4 +1,4 @@
-import type { AgentLoop } from '@agent-engine/core';
+import type { AgentLoop } from '@lhx-agent-engine/core';
 import type { Context } from 'hono';
 import type { Logger } from '../infra/logger';
 import { HttpError } from '../middlewares/error';

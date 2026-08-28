@@ -1,4 +1,4 @@
-import type { Plugin } from '@agent-engine/core/plugins';
+import type { Plugin } from '@lhx-agent-engine/core/plugins';
 import { createPgvectorPool } from './client';
 import type { PgvectorConfig } from './client';
 import { PgMemoryBackend } from './memory-backend';
@@ -18,7 +18,7 @@ export { PgMemoryBackend } from './memory-backend';
  */
 export function createPgvectorPlugin(config: PgvectorConfig = {}): Plugin {
   return {
-    name: '@agent-engine/plugin-pgvector',
+    name: '@lhx-agent-engine/plugin-pgvector',
     description: 'pgvector 向量存储 + 长期记忆 KV 持久化（PostgreSQL）',
     version: '0.1.0',
     tags: ['pgvector', 'postgresql', 'vector', 'memory'],

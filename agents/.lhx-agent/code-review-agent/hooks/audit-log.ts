@@ -1,4 +1,4 @@
-import type { Hook } from '@agent-engine/core';
+import type { Hook } from '@lhx-agent-engine/core';
 
 /** 审计日志 hook：观察会话/步/工具调用（不改写、不阻断）。 */
 const auditLog: Hook = {

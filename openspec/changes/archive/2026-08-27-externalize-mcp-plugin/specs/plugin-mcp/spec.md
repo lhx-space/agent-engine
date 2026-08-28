@@ -2,12 +2,12 @@
 
 ### Requirement: createMcpPlugin 注册 ToolSource
 
-系统 SHALL 提供 `@agent-engine/plugin-mcp` 包，导出 `createMcpPlugin(servers)`，返回 `Plugin`；其 `install(ctx)` SHALL 在 `servers` 非空时调用 `ctx.registerToolSource` 注册一个 `ToolSource`（`name` 为 `@agent-engine/plugin-mcp`），`resolve` 时连接全部 servers 并返回归一化工具 + 聚合关闭。
+系统 SHALL 提供 `@lhx-agent-engine/plugin-mcp` 包，导出 `createMcpPlugin(servers)`，返回 `Plugin`；其 `install(ctx)` SHALL 在 `servers` 非空时调用 `ctx.registerToolSource` 注册一个 `ToolSource`（`name` 为 `@lhx-agent-engine/plugin-mcp`），`resolve` 时连接全部 servers 并返回归一化工具 + 聚合关闭。
 
 #### Scenario: 注册 ToolSource
 
 - **WHEN** 以非空 servers 构造并安装
-- **THEN** 注册一个 `ToolSource`，名称为 `@agent-engine/plugin-mcp`
+- **THEN** 注册一个 `ToolSource`，名称为 `@lhx-agent-engine/plugin-mcp`
 
 #### Scenario: 空 servers 零注册
 

@@ -1,6 +1,6 @@
-import type { SecurityConfig, WebSearchProvider } from '@agent-engine/config';
-import type { FetchLike } from '@agent-engine/core';
-import type { Plugin } from '@agent-engine/core/plugins';
+import type { SecurityConfig, WebSearchProvider } from '@lhx-agent-engine/config';
+import type { FetchLike } from '@lhx-agent-engine/core';
+import type { Plugin } from '@lhx-agent-engine/core/plugins';
 import { createDuckDuckGoSearchProvider } from './duckduckgo';
 import type { SearchProvider } from './search';
 import { createFallbackSearchProvider } from './search';
@@ -89,7 +89,7 @@ function resolveSearchProvider(security: SecurityConfig, deps: WebPluginDeps): S
  */
 export function createWebPlugin(security: SecurityConfig, deps: WebPluginDeps = {}): Plugin {
   return {
-    name: '@agent-engine/plugin-web',
+    name: '@lhx-agent-engine/plugin-web',
     description: 'Web 工具（web_search / web_fetch）',
     version: '0.1.0',
     tags: ['web', 'search', 'fetch'],

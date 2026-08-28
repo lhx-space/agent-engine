@@ -1,6 +1,6 @@
 ## Context
 
-`@agent-engine/plugin-git` 在 `packages/plugins/git/` 是独立包，其工具实现与 plugin 壳同包，工厂 `createGitPlugin({ sandbox })` 由 server 层注入。上一版 files/bash 却做成 `core/src/plugins/builtin.ts` 的 core 内置工厂，形态不一致。本次对齐 git：files/bash 迁到独立包，server 层注入工厂（连带解决 git 的 factory 注入死配置）。
+`@lhx-agent-engine/plugin-git` 在 `packages/plugins/git/` 是独立包，其工具实现与 plugin 壳同包，工厂 `createGitPlugin({ sandbox })` 由 server 层注入。上一版 files/bash 却做成 `core/src/plugins/builtin.ts` 的 core 内置工厂，形态不一致。本次对齐 git：files/bash 迁到独立包，server 层注入工厂（连带解决 git 的 factory 注入死配置）。
 
 ## Goals / Non-Goals
 

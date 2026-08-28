@@ -33,7 +33,7 @@ M1 阶段，`core` 包需要一个统一的 LLM 接入层——否则后续的 A
 ## Impact
 
 - 新增 `packages/core/src/llm/`（types / provider 工厂 / openai-compatible / anthropic 实现）。
-- 依赖：`openai`（v7）、`@anthropic-ai/sdk`（v0.120），已在 `@agent-engine/core` 的 dependencies 声明。
+- 依赖：`openai`（v7）、`@anthropic-ai/sdk`（v0.120），已在 `@lhx-agent-engine/core` 的 dependencies 声明。
 - 新增 `packages/core/tests/` 下的单元测试（mock 两个 SDK，验证归一化与工厂分派）。
-- 复用 `@agent-engine/config` 的 `ModelConfig` 类型。
+- 复用 `@lhx-agent-engine/config` 的 `ModelConfig` 类型。
 - 无 breaking changes（core 包当前为占位实现）。

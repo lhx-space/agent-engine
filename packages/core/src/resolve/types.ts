@@ -19,7 +19,7 @@ export type PluginFactory = () => Plugin | Promise<Plugin>;
 
 /** `resolveAgentConfig` 的可注入依赖。 */
 export interface ResolveDeps {
-  /** plugin 名 → 工厂（`@agent-engine/plugin-git` → `() => createGitPlugin()`）。 */
+  /** plugin 名 → 工厂（`@lhx-agent-engine/plugin-git` → `() => createGitPlugin()`）。 */
   pluginFactories?: Record<string, PluginFactory>;
   /** 组合层按 config 切片激活的额外能力插件名（与 `config.plugins` 去重合并；core 不硬编码能力映射）。 */
   defaultPlugins?: string[];

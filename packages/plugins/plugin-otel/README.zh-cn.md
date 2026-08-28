@@ -1,13 +1,13 @@
-# @agent-engine/plugin-otel
+# @lhx-agent-engine/plugin-otel
 
 OpenTelemetry 可观测插件——经 `PluginContext.registerHook` 把 Agent 执行链路接入 OpenTelemetry traces。
 
 ## 用法
 
 ```ts
-import { createOtelPlugin } from '@agent-engine/plugin-otel';
+import { createOtelPlugin } from '@lhx-agent-engine/plugin-otel';
 
-const plugin = createOtelPlugin({ tracerName: '@agent-engine/plugin-otel' });
+const plugin = createOtelPlugin({ tracerName: '@lhx-agent-engine/plugin-otel' });
 // 经 config.plugins 激活（或注入 pluginFactories）
 ```
 

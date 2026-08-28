@@ -6,7 +6,7 @@ web 工具（`web_search` / `web_fetch`）与 files/bash 一样是「工具能�
 
 **Goals:**
 
-- web 工具外放 `@agent-engine/plugin-web`。
+- web 工具外放 `@lhx-agent-engine/plugin-web`。
 - `registerBuiltinTools` 只注册 `todo` / `datetime`，签名移除 `security`。
 - 保留搜索 provider 插拔与 domain 约束语义。
 
@@ -31,7 +31,7 @@ web 工具（`web_search` / `web_fetch`）与 files/bash 一样是「工具能�
 
 ### D3: 保留 `http.ts`（`defaultFetch` / `FetchLike`）于 core
 
-**选择**：`tools/utils/http.ts` 留 core（被 embedding 的 `createEmbeddingProvider` 共享）；plugin-web 从 `@agent-engine/core` 导入 `defaultFetch` / `FetchLike`。
+**选择**：`tools/utils/http.ts` 留 core（被 embedding 的 `createEmbeddingProvider` 共享）；plugin-web 从 `@lhx-agent-engine/core` 导入 `defaultFetch` / `FetchLike`。
 
 **理由**：`defaultFetch` 是跨能力的共享原语，不是 web 独占；`FetchLike` / `HttpResponse` 类型也是协议。web 独占的 `search` / `domain` / `html` utils 才随之外放。
 

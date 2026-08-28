@@ -1,4 +1,4 @@
-import type { Tool } from '@agent-engine/core/tools';
+import type { Tool } from '@lhx-agent-engine/core/tools';
 
 /** 可复用能力包：一份指令（SKILL.md 正文）+ 可选捆绑工具。 */
 export interface Skill {

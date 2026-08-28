@@ -1,4 +1,4 @@
-import type { AgentConfig } from '@agent-engine/config';
+import type { AgentConfig } from '@lhx-agent-engine/config';
 import { assembleAgentLoop } from '../agent/assemble';
 import { createEmbeddingProvider } from '../embedding/openai';
 import { HookPipeline } from '../hooks/pipeline';

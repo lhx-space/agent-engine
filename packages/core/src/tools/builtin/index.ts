@@ -26,9 +26,9 @@ export { createDatetimeTool, type DatetimeInput, type DatetimeResult } from './d
 
 /**
  * 统一装配内置工具：只注册**通用原语** `todo` / `datetime`。
- * 垂直能力（read_file / write_file / bash）由内置 plugin（`@agent-engine/plugin-files` /
- * `@agent-engine/plugin-bash`）按 `config.plugins` 声明加载；`web_search` / `web_fetch`
- * 已外放为 `@agent-engine/plugin-web`。
+ * 垂直能力（read_file / write_file / bash）由内置 plugin（`@lhx-agent-engine/plugin-files` /
+ * `@lhx-agent-engine/plugin-bash`）按 `config.plugins` 声明加载；`web_search` / `web_fetch`
+ * 已外放为 `@lhx-agent-engine/plugin-web`。
  */
 export function registerBuiltinTools(
   registry: ToolRegistry,

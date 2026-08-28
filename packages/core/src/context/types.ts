@@ -1,4 +1,4 @@
-import type { SystemPrompt } from '@agent-engine/config';
+import type { SystemPrompt } from '@lhx-agent-engine/config';
 
 /**
  * system prompt 三种形态：

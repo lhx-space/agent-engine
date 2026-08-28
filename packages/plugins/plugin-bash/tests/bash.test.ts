@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@rstest/core';
-import type { BashPolicy } from '@agent-engine/config';
-import { PluginManager } from '@agent-engine/core';
-import type { SandboxBackend } from '@agent-engine/core';
+import type { BashPolicy } from '@lhx-agent-engine/config';
+import { PluginManager } from '@lhx-agent-engine/core';
+import type { SandboxBackend } from '@lhx-agent-engine/core';
 import { createBashPlugin } from '../src/index';
 
 function makeBashPolicy(overrides: Partial<BashPolicy> = {}): BashPolicy {

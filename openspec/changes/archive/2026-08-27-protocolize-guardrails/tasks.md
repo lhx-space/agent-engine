@@ -13,7 +13,7 @@
 
 ## 3. 外放 plugin-guardrails
 
-- [x] 3.1 新增 `@agent-engine/plugin-guardrails` 包（编译逻辑 + `createGuardrailsPlugin`）
+- [x] 3.1 新增 `@lhx-agent-engine/plugin-guardrails` 包（编译逻辑 + `createGuardrailsPlugin`）
 - [x] 3.2 迁移 declarative 编译测试
 
 ## 4. 校验

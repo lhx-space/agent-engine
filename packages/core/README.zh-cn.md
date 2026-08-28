@@ -1,22 +1,22 @@
-# @agent-engine/core
+# @lhx-agent-engine/core
 
 Agent 内核执行引擎（瘦内核）：LLM Provider 抽象、Tool 注册表、单 Agent ReAct 循环、hooks / guardrails 协议、可插拔的记忆 / 检索 / embedding / 缓存后端、插件系统、执行沙箱与事件总线。
 
-> **能力在 `@agent-engine/plugin-*`，不在 core。** 内核只保留「**引擎 + 协议**」（`LLMProvider` / `Retriever` / `hybridRetrieve` / `ToolSource` / `ContextContributor` / `GuardrailRule` / `LongTermMemory` / 各后端）。rules / skills / documents / 语义记忆 / web / mcp / 声明式 guardrail 编译均已外放——见[能力对照表](#能力对照表)。
+> **能力在 `@lhx-agent-engine/plugin-*`，不在 core。** 内核只保留「**引擎 + 协议**」（`LLMProvider` / `Retriever` / `hybridRetrieve` / `ToolSource` / `ContextContributor` / `GuardrailRule` / `LongTermMemory` / 各后端）。rules / skills / documents / 语义记忆 / web / mcp / 声明式 guardrail 编译均已外放——见[能力对照表](#能力对照表)。
 
 **设计铁律**：每个扩展点都是「**接口 + in-memory 默认 + 注入点**」（`PluginContext.register*` + `CapabilityBundle` + `ResolvedAgent`）。具体后端（pgvector / redis / embedding 模型 / 缓存）由用户或生态接入，内核只做适配。
 
 ## 安装
 
 ```bash
-pnpm add @agent-engine/core @agent-engine/config
+pnpm add @lhx-agent-engine/core @lhx-agent-engine/config
 ```
 
 ## 端到端
 
 ```ts
-import { loadAgentConfig } from '@agent-engine/config';
-import { createProvider, resolveAgentConfig } from '@agent-engine/core';
+import { loadAgentConfig } from '@lhx-agent-engine/config';
+import { createProvider, resolveAgentConfig } from '@lhx-agent-engine/core';
 
 const config = await loadAgentConfig('agent.yaml'); // YAML/JSON5/TS → AgentConfig
 const resolved = await resolveAgentConfig(config, {
@@ -53,8 +53,12 @@ systemPrompt: { template: 你是一个简洁、可靠的助手。 }
 实现接口（自定义协议），或用内置工厂。
 
 ```ts
-import { createOpenAIProvider, createAnthropicProvider, createProvider } from '@agent-engine/core';
-import type { LLMProvider } from '@agent-engine/core';
+import {
+  createOpenAIProvider,
+  createAnthropicProvider,
+  createProvider,
+} from '@lhx-agent-engine/core';
+import type { LLMProvider } from '@lhx-agent-engine/core';
 
 // 内置：DeepSeek / OpenAI 兼容
 const openai = createOpenAIProvider({ model: 'deepseek-chat', apiKey: 'sk-...' });
@@ -84,7 +88,7 @@ const result = await provider.chatCompletion({ messages: [{ role: 'user', conten
 
 ```ts
 import { z } from 'zod';
-import { ToolRegistry } from '@agent-engine/core';
+import { ToolRegistry } from '@lhx-agent-engine/core';
 
 const registry = new ToolRegistry();
 registry.register({
@@ -101,15 +105,15 @@ const definitions = registry.toToolDefinitions(); // → LLM 工具定义
 ```
 
 - `registerBuiltinTools(registry, deps?)` 只注册**通用原语** `builtin.todo` / `builtin.datetime`。
-- `createReadFileTool` / `createWriteFileTool` / `createListFilesTool` / `createBashTool` 工厂在 `core/tools`，但**装配它们的插件**是 `@agent-engine/plugin-files` / `@agent-engine/plugin-bash`。
-- `web_search` / `web_fetch` 已迁出到 `@agent-engine/plugin-web`。
+- `createReadFileTool` / `createWriteFileTool` / `createListFilesTool` / `createBashTool` 工厂在 `core/tools`，但**装配它们的插件**是 `@lhx-agent-engine/plugin-files` / `@lhx-agent-engine/plugin-bash`。
+- `web_search` / `web_fetch` 已迁出到 `@lhx-agent-engine/plugin-web`。
 
 ### 3. AgentLoop 运行选项
 
 `agent.run(userInput, options?)` 支持流式、事件、Human-in-the-loop 审批与取消。
 
 ```ts
-import { AbortError } from '@agent-engine/core';
+import { AbortError } from '@lhx-agent-engine/core';
 
 const result = await resolved.agent.run('给我写个脚本', {
   signal: controller.signal,
@@ -131,8 +135,8 @@ const result = await resolved.agent.run('给我写个脚本', {
 Hook 在 10 个生命周期点观察 / 改写，从不阻断（阻断是 guardrail 的职责）。
 
 ```ts
-import { HookPipeline } from '@agent-engine/core';
-import type { Hook } from '@agent-engine/core';
+import { HookPipeline } from '@lhx-agent-engine/core';
+import type { Hook } from '@lhx-agent-engine/core';
 
 const audit: Hook = {
   name: 'audit',
@@ -151,10 +155,10 @@ hooks.onTrace((trace) => console.log(trace)); // 哪个 hook、耗时、是否�
 
 ### 5. Guardrails（协议）
 
-内核只定义可执行 `GuardrailRule` 协议（`validate({ toolName, args?, result? }) → { allowed, reason }`），并经 `PluginContext.registerGuardrail` 注入规则。**把声明式 `config.guardrails` 编译成规则**在 `@agent-engine/plugin-guardrails`。
+内核只定义可执行 `GuardrailRule` 协议（`validate({ toolName, args?, result? }) → { allowed, reason }`），并经 `PluginContext.registerGuardrail` 注入规则。**把声明式 `config.guardrails` 编译成规则**在 `@lhx-agent-engine/plugin-guardrails`。
 
 ```ts
-import type { GuardrailRule } from '@agent-engine/core';
+import type { GuardrailRule } from '@lhx-agent-engine/core';
 
 const denyRm: GuardrailRule = {
   on: 'beforeToolCall',
@@ -175,8 +179,8 @@ import {
   renderTemplate,
   TokenBudgetCompactor,
   ApproximateTokenCounter,
-} from '@agent-engine/core';
-import type { ContextContributor } from '@agent-engine/core';
+} from '@lhx-agent-engine/core';
+import type { ContextContributor } from '@lhx-agent-engine/core';
 
 // renderTemplate / buildSystemPrompt 现在只渲染用户变量——
 // rules/skills/documents 经 ContextContributor（文本 + run 级工具）注入，不再走模板占位符。
@@ -203,7 +207,7 @@ import {
   InMemoryMemoryBackend,
   LLMSummarizer,
   noopLongTermMemory,
-} from '@agent-engine/core';
+} from '@lhx-agent-engine/core';
 
 // ① 条数裁剪 / ② token 预算 + 滚动摘要
 const memory = new ConversationMemory({
@@ -218,7 +222,7 @@ memory.append([
 ]);
 const window = await memory.getWindow();
 
-// ③ 长期记忆在这里是协议；语义实现（SemanticMemory）在 @agent-engine/plugin-memory，
+// ③ 长期记忆在这里是协议；语义实现（SemanticMemory）在 @lhx-agent-engine/plugin-memory，
 //    经 ResolveDeps.longTermMemoryFactory 注入。
 const longTerm = noopLongTermMemory; // core 默认
 ```
@@ -231,7 +235,7 @@ import {
   reciprocalRankFusion,
   InMemoryVectorStore,
   noopRetriever,
-} from '@agent-engine/core';
+} from '@lhx-agent-engine/core';
 
 // 每个能力插件自建索引（MiniSearch 词法 + 可选 InMemoryVectorStore），
 // 并复用 hybridRetrieve 作为唯一的 BM25 + 向量 RRF 编排器：
@@ -255,7 +259,7 @@ const fused = reciprocalRankFusion([
 ### 9. Embedding
 
 ```ts
-import { createEmbeddingProvider } from '@agent-engine/core';
+import { createEmbeddingProvider } from '@lhx-agent-engine/core';
 
 const embedding = createEmbeddingProvider({
   baseURL: 'https://api.openai.com/v1',
@@ -271,8 +275,8 @@ console.log(embedding.dimension, vector.length);
 插件打包「tools + 工具来源 + hooks + guardrails + prompt 片段 + context 贡献者 + 各后端」，经 `PluginContext` 一次性注入。
 
 ```ts
-import { PluginManager } from '@agent-engine/core';
-import type { Plugin } from '@agent-engine/core';
+import { PluginManager } from '@lhx-agent-engine/core';
+import type { Plugin } from '@lhx-agent-engine/core';
 
 const plugin: Plugin = {
   name: 'my-plugin',
@@ -303,10 +307,10 @@ const bundle = manager.getAssembly(); // CapabilityBundle
 
 ### 11. 工具来源（MCP 协议）
 
-内核只定义 `ToolSource { name; resolve() → { tools, dispose } }`；MCP client（`connectMcpServer` / `connectMcpServers`）已迁出到 `@agent-engine/plugin-mcp`。
+内核只定义 `ToolSource { name; resolve() → { tools, dispose } }`；MCP client（`connectMcpServer` / `connectMcpServers`）已迁出到 `@lhx-agent-engine/plugin-mcp`。
 
 ```ts
-import type { ToolSource } from '@agent-engine/core';
+import type { ToolSource } from '@lhx-agent-engine/core';
 
 const source: ToolSource = {
   name: 'external',
@@ -319,7 +323,7 @@ const source: ToolSource = {
 ### 12. 沙箱
 
 ```ts
-import { resolveSandboxBackend, WasiFunctionSandbox } from '@agent-engine/core';
+import { resolveSandboxBackend, WasiFunctionSandbox } from '@lhx-agent-engine/core';
 
 const resolution = resolveSandboxBackend('auto', {
   workspaceRoot: '/workspace',
@@ -340,7 +344,7 @@ const out = await wasi.exec({ wasm: compiledWasmBytes, args: ['arg1'], timeoutMs
 ### 13. 事件总线
 
 ```ts
-import { EventBus } from '@agent-engine/core';
+import { EventBus } from '@lhx-agent-engine/core';
 
 const bus = new EventBus();
 const off = bus.on((event) => console.log(event));
@@ -352,7 +356,7 @@ off();
 
 ```ts
 import { z } from 'zod';
-import { extractStructured } from '@agent-engine/core';
+import { extractStructured } from '@lhx-agent-engine/core';
 
 const schema = z.object({ severity: z.enum(['low', 'high']), summary: z.string() });
 const parsed = await extractStructured({
@@ -365,7 +369,7 @@ const parsed = await extractStructured({
 ### 15. 缓存
 
 ```ts
-import { InMemoryCacheBackend } from '@agent-engine/core';
+import { InMemoryCacheBackend } from '@lhx-agent-engine/core';
 
 const cache = new InMemoryCacheBackend();
 await cache.set('user:1', { plan: 'basic' }, 60_000); // TTL 60s
@@ -375,43 +379,43 @@ await cache.delete('user:1');
 
 ## 子路径导出
 
-| 子路径                  | 模块       | 要点                                                                                                                                                                               |
-| ----------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@agent-engine/core`    | —          | `AgentLoop`、`assembleAgentLoop`、`resolveAgentConfig`、各后端与类型                                                                                                               |
-| `.../llm`               | LLM        | `createProvider` / `createOpenAIProvider` / `createAnthropicProvider`、`LLMProvider`、`FinishReason`、`CompletionError`、`AbortError`、采样参数                                    |
-| `.../tools`             | Tools      | `Tool`、`ToolRegistry`、`registerBuiltinTools`（todo/datetime）、`create*FileTool`、`createBashTool`、utils（`defaultFetch`、`resolveWithinRoot`、`TodoStore`、`checkBashPolicy`） |
-| `.../agent`             | Agent      | `AgentLoop`、`assembleAgentLoop`、`ToolApproval`（HITL）、`AgentRunOutcome`                                                                                                        |
-| `.../hooks`             | Hooks      | `Hook`、`HookPipeline`、`HookPoint`、`HookTrace`                                                                                                                                   |
-| `.../guardrails`        | Guardrails | `GuardrailRule`、`GuardrailContext`、`GuardrailResult`（仅协议）                                                                                                                   |
-| `.../context`           | Context    | `ContextComposer`、`buildSystemPrompt`、`renderTemplate`、`ContextContributor`、`TokenCounter`、`ContextCompactor`                                                                 |
-| `.../memory`            | Memory     | `ConversationMemory`、`MemoryBackend`、`Summarizer`、`LongTermMemory`、`noopLongTermMemory`、`LLMSummarizer`                                                                       |
-| `.../retrieval`         | Retrieval  | `hybridRetrieve`、`Retriever`、`Reranker`、`IdentityReranker`、`noopRetriever`、`reciprocalRankFusion`、`InMemoryVectorStore`、`VectorStore`                                       |
-| `.../embedding`         | Embedding  | `EmbeddingProvider`、`createEmbeddingProvider`                                                                                                                                     |
-| `.../plugins`           | Plugins    | `Plugin`、`PluginContext`、`PluginManager`                                                                                                                                         |
-| `.../capability`        | Capability | `CapabilityBundle`、`mergeBundles`                                                                                                                                                 |
-| `.../capability-source` | Sources    | `ToolSource`                                                                                                                                                                       |
-| `.../resolve`           | Resolve    | `resolveAgentConfig`（config → `ResolvedAgent`）                                                                                                                                   |
-| `.../sandbox`           | Sandbox    | `SandboxBackend`（docker/nsjail）、`WasiFunctionSandbox`                                                                                                                           |
-| `.../events`            | Events     | `EventBus`、`AgentEngineEvent`                                                                                                                                                     |
-| `.../structured-output` | Structured | `extractStructured`（JSON 模式 + Zod + 重试）                                                                                                                                      |
-| `.../cache`             | Cache      | `CacheBackend`、`InMemoryCacheBackend`                                                                                                                                             |
+| 子路径                   | 模块       | 要点                                                                                                                                                                               |
+| ------------------------ | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@lhx-agent-engine/core` | —          | `AgentLoop`、`assembleAgentLoop`、`resolveAgentConfig`、各后端与类型                                                                                                               |
+| `.../llm`                | LLM        | `createProvider` / `createOpenAIProvider` / `createAnthropicProvider`、`LLMProvider`、`FinishReason`、`CompletionError`、`AbortError`、采样参数                                    |
+| `.../tools`              | Tools      | `Tool`、`ToolRegistry`、`registerBuiltinTools`（todo/datetime）、`create*FileTool`、`createBashTool`、utils（`defaultFetch`、`resolveWithinRoot`、`TodoStore`、`checkBashPolicy`） |
+| `.../agent`              | Agent      | `AgentLoop`、`assembleAgentLoop`、`ToolApproval`（HITL）、`AgentRunOutcome`                                                                                                        |
+| `.../hooks`              | Hooks      | `Hook`、`HookPipeline`、`HookPoint`、`HookTrace`                                                                                                                                   |
+| `.../guardrails`         | Guardrails | `GuardrailRule`、`GuardrailContext`、`GuardrailResult`（仅协议）                                                                                                                   |
+| `.../context`            | Context    | `ContextComposer`、`buildSystemPrompt`、`renderTemplate`、`ContextContributor`、`TokenCounter`、`ContextCompactor`                                                                 |
+| `.../memory`             | Memory     | `ConversationMemory`、`MemoryBackend`、`Summarizer`、`LongTermMemory`、`noopLongTermMemory`、`LLMSummarizer`                                                                       |
+| `.../retrieval`          | Retrieval  | `hybridRetrieve`、`Retriever`、`Reranker`、`IdentityReranker`、`noopRetriever`、`reciprocalRankFusion`、`InMemoryVectorStore`、`VectorStore`                                       |
+| `.../embedding`          | Embedding  | `EmbeddingProvider`、`createEmbeddingProvider`                                                                                                                                     |
+| `.../plugins`            | Plugins    | `Plugin`、`PluginContext`、`PluginManager`                                                                                                                                         |
+| `.../capability`         | Capability | `CapabilityBundle`、`mergeBundles`                                                                                                                                                 |
+| `.../capability-source`  | Sources    | `ToolSource`                                                                                                                                                                       |
+| `.../resolve`            | Resolve    | `resolveAgentConfig`（config → `ResolvedAgent`）                                                                                                                                   |
+| `.../sandbox`            | Sandbox    | `SandboxBackend`（docker/nsjail）、`WasiFunctionSandbox`                                                                                                                           |
+| `.../events`             | Events     | `EventBus`、`AgentEngineEvent`                                                                                                                                                     |
+| `.../structured-output`  | Structured | `extractStructured`（JSON 模式 + Zod + 重试）                                                                                                                                      |
+| `.../cache`              | Cache      | `CacheBackend`、`InMemoryCacheBackend`                                                                                                                                             |
 
 ## 能力对照表
 
 **曾经在 core**、现在住在能力插件里的东西（各自保留索引、复用 `hybridRetrieve` + `ContextContributor`）：
 
-| 能力                               | 现在在哪                                        |
-| ---------------------------------- | ----------------------------------------------- |
-| rules（加载 + 检索 + 注入）        | `@agent-engine/plugin-rules`                    |
-| skills（path/npm/git 加载 + 捆绑） | `@agent-engine/plugin-skills`                   |
-| documents（归一化/分块/检索）      | `@agent-engine/plugin-documents`                |
-| 语义长期记忆                       | `@agent-engine/plugin-memory`                   |
-| `web_search` / `web_fetch`         | `@agent-engine/plugin-web`                      |
-| MCP client（stdio）                | `@agent-engine/plugin-mcp`                      |
-| 声明式 guardrail 编译              | `@agent-engine/plugin-guardrails`               |
-| file / bash / git 工具套件         | `@agent-engine/plugin-files` / `-bash` / `-git` |
-| OpenTelemetry 可观测               | `@agent-engine/plugin-otel`                     |
-| 上述全部聚合                       | `@agent-engine/preset-default`                  |
+| 能力                               | 现在在哪                                            |
+| ---------------------------------- | --------------------------------------------------- |
+| rules（加载 + 检索 + 注入）        | `@lhx-agent-engine/plugin-rules`                    |
+| skills（path/npm/git 加载 + 捆绑） | `@lhx-agent-engine/plugin-skills`                   |
+| documents（归一化/分块/检索）      | `@lhx-agent-engine/plugin-documents`                |
+| 语义长期记忆                       | `@lhx-agent-engine/plugin-memory`                   |
+| `web_search` / `web_fetch`         | `@lhx-agent-engine/plugin-web`                      |
+| MCP client（stdio）                | `@lhx-agent-engine/plugin-mcp`                      |
+| 声明式 guardrail 编译              | `@lhx-agent-engine/plugin-guardrails`               |
+| file / bash / git 工具套件         | `@lhx-agent-engine/plugin-files` / `-bash` / `-git` |
+| OpenTelemetry 可观测               | `@lhx-agent-engine/plugin-otel`                     |
+| 上述全部聚合                       | `@lhx-agent-engine/preset-default`                  |
 
 ## 设计说明
 
@@ -422,7 +426,7 @@ await cache.delete('user:1');
 
 ## 依赖
 
-- `@agent-engine/config`（schema 类型）
+- `@lhx-agent-engine/config`（schema 类型）
 - `openai` / `@anthropic-ai/sdk`（LLM SDK）
 - `picomatch`（glob 匹配）、`zod`（运行时校验）
 - dev：`wabt`（WASI 编译）

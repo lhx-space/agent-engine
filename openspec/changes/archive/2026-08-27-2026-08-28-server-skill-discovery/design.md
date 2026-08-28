@@ -45,4 +45,4 @@ find-skill 机制的本质是「发现 → 声明 → 拉取 → 使用」四段
 ## Migration Plan
 
 - 新增端点/字段，旧 API 零迁移。
-- otel opt-in：用户 `config.plugins` 加 `@agent-engine/plugin-otel` 即可。
+- otel opt-in：用户 `config.plugins` 加 `@lhx-agent-engine/plugin-otel` 即可。

@@ -1,7 +1,7 @@
-import type { DocumentsConfig } from '@agent-engine/config';
-import type { ContextContributor } from '@agent-engine/core/context';
-import type { EmbeddingProvider } from '@agent-engine/core/embedding';
-import type { Plugin } from '@agent-engine/core/plugins';
+import type { DocumentsConfig } from '@lhx-agent-engine/config';
+import type { ContextContributor } from '@lhx-agent-engine/core/context';
+import type { EmbeddingProvider } from '@lhx-agent-engine/core/embedding';
+import type { Plugin } from '@lhx-agent-engine/core/plugins';
 import { DocumentIndex, loadDocuments } from './document-index';
 
 export { TextNormalizer } from './text-normalizer';
@@ -36,14 +36,14 @@ export function createDocumentsPlugin(
   options: DocumentsPluginOptions = {},
 ): Plugin {
   return {
-    name: '@agent-engine/plugin-documents',
+    name: '@lhx-agent-engine/plugin-documents',
     description: '文档 RAG（归一化 → 分块 → 索引 → 检索注入 [文档]）',
     version: '0.1.0',
     tags: ['documents', 'rag', '文档'],
     async install(ctx) {
       const index: DocumentIndex = await loadDocuments(documents, options.embedding);
       const contributor: ContextContributor = {
-        name: '@agent-engine/plugin-documents',
+        name: '@lhx-agent-engine/plugin-documents',
         async contribute({ userInput }) {
           const chunks = await index.retrieve(userInput);
           if (chunks.length === 0) return undefined;

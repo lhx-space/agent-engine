@@ -1,6 +1,6 @@
 import { Button, Empty, Input, Select, Space } from 'antd';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import type { HookConfig, HookPoint } from '@agent-engine/config/schema';
+import type { HookConfig, HookPoint } from '@lhx-agent-engine/config/schema';
 
 const HOOK_POINTS: HookPoint[] = [
   'onInit',

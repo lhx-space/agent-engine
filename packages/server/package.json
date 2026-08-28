@@ -1,9 +1,22 @@
 {
-  "name": "@agent-engine/server",
+  "name": "@lhx-agent-engine/server",
   "version": "0.1.0",
   "description": "Agent Engine HTTP 服务（Docker 部署）",
+  "keywords": [
+    "lhx-agent-engine"
+  ],
+  "license": "MIT",
+  "author": "luhanxin",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lhx-space/agent-engine.git",
+    "directory": "packages/server"
+  },
+  "homepage": "https://github.com/lhx-space/agent-engine/tree/main/packages/server#readme",
+  "bugs": {
+    "url": "https://github.com/lhx-space/agent-engine/issues"
+  },
   "type": "module",
-  "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
@@ -22,20 +35,28 @@
   "files": [
     "dist"
   ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
     "start": "tsx src/bin.ts",
     "typecheck": "tsc --noEmit"
   },
+  "devDependencies": {
+    "tsx": "^4.23.12"
+  },
   "dependencies": {
-    "@agent-engine/config": "workspace:*",
-    "@agent-engine/core": "workspace:*",
-    "@agent-engine/preset-default": "workspace:*",
+    "@lhx-agent-engine/config": "workspace:*",
+    "@lhx-agent-engine/core": "workspace:*",
+    "@lhx-agent-engine/preset-default": "workspace:*",
     "@hono/node-server": "^2.1.1",
     "hono": "^4.13.3"
   },
-  "devDependencies": {
-    "tsx": "^4.23.12"
+  "engines": {
+    "node": ">=18.18.0"
   }
 }

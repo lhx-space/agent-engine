@@ -1,11 +1,11 @@
-# @agent-engine/cli
+# @lhx-agent-engine/cli
 
 Agent Engine command-line entry.
 
 ## Plan
 
 - `agent-engine run --config <path>`: load a config and run a vertical-domain Agent.
-- Built on `commander`, driving the Agent Loop from `@agent-engine/core`.
+- Built on `commander`, driving the Agent Loop from `@lhx-agent-engine/core`.
 
 ## Status
 

@@ -1,5 +1,5 @@
 import { Alert, Form, Input } from 'antd';
-import type { SystemPrompt } from '@agent-engine/config/schema';
+import type { SystemPrompt } from '@lhx-agent-engine/config/schema';
 
 interface SystemPromptPanelProps {
   systemPrompt: SystemPrompt;

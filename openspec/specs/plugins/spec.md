@@ -50,7 +50,7 @@ TBD - created by archiving change add-plugins. Update Purpose after archive.
 
 ### Requirement: 内置 plugin（files / bash）
 
-系统 SHALL 提供两个独立 plugin 包 `@agent-engine/plugin-files`（`createFilesPlugin(policy)`，注册 `read_file` / `write_file` / `list_files`）与 `@agent-engine/plugin-bash`（`createBashPlugin(policy, sandbox)`，注册 `bash`，`install` 时校验 `bash.enabled`）；二者均为 `Plugin` 实现，经 `config.plugins` 声明并由装配层注入工厂后加载。`read_file` 截断 SHALL 在 UTF-8 字符边界进行（不切断多字节字符）。
+系统 SHALL 提供两个独立 plugin 包 `@lhx-agent-engine/plugin-files`（`createFilesPlugin(policy)`，注册 `read_file` / `write_file` / `list_files`）与 `@lhx-agent-engine/plugin-bash`（`createBashPlugin(policy, sandbox)`，注册 `bash`，`install` 时校验 `bash.enabled`）；二者均为 `Plugin` 实现，经 `config.plugins` 声明并由装配层注入工厂后加载。`read_file` 截断 SHALL 在 UTF-8 字符边界进行（不切断多字节字符）。
 
 #### Scenario: files plugin 注册文件工具
 

@@ -15,12 +15,12 @@
 
 #### Scenario: ESM 导入
 
-- **WHEN** 消费者以 `import { x } from '@agent-engine/core'` 导入
+- **WHEN** 消费者以 `import { x } from '@lhx-agent-engine/core'` 导入
 - **THEN** 解析到 `dist/index.mjs` 与 `dist/index.d.mts`
 
 #### Scenario: CJS 导入
 
-- **WHEN** 消费者以 `require('@agent-engine/core')` 导入
+- **WHEN** 消费者以 `require('@lhx-agent-engine/core')` 导入
 - **THEN** 解析到 `dist/index.cjs` 与 `dist/index.d.cts`
 
 ### Requirement: tree-shaking 标记

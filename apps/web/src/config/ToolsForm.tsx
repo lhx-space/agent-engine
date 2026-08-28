@@ -1,5 +1,5 @@
 import { Select, Space, Typography } from 'antd';
-import type { ToolsConfig } from '@agent-engine/config/schema';
+import type { ToolsConfig } from '@lhx-agent-engine/config/schema';
 
 const BUILTIN_TOOL_OPTIONS = [
   { value: 'builtin.todo', label: 'todo（任务规划）' },

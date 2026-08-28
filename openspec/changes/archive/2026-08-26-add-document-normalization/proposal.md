@@ -7,7 +7,7 @@
 - `core/src/documents/`：`Document` / `Chunk` 类型 + `DocumentNormalizer` / `Chunker` 接口。
 - 归一化默认实现：`TextNormalizer`（text/md 透传）、`HtmlNormalizer`（`turndown` HTML→Markdown）。
 - 分块默认实现：`FixedSizeChunker`（size + overlap）、`MarkdownHeadingChunker`（按标题切，超长回落固定切）。
-- 导出：`@agent-engine/core/documents` 子路径 + 根 `index` / `types`。
+- 导出：`@lhx-agent-engine/core/documents` 子路径 + 根 `index` / `types`。
 
 ## Capabilities
 

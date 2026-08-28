@@ -4,7 +4,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import type { SkillRef } from '@agent-engine/config';
+import type { SkillRef } from '@lhx-agent-engine/config';
 import { loadSkillFromPath } from './load';
 import type { Skill } from './types';
 

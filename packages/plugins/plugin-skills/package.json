@@ -1,9 +1,22 @@
 {
-  "name": "@agent-engine/plugin-skills",
+  "name": "@lhx-agent-engine/plugin-skills",
   "version": "0.1.0",
   "description": "技能插件（检索命中注入 instruction + 捆绑工具；SKILL.md 加载 + path/npm/git 来源解析）",
+  "keywords": [
+    "lhx-agent-engine"
+  ],
+  "license": "MIT",
+  "author": "luhanxin",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lhx-space/agent-engine.git",
+    "directory": "packages/plugins/plugin-skills"
+  },
+  "homepage": "https://github.com/lhx-space/agent-engine/tree/main/packages/plugins/plugin-skills#readme",
+  "bugs": {
+    "url": "https://github.com/lhx-space/agent-engine/issues"
+  },
   "type": "module",
-  "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
@@ -22,15 +35,23 @@
   "files": [
     "dist"
   ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@agent-engine/config": "workspace:*",
-    "@agent-engine/core": "workspace:*",
+    "@lhx-agent-engine/config": "workspace:*",
+    "@lhx-agent-engine/core": "workspace:*",
     "gray-matter": "^4.0.3",
     "minisearch": "^7.2.0"
+  },
+  "engines": {
+    "node": ">=18.18.0"
   }
 }

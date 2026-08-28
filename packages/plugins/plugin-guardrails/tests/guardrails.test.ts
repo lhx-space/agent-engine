@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@rstest/core';
-import type { GuardrailRuleConfig } from '@agent-engine/config';
-import type { GuardrailRule } from '@agent-engine/core/guardrails';
-import type { PluginContext } from '@agent-engine/core/plugins';
+import type { GuardrailRuleConfig } from '@lhx-agent-engine/config';
+import type { GuardrailRule } from '@lhx-agent-engine/core/guardrails';
+import type { PluginContext } from '@lhx-agent-engine/core/plugins';
 import {
   compileGuardrails,
   createDeclarativeGuardrail,

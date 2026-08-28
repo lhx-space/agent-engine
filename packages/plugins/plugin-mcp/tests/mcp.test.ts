@@ -1,8 +1,8 @@
 import { describe, expect, it } from '@rstest/core';
 import { z } from 'zod';
-import type { McpServer as McpServerConfig } from '@agent-engine/config';
-import type { ToolSource } from '@agent-engine/core';
-import type { PluginContext } from '@agent-engine/core/plugins';
+import type { McpServer as McpServerConfig } from '@lhx-agent-engine/config';
+import type { ToolSource } from '@lhx-agent-engine/core';
+import type { PluginContext } from '@lhx-agent-engine/core/plugins';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -101,7 +101,7 @@ describe('createMcpPlugin', () => {
     const { ctx, sources } = makeCtx();
     await createMcpPlugin(servers).install(ctx);
     expect(sources).toHaveLength(1);
-    expect(sources[0]?.name).toBe('@agent-engine/plugin-mcp');
+    expect(sources[0]?.name).toBe('@lhx-agent-engine/plugin-mcp');
   });
 
   it('空 servers 不注册 ToolSource', async () => {

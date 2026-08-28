@@ -3,9 +3,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from '@rstest/core';
 import { z } from 'zod';
-import type { SkillRef } from '@agent-engine/config';
-import type { ContextContributor } from '@agent-engine/core/context';
-import type { PluginContext } from '@agent-engine/core/plugins';
+import type { SkillRef } from '@lhx-agent-engine/config';
+import type { ContextContributor } from '@lhx-agent-engine/core/context';
+import type { PluginContext } from '@lhx-agent-engine/core/plugins';
 import { createSkillsPlugin, loadSkillFromPath, resolveSkill, resolveSkills } from '../src/index';
 import type { Skill, SkillSourceDeps } from '../src/index';
 
@@ -44,7 +44,7 @@ describe('createSkillsPlugin', () => {
     const { ctx, contributors } = makeCtx();
     await createSkillsPlugin([incidentSkill, k8sSkill]).install(ctx);
     expect(contributors).toHaveLength(1);
-    expect(contributors[0]?.name).toBe('@agent-engine/plugin-skills');
+    expect(contributors[0]?.name).toBe('@lhx-agent-engine/plugin-skills');
   });
 
   it('检索命中注入 instruction 文本', async () => {

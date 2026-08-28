@@ -1,11 +1,11 @@
-import type { PluginFactory, ProviderFactory } from '@agent-engine/core';
+import type { PluginFactory, ProviderFactory } from '@lhx-agent-engine/core';
 import type { Logger } from './infra/logger';
 import type { SessionStoreBackend } from './infra/session-store';
 import type { SkillDiscoverer } from './services/skill-discovery';
 
 /** `createApp` / `serve` 的可注入选项。 */
 export interface ServerOptions {
-  /** plugin 名 → 工厂（`@agent-engine/plugin-git` → `() => createGitPlugin()`）。 */
+  /** plugin 名 → 工厂（`@lhx-agent-engine/plugin-git` → `() => createGitPlugin()`）。 */
   pluginFactories?: Record<string, PluginFactory>;
   /** LLM provider 工厂；缺省用 core 的 `createProvider`。 */
   providerFactory?: ProviderFactory;

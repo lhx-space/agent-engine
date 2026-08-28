@@ -24,7 +24,7 @@ M2「配置化能力」的最后一块缺口：**内置工具**。当前 `ToolRe
 
 - 新增 `packages/core/src/tools/builtin/`（todo.ts / file.ts / bash.ts / web-search.ts / index.ts）。
 - 消费 `packages/core/src/tools/types.ts`（`Tool`）、`packages/core/src/tools/registry.ts`（`ToolRegistry`）、`packages/core/src/sandbox/`（`SandboxBackend`，前一 change）。
-- 消费 `@agent-engine/config` 的 `SecurityConfig` 类型。
+- 消费 `@lhx-agent-engine/config` 的 `SecurityConfig` 类型。
 - **无新增三方依赖**：`node:fs` / `node:child_process` / 全局 `fetch`。
 - 新增 `packages/core/tests/builtin-tools.test.ts`（todo 状态流转 / 文件路径约束含 symlink / bash 策略 / web_search domain 策略，用假 fetch 与假沙箱）。
 - 无 breaking changes（纯新增工具；demo 可从 mock 升级为真实内置工具）。

@@ -8,12 +8,12 @@ TBD - created by archiving change externalize-skills-plugin. Update Purpose afte
 
 ### Requirement: createSkillsPlugin 注册 ContextContributor
 
-系统 SHALL 提供 `@agent-engine/plugin-skills` 包，导出 `createSkillsPlugin(skills, options?)`，返回 `Plugin`；其 `install(ctx)` SHALL 调用 `ctx.registerContextContributor` 注册一个 `ContextContributor`（`name` 为 `@agent-engine/plugin-skills`）。每次 run，contributor SHALL 自建索引（MiniSearch + 可选向量，复用 core 的 `hybridRetrieve`）检索命中 skills，注入 instruction 拼接文本 + 命中 skills 的捆绑工具。
+系统 SHALL 提供 `@lhx-agent-engine/plugin-skills` 包，导出 `createSkillsPlugin(skills, options?)`，返回 `Plugin`；其 `install(ctx)` SHALL 调用 `ctx.registerContextContributor` 注册一个 `ContextContributor`（`name` 为 `@lhx-agent-engine/plugin-skills`）。每次 run，contributor SHALL 自建索引（MiniSearch + 可选向量，复用 core 的 `hybridRetrieve`）检索命中 skills，注入 instruction 拼接文本 + 命中 skills 的捆绑工具。
 
 #### Scenario: 安装注册 contributor
 
 - **WHEN** 以非空 `skills` 构造 `createSkillsPlugin` 并安装
-- **THEN** `registerContextContributor` 被调用，注册的 contributor 名称为 `@agent-engine/plugin-skills`
+- **THEN** `registerContextContributor` 被调用，注册的 contributor 名称为 `@lhx-agent-engine/plugin-skills`
 
 #### Scenario: 检索命中注入 instruction + 工具
 

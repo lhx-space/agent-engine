@@ -24,4 +24,4 @@ pino 是 server 的硬依赖，且 `core` 也冗余声明了 pino（`core/src` �
 
 - 修改 `packages/server/src/{logger.ts,app.ts,types.ts,index.ts}`、`packages/core/package.json`、`packages/server/package.json`、`pnpm-lock.yaml`。
 - 测试：注入自定义 Logger 断言被调用。
-- **破坏性（小）**：移除 `@agent-engine/server` 的 `logger`（pino 实例）导出，改为 `consoleLogger` + `Logger`；不再内置 pino，需结构化 JSON 日志者自行 `createApp({ logger: pino() })`。
+- **破坏性（小）**：移除 `@lhx-agent-engine/server` 的 `logger`（pino 实例）导出，改为 `consoleLogger` + `Logger`；不再内置 pino，需结构化 JSON 日志者自行 `createApp({ logger: pino() })`。

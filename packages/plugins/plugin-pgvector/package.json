@@ -1,9 +1,22 @@
 {
-  "name": "@agent-engine/plugin-pgvector",
+  "name": "@lhx-agent-engine/plugin-pgvector",
   "version": "0.1.0",
   "description": "pgvector 向量存储 + 长期记忆 KV 持久化（PostgreSQL）",
+  "keywords": [
+    "lhx-agent-engine"
+  ],
+  "license": "MIT",
+  "author": "luhanxin",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lhx-space/agent-engine.git",
+    "directory": "packages/plugins/plugin-pgvector"
+  },
+  "homepage": "https://github.com/lhx-space/agent-engine/tree/main/packages/plugins/plugin-pgvector#readme",
+  "bugs": {
+    "url": "https://github.com/lhx-space/agent-engine/issues"
+  },
   "type": "module",
-  "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
@@ -22,16 +35,24 @@
   "files": [
     "dist"
   ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "@agent-engine/core": "workspace:*",
-    "pg": "^8.13.0"
-  },
   "devDependencies": {
     "@types/pg": "^8.11.10"
+  },
+  "dependencies": {
+    "@lhx-agent-engine/core": "workspace:*",
+    "pg": "^8.13.0"
+  },
+  "engines": {
+    "node": ">=18.18.0"
   }
 }

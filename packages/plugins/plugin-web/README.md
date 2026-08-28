@@ -1,4 +1,4 @@
-# @agent-engine/plugin-web
+# @lhx-agent-engine/plugin-web
 
 Web tools plugin: registers `web_search` (pluggable `SearchProvider`: duckduckgo / searxng / tavily / serper + fallback) and `web_fetch` (domain policy + main-text extraction).
 
@@ -7,13 +7,13 @@ Core no longer ships web tools; this plugin interprets `security.webSearch` / `s
 ## Install
 
 ```bash
-pnpm add @agent-engine/plugin-web
+pnpm add @lhx-agent-engine/plugin-web
 ```
 
 ## Usage
 
 ```ts
-import { createWebPlugin } from '@agent-engine/plugin-web';
+import { createWebPlugin } from '@lhx-agent-engine/plugin-web';
 
 const webPlugin = createWebPlugin(config.security);
 

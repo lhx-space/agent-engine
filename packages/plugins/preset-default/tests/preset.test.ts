@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@rstest/core';
-import { AgentConfigSchema } from '@agent-engine/config';
-import { InMemoryMemoryBackend } from '@agent-engine/core';
-import { InMemoryVectorStore } from '@agent-engine/core';
+import { AgentConfigSchema } from '@lhx-agent-engine/config';
+import { InMemoryMemoryBackend } from '@lhx-agent-engine/core';
+import { InMemoryVectorStore } from '@lhx-agent-engine/core';
 import {
   createPresetLongTermMemoryFactory,
   createPresetPluginFactories,
@@ -20,16 +20,16 @@ describe('createPresetPluginFactories', () => {
   it('返回全部能力插件工厂', () => {
     const factories = createPresetPluginFactories(baseConfig());
     expect(Object.keys(factories).sort()).toEqual([
-      '@agent-engine/plugin-bash',
-      '@agent-engine/plugin-documents',
-      '@agent-engine/plugin-files',
-      '@agent-engine/plugin-git',
-      '@agent-engine/plugin-guardrails',
-      '@agent-engine/plugin-mcp',
-      '@agent-engine/plugin-otel',
-      '@agent-engine/plugin-rules',
-      '@agent-engine/plugin-skills',
-      '@agent-engine/plugin-web',
+      '@lhx-agent-engine/plugin-bash',
+      '@lhx-agent-engine/plugin-documents',
+      '@lhx-agent-engine/plugin-files',
+      '@lhx-agent-engine/plugin-git',
+      '@lhx-agent-engine/plugin-guardrails',
+      '@lhx-agent-engine/plugin-mcp',
+      '@lhx-agent-engine/plugin-otel',
+      '@lhx-agent-engine/plugin-rules',
+      '@lhx-agent-engine/plugin-skills',
+      '@lhx-agent-engine/plugin-web',
     ]);
   });
 });
@@ -37,8 +37,8 @@ describe('createPresetPluginFactories', () => {
 describe('defaultCapabilityPlugins', () => {
   it('web 恒激活 + 能力按 config 切片激活', () => {
     const names = defaultCapabilityPlugins(baseConfig());
-    expect(names).toContain('@agent-engine/plugin-web');
-    expect(names).not.toContain('@agent-engine/plugin-rules');
+    expect(names).toContain('@lhx-agent-engine/plugin-web');
+    expect(names).not.toContain('@lhx-agent-engine/plugin-rules');
   });
 
   it('rules/skills/documents/guardrails/mcp 非空时激活', () => {
@@ -54,11 +54,11 @@ describe('defaultCapabilityPlugins', () => {
     config.mcp = { servers: [{ source: 'command', name: 'm', command: 'node', args: [] }] };
 
     const names = defaultCapabilityPlugins(config);
-    expect(names).toContain('@agent-engine/plugin-rules');
-    expect(names).toContain('@agent-engine/plugin-skills');
-    expect(names).toContain('@agent-engine/plugin-documents');
-    expect(names).toContain('@agent-engine/plugin-guardrails');
-    expect(names).toContain('@agent-engine/plugin-mcp');
+    expect(names).toContain('@lhx-agent-engine/plugin-rules');
+    expect(names).toContain('@lhx-agent-engine/plugin-skills');
+    expect(names).toContain('@lhx-agent-engine/plugin-documents');
+    expect(names).toContain('@lhx-agent-engine/plugin-guardrails');
+    expect(names).toContain('@lhx-agent-engine/plugin-mcp');
   });
 });
 

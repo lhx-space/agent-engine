@@ -1,6 +1,6 @@
 ## Context
 
-`@agent-engine/core` 是最大、依赖最重的包（openai / anthropic / mcp-sdk / readability / linkedom / minisearch / picomatch 等），但对外只有一个 `.` 入口。写 plugin（`@agent-engine/plugin-files` 等）只需 tools 层（`Tool` / `ToolRegistry` / 工具工厂）与 `Plugin` 类型，却要连带整个 barrel。对照 `@agent-engine/config` 的 `./schema` 子路径，core 应按模块拆子路径，让「用多少引多少」。
+`@lhx-agent-engine/core` 是最大、依赖最重的包（openai / anthropic / mcp-sdk / readability / linkedom / minisearch / picomatch 等），但对外只有一个 `.` 入口。写 plugin（`@lhx-agent-engine/plugin-files` 等）只需 tools 层（`Tool` / `ToolRegistry` / 工具工厂）与 `Plugin` 类型，却要连带整个 barrel。对照 `@lhx-agent-engine/config` 的 `./schema` 子路径，core 应按模块拆子路径，让「用多少引多少」。
 
 ## Goals / Non-Goals
 
@@ -44,6 +44,6 @@
 
 ## Migration Plan
 
-- `.` 主入口不变，既有 `from '@agent-engine/core'` 全部兼容，无迁移成本。
-- 新增用法：`import { ToolRegistry, createReadFileTool } from '@agent-engine/core/tools'` 等。
+- `.` 主入口不变，既有 `from '@lhx-agent-engine/core'` 全部兼容，无迁移成本。
+- 新增用法：`import { ToolRegistry, createReadFileTool } from '@lhx-agent-engine/core/tools'` 等。
 - 后续可把 plugin 包、server 层逐步改走子路径（可选，非本次必须）。

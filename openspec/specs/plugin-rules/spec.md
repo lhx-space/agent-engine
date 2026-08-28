@@ -8,12 +8,12 @@ TBD - created by archiving change externalize-rules-plugin. Update Purpose after
 
 ### Requirement: createRulesPlugin 注册 ContextContributor
 
-系统 SHALL 提供 `@agent-engine/plugin-rules` 包，导出 `createRulesPlugin(rules, options?)`，返回 `Plugin`；其 `install(ctx)` SHALL 调用 `ctx.registerContextContributor` 注册一个 `ContextContributor`（`name` 为 `@agent-engine/plugin-rules`）。
+系统 SHALL 提供 `@lhx-agent-engine/plugin-rules` 包，导出 `createRulesPlugin(rules, options?)`，返回 `Plugin`；其 `install(ctx)` SHALL 调用 `ctx.registerContextContributor` 注册一个 `ContextContributor`（`name` 为 `@lhx-agent-engine/plugin-rules`）。
 
 #### Scenario: 安装注册 contributor
 
 - **WHEN** 以非空 `rules` 构造 `createRulesPlugin` 并安装到 `PluginContext`
-- **THEN** `registerContextContributor` 被调用一次，注册的 contributor 名称为 `@agent-engine/plugin-rules`
+- **THEN** `registerContextContributor` 被调用一次，注册的 contributor 名称为 `@lhx-agent-engine/plugin-rules`
 
 #### Scenario: 空 rules 不注册 contributor
 

@@ -25,6 +25,6 @@ Agent Loop（ReAct 循环）需要「执行工具」的能力：模型返回工�
 
 - 新增 `packages/core/src/tools/`（Tool 接口、ToolRegistry、Zod→JSON Schema 转换）。
 - 消费 `packages/core/src/llm/types.ts` 的 `ToolDefinition` 类型（衔接上一 change）。
-- 依赖：`zod`（已在 `@agent-engine/core` 声明，使用其内置 `toJSONSchema`，**不新增三方依赖**）。
+- 依赖：`zod`（已在 `@lhx-agent-engine/core` 声明，使用其内置 `toJSONSchema`，**不新增三方依赖**）。
 - 新增 `packages/core/tests/` 下的单元测试。
 - 无 breaking changes（core 包当前仅有 llm 模块）。

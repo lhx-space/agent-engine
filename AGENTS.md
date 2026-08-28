@@ -148,9 +148,9 @@ agent-engine/
 ├── openspec/                  # OpenSpec 规范（specs/ · changes/ · config.yaml）
 ├── docs/                      # 文档站点（Rspress）—— 架构设计、API、使用指南
 ├── apps/
-│   └── web/                   # @agent-engine/web —— WebApp（React 19 + Rsbuild）
+│   └── web/                   # @lhx-agent-engine/web —— WebApp（React 19 + Rsbuild）
 ├── packages/
-│   ├── core/                  # @agent-engine/core   —— 内核执行引擎（最核心；只留引擎 + 协议）
+│   ├── core/                  # @lhx-agent-engine/core   —— 内核执行引擎（最核心；只留引擎 + 协议）
 │   │   └── src/
 │   │       ├── agent/         #   Agent Loop（单 Agent 原语；多 Agent 编排在独立 orchestration 包，M3）
 │   │       ├── capability/    #   CapabilityBundle 统一能力束 + mergeBundles 汇聚
@@ -172,13 +172,13 @@ agent-engine/
 │   │       ├── cache/         #   CacheBackend + InMemoryCacheBackend
 │   │       ├── events/        #   事件总线、可观测
 │   │       └── types.ts       #   对外核心类型
-│   ├── config/                # @agent-engine/config —— 配置加载 + Schema
+│   ├── config/                # @lhx-agent-engine/config —— 配置加载 + Schema
 │   │   └── src/
 │   │       ├── schema/        #   Zod Schema（AgentConfig 等）
 │   │       ├── loader/        #   yaml/json5/jiti 加载器
 │   │       └── resolve/       #   配置级归一化（env 插值 / $ref / extends，后续）
-│   ├── cli/                   # @agent-engine/cli   —— 命令行入口
-│   ├── server/                # @agent-engine/server —— HTTP 服务（Docker 部署）
+│   ├── cli/                   # @lhx-agent-engine/cli   —— 命令行入口
+│   ├── server/                # @lhx-agent-engine/server —— HTTP 服务（Docker 部署）
 │   └── plugins/               # 能力插件（plugin-rules/skills/documents/memory/web/mcp/guardrails/files/bash/git/otel）+ preset-default
 ├── examples/                  # 垂直领域 Agent 配置示例
 │   ├── devops-agent/
@@ -223,32 +223,32 @@ docs/（Rspress）为独立站点，无运行时依赖
 | 上下文层                   | `context/`（system-prompt / ContextComposer / ContextContributor）、`memory/`          | 提示词组装 + 会话/长期记忆         |
 | 基建层（leaf，被上层依赖） | `sandbox/`、`retrieval/`、`capability/`、`resolve/`、`embedding/`、`cache/`、`events/` | 隔离 / 检索 / 能力束 / 装配 / 后端 |
 
-能力实现（rules / skills / documents / 语义记忆 / web / mcp / 声明式 guardrail 编译）已全部外放为 `packages/plugins/plugin-*`，core 只留协议 + 注入点；`@agent-engine/preset-default` 聚合它们并据 config 切片激活。
+能力实现（rules / skills / documents / 语义记忆 / web / mcp / 声明式 guardrail 编译）已全部外放为 `packages/plugins/plugin-*`，core 只留协议 + 注入点；`@lhx-agent-engine/preset-default` 聚合它们并据 config 切片激活。
 
 > 目录是「呈现」不是「约束」：真正的分层靠依赖方向与未来的 import 边界 lint，而非目录嵌套深度。
 
 ### 5.1 能力层（Agent 能「做什么」）
 
-- **tools**：原子能力单元，一个函数即一个工具（如 `read_file`、`bash`、`web_search`）。注册进 **Tool Registry**。已落地**内置通用原语** `todo` / `datetime`（`core/tools/builtin/`）；`web_search` / `web_fetch` 迁出为 `@agent-engine/plugin-web`（多 provider：`searxng` 默认 / `duckduckgo` 兜底 / `tavily` / `serper`，经 `security.webSearch.endpoint` / `apiKey` / `fallback` 配置，缺失必需配置或运行期失败按序回退）；垂直能力 `read_file` / `write_file` / `list_files` / `bash` / `git` 为插件 `@agent-engine/plugin-files` / `@agent-engine/plugin-bash` / `@agent-engine/plugin-git`（经 `config.plugins` 声明加载，bash 经 `SandboxBackend` 沙箱执行，见 5.6）；`tools.disabled`（配置轴）在装配末按名禁用任意 builtin / plugin / MCP 工具；非 tool 的支撑代码统一在 `core/tools/utils/`。
-- **skills**：可复用能力包 = 一份指令（`SKILL.md`）+ 可选捆绑的 tools/资源。外放为 `@agent-engine/plugin-skills`（`loadSkillFromPath` gray-matter 解析 + `resolveSkills` 按 path/npm/git 装载）；经 `ContextContributor` 注入指令 + 注册捆绑工具（run 结束还原）。
-- **mcp**：通过 Model Context Protocol 接入的**外部能力来源**。外放为 `@agent-engine/plugin-mcp`（`connectMcpServer` / `connectMcpServers`，stdio transport 复用 `@modelcontextprotocol/sdk`，tools 归一化为标准 Tool + `jsonSchema` 透传 + 错误隔离 + `dispose` 生命周期）；core 只留 `ToolSource` 协议（`registerToolSource`），装配层 resolve 出工具 + 聚合释放；配置 `mcp.servers`（source: command|registry）由插件工厂解释。
+- **tools**：原子能力单元，一个函数即一个工具（如 `read_file`、`bash`、`web_search`）。注册进 **Tool Registry**。已落地**内置通用原语** `todo` / `datetime`（`core/tools/builtin/`）；`web_search` / `web_fetch` 迁出为 `@lhx-agent-engine/plugin-web`（多 provider：`searxng` 默认 / `duckduckgo` 兜底 / `tavily` / `serper`，经 `security.webSearch.endpoint` / `apiKey` / `fallback` 配置，缺失必需配置或运行期失败按序回退）；垂直能力 `read_file` / `write_file` / `list_files` / `bash` / `git` 为插件 `@lhx-agent-engine/plugin-files` / `@lhx-agent-engine/plugin-bash` / `@lhx-agent-engine/plugin-git`（经 `config.plugins` 声明加载，bash 经 `SandboxBackend` 沙箱执行，见 5.6）；`tools.disabled`（配置轴）在装配末按名禁用任意 builtin / plugin / MCP 工具；非 tool 的支撑代码统一在 `core/tools/utils/`。
+- **skills**：可复用能力包 = 一份指令（`SKILL.md`）+ 可选捆绑的 tools/资源。外放为 `@lhx-agent-engine/plugin-skills`（`loadSkillFromPath` gray-matter 解析 + `resolveSkills` 按 path/npm/git 装载）；经 `ContextContributor` 注入指令 + 注册捆绑工具（run 结束还原）。
+- **mcp**：通过 Model Context Protocol 接入的**外部能力来源**。外放为 `@lhx-agent-engine/plugin-mcp`（`connectMcpServer` / `connectMcpServers`，stdio transport 复用 `@modelcontextprotocol/sdk`，tools 归一化为标准 Tool + `jsonSchema` 透传 + 错误隔离 + `dispose` 生命周期）；core 只留 `ToolSource` 协议（`registerToolSource`），装配层 resolve 出工具 + 聚合释放；配置 `mcp.servers`（source: command|registry）由插件工厂解释。
 
 ### 5.2 扩展层（能力的「打包与分发」单元）
 
-- **plugins**：最大的扩展单元，可打包「多个 tools + hooks + guardrails + prompt 片段 + context 贡献者 + 各后端」整体注册/卸载。插件通过 `PluginContext` 注入能力，是实现「开箱即用领域能力」的载体。已落地 `Plugin` 类型 + `PluginContext`（registerTool / registerToolSource / registerHook / registerGuardrail / provideSystemPrompt / registerMemoryBackend / registerCacheBackend / registerVectorStore / registerEmbeddingProvider / registerTokenCounter / registerContextCompactor / registerRetriever / registerReranker / registerSummarizer / registerContextContributor）+ `PluginManager`（install → `CapabilityBundle`）+ `assembleAgentLoop`（async 装配工厂，安装 plugins 并合并能力）；能力插件 `plugin-rules` / `plugin-skills` / `plugin-documents` / `plugin-memory` / `plugin-web` / `plugin-mcp` / `plugin-guardrails` 与工具插件 `plugin-files` / `plugin-bash` / `plugin-git` / `plugin-otel` 均在 `packages/plugins/` 下；`@agent-engine/preset-default` 聚合它们，按 config 切片激活（rules/skills/documents/guardrails/mcp 非空才激活、web 常开、files/bash/git 经 `config.plugins` opt-in），由 server 层注入工厂加载。
+- **plugins**：最大的扩展单元，可打包「多个 tools + hooks + guardrails + prompt 片段 + context 贡献者 + 各后端」整体注册/卸载。插件通过 `PluginContext` 注入能力，是实现「开箱即用领域能力」的载体。已落地 `Plugin` 类型 + `PluginContext`（registerTool / registerToolSource / registerHook / registerGuardrail / provideSystemPrompt / registerMemoryBackend / registerCacheBackend / registerVectorStore / registerEmbeddingProvider / registerTokenCounter / registerContextCompactor / registerRetriever / registerReranker / registerSummarizer / registerContextContributor）+ `PluginManager`（install → `CapabilityBundle`）+ `assembleAgentLoop`（async 装配工厂，安装 plugins 并合并能力）；能力插件 `plugin-rules` / `plugin-skills` / `plugin-documents` / `plugin-memory` / `plugin-web` / `plugin-mcp` / `plugin-guardrails` 与工具插件 `plugin-files` / `plugin-bash` / `plugin-git` / `plugin-otel` 均在 `packages/plugins/` 下；`@lhx-agent-engine/preset-default` 聚合它们，按 config 切片激活（rules/skills/documents/guardrails/mcp 非空才激活、web 常开、files/bash/git 经 `config.plugins` opt-in），由 server 层注入工厂加载。
 
 ### 5.3 执行控制层（Agent「如何做」的约束）
 
 - **hooks**：生命周期事件拦截点，用于无侵入地增强执行流程（日志、审计、限流、埋点、内容过滤）。
-- **rules**：上下文规则，作为「约束文本」经 `ContextContributor` 注入 system-prompt，按 `kind` 决定加载策略——`always` 强制注入 / `on-demand` 按需检索（`hybridRetrieve`：BM25 + 向量 RRF）注入；每条规则 = `id` + `description`（匹配面）+ `content`（markdown 正文）+ `tags`（同义词）。实现外放 `@agent-engine/plugin-rules`（自建 MiniSearch 索引 + 复用 core `hybridRetrieve`）。
-- **guardrail（安全拦截，独立于 rules）**：在关键节点（如 `beforeToolCall` / `afterToolCall`）做拦截与校验、可阻断危险行为的**可执行代码**（core 只留 `GuardrailRule` 协议 + `registerGuardrail`）；声明式 `config.guardrails` 的编译外放 `@agent-engine/plugin-guardrails`（`compileGuardrails` / `createDeclarativeGuardrail`），与「配置文本类 rules」分离。
+- **rules**：上下文规则，作为「约束文本」经 `ContextContributor` 注入 system-prompt，按 `kind` 决定加载策略——`always` 强制注入 / `on-demand` 按需检索（`hybridRetrieve`：BM25 + 向量 RRF）注入；每条规则 = `id` + `description`（匹配面）+ `content`（markdown 正文）+ `tags`（同义词）。实现外放 `@lhx-agent-engine/plugin-rules`（自建 MiniSearch 索引 + 复用 core `hybridRetrieve`）。
+- **guardrail（安全拦截，独立于 rules）**：在关键节点（如 `beforeToolCall` / `afterToolCall`）做拦截与校验、可阻断危险行为的**可执行代码**（core 只留 `GuardrailRule` 协议 + `registerGuardrail`）；声明式 `config.guardrails` 的编译外放 `@lhx-agent-engine/plugin-guardrails`（`compileGuardrails` / `createDeclarativeGuardrail`），与「配置文本类 rules」分离。
 
 ### 5.4 上下文层（Agent「知道什么」）
 
 - **system-prompt**：系统提示词，由「模板 + 变量 + 能力注入片段（`ContextContributor`）」组装而成。组装已落地 `context` 模块：`buildSystemPrompt({ systemPrompt })` 只做模板渲染（`renderTemplate`，`{{var}}` 正则替换、未提供变量保留原样、null/undefined 空串）；rules / skills / documents 注入已外放为各 `plugin-*` 的 `ContextContributor`（追加文本 + 临时工具），不再占用 `{{rules}}` / `{{skills}}` 占位符；检索 + 组装统一由 `ContextComposer` 完成（`AgentLoop` 只做 ReAct 循环）。`systemPrompt` 支持三种形态——静态字符串 / `SystemPrompt` 模板对象 / 函数式（完全自定义），每次 `run` 动态解析。
 - **memory**：记忆管理，分两层：
   - **会话上下文**：单次会话的 message 窗口管理（含窗口裁剪）。已落地 `ConversationMemory`（不存 system——system 每次 run 动态组装）+ `getWindow()`：`maxMessages` 条数裁剪 / `maxTokens` token 预算整轮裁剪（三层记忆①，`ContextCompactor`）/ `summary` 滚动摘要（三层记忆②，`Summarizer`，默认 `LLMSummarizer`）；`AgentLoop.memory` 注入后跨 run 累积历史（异常不回写）。
-  - **长期记忆**：跨会话持久化 + 语义召回。core 只留 `LongTermMemory` 协议（默认 no-op）；语义实现 `SemanticMemory` 外放 `@agent-engine/plugin-memory`（三层记忆③：`EmbeddingProvider` 向量化 + `VectorStore.query` 召回 + `MemoryBackend` 持久化；无 embedding 时优雅 no-op）；`AgentLoop.longTermMemory` 注入后 run 开始召回注入、正常结束写回。
+  - **长期记忆**：跨会话持久化 + 语义召回。core 只留 `LongTermMemory` 协议（默认 no-op）；语义实现 `SemanticMemory` 外放 `@lhx-agent-engine/plugin-memory`（三层记忆③：`EmbeddingProvider` 向量化 + `VectorStore.query` 召回 + `MemoryBackend` 持久化；无 embedding 时优雅 no-op）；`AgentLoop.longTermMemory` 注入后 run 开始召回注入、正常结束写回。
 
   > **三层记忆已落地**：① 正确截取（token 预算 + 整轮边界淘汰，绝不拆散配对，`ContextCompactor`）→ ② 压缩层（滚动摘要，`Summarizer` 摘要旧轮）→ ③ 语义层（embedding 向量化 + 向量召回 + 持久化，`plugin-memory`）。剩余演进：记忆去重/遗忘、LLM·检索缓存。
   >
@@ -309,7 +309,7 @@ rules / skills / documents 共享同一套「**meta 描述 + 按需加载**」�
 
 ### 5.7 文档摄入（documents 配置轴）
 
-「归一化层 md 后 在处理」——先把异构文档统一成 Markdown，再走分块/检索，外放为 `@agent-engine/plugin-documents`：
+「归一化层 md 后 在处理」——先把异构文档统一成 Markdown，再走分块/检索，外放为 `@lhx-agent-engine/plugin-documents`：
 
 - **归一化（`DocumentNormalizer`）**：`TextNormalizer`（text/md 透传）、`HtmlNormalizer`（`turndown` HTML→Markdown）、`PdfNormalizer`（`unpdf` 抽文本层）、`DocxNormalizer`（`mammoth` → HTML → `turndown` 转 Markdown）、`EpubNormalizer`（`epub2` 解析章节 → `turndown` 转 Markdown）。docx/epub 走 HTML→Markdown 保留标题/列表结构，契合「归一化到 md」。
 - **分块（`Chunker`）**：`FixedSizeChunker`（size + overlap，换行边界切）与 `MarkdownHeadingChunker`（按 `#` 标题切段，超 size 回落固定切）。
@@ -530,9 +530,9 @@ hooks:
 # 能力插件（rules/skills/documents/memory/web/mcp/guardrails）由 preset-default 按 config 切片自动激活；
 # files/bash/git/otel 仍按需在 plugins 声明（server 层注入工厂）
 plugins:
-  - '@agent-engine/plugin-files' # 本地文件读写/列举（read_file / write_file / list_files）
-  - '@agent-engine/plugin-bash' # 命令执行（bash，需 security.bash.enabled + 沙箱）
-  - '@agent-engine/plugin-otel'
+  - '@lhx-agent-engine/plugin-files' # 本地文件读写/列举（read_file / write_file / list_files）
+  - '@lhx-agent-engine/plugin-bash' # 命令执行（bash，需 security.bash.enabled + 沙箱）
+  - '@lhx-agent-engine/plugin-otel'
 
 security:
   sandbox:
@@ -585,7 +585,7 @@ orchestration:
 2. 通过 `ToolRegistry.register()` 或配置文件 `tools` 段注册。
 3. 覆盖 `inputSchema`（Zod），保证 LLM 可正确理解参数。
 
-> 内置**通用原语**（`todo` / `datetime`）已提供（`core/tools/builtin/`），通过 `registerBuiltinTools` 统一装配。`web_search` / `web_fetch` 为 `@agent-engine/plugin-web`；垂直能力 `read_file` / `write_file` / `list_files` / `bash` / `git` 为 `@agent-engine/plugin-files` / `@agent-engine/plugin-bash` / `@agent-engine/plugin-git`（经 `config.plugins` 声明加载，bash 需 `security.bash.enabled` + 沙箱）。非 tool 支撑在 `core/tools/utils/`。
+> 内置**通用原语**（`todo` / `datetime`）已提供（`core/tools/builtin/`），通过 `registerBuiltinTools` 统一装配。`web_search` / `web_fetch` 为 `@lhx-agent-engine/plugin-web`；垂直能力 `read_file` / `write_file` / `list_files` / `bash` / `git` 为 `@lhx-agent-engine/plugin-files` / `@lhx-agent-engine/plugin-bash` / `@lhx-agent-engine/plugin-git`（经 `config.plugins` 声明加载，bash 需 `security.bash.enabled` + 沙箱）。非 tool 支撑在 `core/tools/utils/`。
 
 ### 8.2 新增一个 skill
 
@@ -669,7 +669,7 @@ interface PluginContext {
 
 ### 10.2 命名约定
 
-- 包名：`@agent-engine/<name>`，目录名与包名一致。
+- 包名：`@lhx-agent-engine/<name>`，目录名与包名一致。
 - 文件：小写 kebab-case（`agent-loop.ts`）。
 - 类型/接口：PascalCase（`AgentConfig`、`Tool`）。
 - 常量/枚举：UPPER_SNAKE_CASE 或 `as const` 对象。
@@ -719,7 +719,7 @@ pnpm web:dev            # apps/web 开发（React 19 + Rsbuild）
 pnpm docs:dev           # Rspress 文档站开发
 
 # 通过 CLI 运行一个垂直领域 Agent（M4 落地后生效）
-pnpm --filter @agent-engine/cli run agent run \
+pnpm --filter @lhx-agent-engine/cli run agent run \
   --config agents/devops-agent.yaml
 ```
 
@@ -759,7 +759,7 @@ pnpm --filter @agent-engine/cli run agent run \
 
 - 多阶段构建：`node:20-alpine` → 安装依赖 → 构建 → 精简运行时镜像。
 - 配置通过 **卷挂载** `agents/` 目录，支持不改镜像即热更新 Agent。
-- 服务由 `@agent-engine/server` 对外提供 HTTP API，`cli` 用于交互/批处理。
+- 服务由 `@lhx-agent-engine/server` 对外提供 HTTP API，`cli` 用于交互/批处理。
 
 ```yaml
 # docker-compose.yml（示意）
@@ -795,11 +795,11 @@ services:
 ## 14. 下一步里程碑（建议）
 
 1. **M1 内核骨架**（✅ 已完成）：monorepo 搭建（tsdown 构建）+ `config` 包（Schema + 三格式加载）+ `core` 包（LLM Provider 抽象——**默认接 DeepSeek**、Tool 注册表、单 Agent Loop）。
-2. **M2 配置化能力**（✅ 已完成）：hooks、rules、skills、plugins 系统 + system-prompt 组装 + 会话 memory + 内置通用原语工具（`todo` / `datetime` / `web_search` / `web_fetch`）+ 执行沙箱（`SandboxBackend`：docker / nsjail 双后端，bash 默认禁用，rtk 输出压缩）+ 内置 plugin（`@agent-engine/plugin-files` / `@agent-engine/plugin-bash` / `@agent-engine/plugin-git`）。
-3. **M3 扩展接入**（**进行中**）：✅ ① MCP client（`connectMcpServer`/`connectMcpServers`，stdio + http（streamable-http/sse）transport）；✅ ④ config resolve 层（`resolveAgentConfig`：AgentConfig→AgentLoop 一键装配 + `CapabilityBundle` 统一）；✅ 流式输出（`chatCompletionStream` + NDJSON 端点）；✅ `onInit`/`onSessionStart`/`onSessionEnd` 三个 hook；✅ 会话生命周期（server `SessionStoreBackend` + `sessionId` 复用 + `DELETE /sessions/:id`）；✅ ReAct loop 强化（并行 tool_calls、工具重试+退避、`AbortSignal` 取消、`finishReason` 续写、`execution` 预算配置）；✅ 真思考透传（DeepSeek R1 `reasoning_content` → `ChatMessage.reasoning` + 前端「思考/回复」分开）；✅ ② 长期记忆（三层记忆：token 预算整轮裁剪 + 滚动摘要 + embedding 语义召回）；✅ ⑤ FunctionSandbox（`FunctionSandbox` + `WasiFunctionSandbox`，WASI）；✅ guardrail 声明式配置轴（`guardrails` + `compileGuardrails`）；✅ SessionStore 可插拔（`SessionStoreBackend` + `InMemorySessionStore`）；✅ 日志可插拔（`Logger` + `consoleLogger` 默认，移除 pino）。剩余：③ 多 Agent 编排（独立 `@agent-engine/orchestration` 包）。
+2. **M2 配置化能力**（✅ 已完成）：hooks、rules、skills、plugins 系统 + system-prompt 组装 + 会话 memory + 内置通用原语工具（`todo` / `datetime` / `web_search` / `web_fetch`）+ 执行沙箱（`SandboxBackend`：docker / nsjail 双后端，bash 默认禁用，rtk 输出压缩）+ 内置 plugin（`@lhx-agent-engine/plugin-files` / `@lhx-agent-engine/plugin-bash` / `@lhx-agent-engine/plugin-git`）。
+3. **M3 扩展接入**（**进行中**）：✅ ① MCP client（`connectMcpServer`/`connectMcpServers`，stdio + http（streamable-http/sse）transport）；✅ ④ config resolve 层（`resolveAgentConfig`：AgentConfig→AgentLoop 一键装配 + `CapabilityBundle` 统一）；✅ 流式输出（`chatCompletionStream` + NDJSON 端点）；✅ `onInit`/`onSessionStart`/`onSessionEnd` 三个 hook；✅ 会话生命周期（server `SessionStoreBackend` + `sessionId` 复用 + `DELETE /sessions/:id`）；✅ ReAct loop 强化（并行 tool_calls、工具重试+退避、`AbortSignal` 取消、`finishReason` 续写、`execution` 预算配置）；✅ 真思考透传（DeepSeek R1 `reasoning_content` → `ChatMessage.reasoning` + 前端「思考/回复」分开）；✅ ② 长期记忆（三层记忆：token 预算整轮裁剪 + 滚动摘要 + embedding 语义召回）；✅ ⑤ FunctionSandbox（`FunctionSandbox` + `WasiFunctionSandbox`，WASI）；✅ guardrail 声明式配置轴（`guardrails` + `compileGuardrails`）；✅ SessionStore 可插拔（`SessionStoreBackend` + `InMemorySessionStore`）；✅ 日志可插拔（`Logger` + `consoleLogger` 默认，移除 pino）。剩余：③ 多 Agent 编排（独立 `@lhx-agent-engine/orchestration` 包）。
 4. **M4 服务化**（**部分完成**）：✅ server HTTP API（`/api/agent/run` 非流式 + `/api/agent/run/stream` NDJSON + `DELETE /api/agent/sessions/:id`，可插拔 `Logger`（默认 console）、session 复用、`SessionStoreBackend`）。剩余：CLI（`packages/cli` 仍是 stub）。
 5. **M5 平台与文档**（**部分完成**）：✅ apps/web 三栏编辑器 + 流式 chat + 模型供应商预设 + security preset + 配置导出（省略默认值减负）。剩余：docs（Rspress）、Docker 编排、示例垂直领域 Agent。
-6. **内核瘦身（能力外放，✅ 已完成）**：rules / skills / documents / 语义记忆 / web / mcp / 声明式 guardrail 编译 全部外放为 `packages/plugins/plugin-*`，core 只留引擎 + 协议（`Retriever` / `hybridRetrieve` / `ToolSource` / `ContextContributor` / guardrail 协议）；`@agent-engine/preset-default` 聚合并据 config 切片激活；模型采样参数（`topP` / `frequencyPenalty` / `presencePenalty` / `stop` / `seed`）归一化透传（「配置缺省 + 调用覆盖」，顺带修复 `temperature` / `maxTokens` 未生效）。
+6. **内核瘦身（能力外放，✅ 已完成）**：rules / skills / documents / 语义记忆 / web / mcp / 声明式 guardrail 编译 全部外放为 `packages/plugins/plugin-*`，core 只留引擎 + 协议（`Retriever` / `hybridRetrieve` / `ToolSource` / `ContextContributor` / guardrail 协议）；`@lhx-agent-engine/preset-default` 聚合并据 config 切片激活；模型采样参数（`topP` / `frequencyPenalty` / `presencePenalty` / `stop` / `seed`）归一化透传（「配置缺省 + 调用覆盖」，顺带修复 `temperature` / `maxTokens` 未生效）。
 
 ### 复盘纪要（截至 M3 中期）
 
@@ -849,8 +849,8 @@ M2 落地及 M3 推进过程中沉淀的坑点与约定，后续开发直接复�
 - **Next.js 宿主（`agents/`）**：`src/lib/agent-dir.ts`（扫目录 → 拼 `AgentConfig` + jiti 加载 hooks → `@local/hooks` 插件）+ `POST /api/agent/:name/run`；`pnpm-workspace.yaml` 加 `agents`。
 - **示例 harness**：`.lhx-agent/devops-agent/`（files/bash/git/otel + 远程 mcp + skill + rules + hooks）、`.lhx-agent/code-review-agent/`（files/git + skill + rules + hooks）。
 - **端到端验证通过**：rules（always/on-demand）/skills/hooks 注入 + 远程 mcp 连接失败隔离，均 200 跑通。
-- **`@agent-engine/plugin-pgvector`**：`PgVectorStore`（pgvector + `<=>` 余弦）+ `PgMemoryBackend`（KV jsonb）；接入 preset-default 按需激活；`docker/docker-compose.yml` 补 pgvector + redis。
-- **`@agent-engine/plugin-redis`**：`RedisCacheBackend`（TTL KV，ioredis + 命名空间前缀 + SCAN 清前缀）；接入 preset-default 按需激活。
+- **`@lhx-agent-engine/plugin-pgvector`**：`PgVectorStore`（pgvector + `<=>` 余弦）+ `PgMemoryBackend`（KV jsonb）；接入 preset-default 按需激活；`docker/docker-compose.yml` 补 pgvector + redis。
+- **`@lhx-agent-engine/plugin-redis`**：`RedisCacheBackend`（TTL KV，ioredis + 命名空间前缀 + SCAN 清前缀）；接入 preset-default 按需激活。
 - **LLM 容错**：`createResilientProvider`（主模型失败退避重试 + 依次 fallback 到 `model.fallbacks`）；config 加 `model.fallbacks` + `execution.llmRetry`；5xx/429/网络可重试、4xx 不重试。
 - **模型路由**：`createRoutingProvider`（`model.routes` 按复杂度 `minInputTokens` / 能力标签 `capabilities` 切换模型）；`ChatCompletionParams` 加 `capabilities`；README 补「模型组合」章节。
 
@@ -869,7 +869,7 @@ M2 落地及 M3 推进过程中沉淀的坑点与约定，后续开发直接复�
 
 原则：两个插件**只做「实现已有抽象接口 + 注册」，不改 core**。抽象已就绪：`MemoryBackend`（跨会话 KV 持久化）、`CacheBackend`（TTL KV）、`VectorStore`（语义向量检索）、`SessionStoreBackend`（server 层会话复用）。
 
-#### `@agent-engine/plugin-pgvector`（pgvector，语义记忆持久化）——✅ 已实现
+#### `@lhx-agent-engine/plugin-pgvector`（pgvector，语义记忆持久化）——✅ 已实现
 
 - 一个插件、两个后端，共用同一 PostgreSQL 实例：
   - `PgVectorStore`（实现 `VectorStore`，name `pgvector`）：依赖 pgvector 扩展；表 `agent_vectors(id text pk, vector vector(dim), metadata jsonb)`；`add` 批量 INSERT、`query` 用 `<=>` 余弦距离（topK）、`delete/clear`；启动时 `CREATE EXTENSION IF NOT EXISTS vector` + 建表。
@@ -878,7 +878,7 @@ M2 落地及 M3 推进过程中沉淀的坑点与约定，后续开发直接复�
 - 注册：`registerVectorStore('pgvector')` + `registerMemoryBackend('pg')`。
 - 语义记忆闭环：`SemanticMemory = PgMemoryBackend（存记忆）+ PgVectorStore（存向量）+ EmbeddingProvider（生成向量）`；config 侧 `memory.longTerm.backend: 'pg'` + `embedding`（DeepSeek 无 embeddings，需 OpenAI / 本地 ollama）。
 
-#### `@agent-engine/plugin-redis`（缓存 + 会话状态）——✅ 缓存已实现
+#### `@lhx-agent-engine/plugin-redis`（缓存 + 会话状态）——✅ 缓存已实现
 
 - `RedisCacheBackend`（实现 `CacheBackend`，name `redis`）：ioredis / node-redis；`SET key value EX ttl`（TTL 到期）、`GET`/`DEL`/`FLUSHDB`，value JSON 序列化；config `cache.backend: 'redis'`。
 - 会话：`SessionStoreBackend` 存的是「已装配 `AgentLoop` 对象」（内存态，不可跨进程序列化），redis **不能直接承载**。多副本的正确姿势是「会话可序列化状态（conversation history）持久化 + 重建」，而非共享 `AgentLoop` 对象；`RedisSessionStore` 放 server 层（或后续把会话状态接口下沉）。

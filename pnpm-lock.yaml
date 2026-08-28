@@ -53,13 +53,13 @@ importers:
 
   agents:
     dependencies:
-      '@agent-engine/config':
+      '@lhx-agent-engine/config':
         specifier: workspace:*
         version: link:../packages/config
-      '@agent-engine/core':
+      '@lhx-agent-engine/core':
         specifier: workspace:*
         version: link:../packages/core
-      '@agent-engine/preset-default':
+      '@lhx-agent-engine/preset-default':
         specifier: workspace:*
         version: link:../packages/plugins/preset-default
       gray-matter:
@@ -96,15 +96,15 @@ importers:
 
   apps/web:
     dependencies:
-      '@agent-engine/config':
-        specifier: workspace:*
-        version: link:../../packages/config
       '@ant-design/icons':
         specifier: ^6.3.2
         version: 6.3.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@ant-design/x':
         specifier: ^2.9.0
         version: 2.9.0(antd@6.6.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@lhx-agent-engine/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       antd:
         specifier: ^6.6.1
         version: 6.6.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -151,7 +151,7 @@ importers:
 
   packages/cli:
     dependencies:
-      '@agent-engine/core':
+      '@lhx-agent-engine/core':
         specifier: workspace:*
         version: link:../core
       commander:
@@ -175,12 +175,12 @@ importers:
 
   packages/core:
     dependencies:
-      '@agent-engine/config':
-        specifier: workspace:*
-        version: link:../config
       '@anthropic-ai/sdk':
         specifier: ^0.120.0
         version: 0.120.0(zod@4.4.3)
+      '@lhx-agent-engine/config':
+        specifier: workspace:*
+        version: link:../config
       openai:
         specifier: ^7.5.0
         version: 7.5.0(zod@4.4.3)
@@ -200,19 +200,19 @@ importers:
 
   packages/plugins/plugin-bash:
     dependencies:
-      '@agent-engine/config':
+      '@lhx-agent-engine/config':
         specifier: workspace:*
         version: link:../../config
-      '@agent-engine/core':
+      '@lhx-agent-engine/core':
         specifier: workspace:*
         version: link:../../core
 
   packages/plugins/plugin-documents:
     dependencies:
-      '@agent-engine/config':
+      '@lhx-agent-engine/config':
         specifier: workspace:*
         version: link:../../config
-      '@agent-engine/core':
+      '@lhx-agent-engine/core':
         specifier: workspace:*
         version: link:../../core
       epub2:
@@ -237,16 +237,16 @@ importers:
 
   packages/plugins/plugin-files:
     dependencies:
-      '@agent-engine/config':
+      '@lhx-agent-engine/config':
         specifier: workspace:*
         version: link:../../config
-      '@agent-engine/core':
+      '@lhx-agent-engine/core':
         specifier: workspace:*
         version: link:../../core
 
   packages/plugins/plugin-git:
     dependencies:
-      '@agent-engine/core':
+      '@lhx-agent-engine/core':
         specifier: workspace:*
         version: link:../../core
       zod:
@@ -255,19 +255,19 @@ importers:
 
   packages/plugins/plugin-guardrails:
     dependencies:
-      '@agent-engine/config':
+      '@lhx-agent-engine/config':
         specifier: workspace:*
         version: link:../../config
-      '@agent-engine/core':
+      '@lhx-agent-engine/core':
         specifier: workspace:*
         version: link:../../core
 
   packages/plugins/plugin-mcp:
     dependencies:
-      '@agent-engine/config':
+      '@lhx-agent-engine/config':
         specifier: workspace:*
         version: link:../../config
-      '@agent-engine/core':
+      '@lhx-agent-engine/core':
         specifier: workspace:*
         version: link:../../core
       '@modelcontextprotocol/sdk':
@@ -279,13 +279,13 @@ importers:
 
   packages/plugins/plugin-memory:
     dependencies:
-      '@agent-engine/core':
+      '@lhx-agent-engine/core':
         specifier: workspace:*
         version: link:../../core
 
   packages/plugins/plugin-otel:
     dependencies:
-      '@agent-engine/core':
+      '@lhx-agent-engine/core':
         specifier: workspace:*
         version: link:../../core
       '@opentelemetry/api':
@@ -294,7 +294,7 @@ importers:
 
   packages/plugins/plugin-pgvector:
     dependencies:
-      '@agent-engine/core':
+      '@lhx-agent-engine/core':
         specifier: workspace:*
         version: link:../../core
       pg:
@@ -307,7 +307,7 @@ importers:
 
   packages/plugins/plugin-redis:
     dependencies:
-      '@agent-engine/core':
+      '@lhx-agent-engine/core':
         specifier: workspace:*
         version: link:../../core
       ioredis:
@@ -316,10 +316,10 @@ importers:
 
   packages/plugins/plugin-rules:
     dependencies:
-      '@agent-engine/config':
+      '@lhx-agent-engine/config':
         specifier: workspace:*
         version: link:../../config
-      '@agent-engine/core':
+      '@lhx-agent-engine/core':
         specifier: workspace:*
         version: link:../../core
       minisearch:
@@ -328,10 +328,10 @@ importers:
 
   packages/plugins/plugin-skills:
     dependencies:
-      '@agent-engine/config':
+      '@lhx-agent-engine/config':
         specifier: workspace:*
         version: link:../../config
-      '@agent-engine/core':
+      '@lhx-agent-engine/core':
         specifier: workspace:*
         version: link:../../core
       gray-matter:
@@ -343,10 +343,10 @@ importers:
 
   packages/plugins/plugin-web:
     dependencies:
-      '@agent-engine/config':
+      '@lhx-agent-engine/config':
         specifier: workspace:*
         version: link:../../config
-      '@agent-engine/core':
+      '@lhx-agent-engine/core':
         specifier: workspace:*
         version: link:../../core
       '@mozilla/readability':
@@ -361,66 +361,66 @@ importers:
 
   packages/plugins/preset-default:
     dependencies:
-      '@agent-engine/config':
+      '@lhx-agent-engine/config':
         specifier: workspace:*
         version: link:../../config
-      '@agent-engine/core':
+      '@lhx-agent-engine/core':
         specifier: workspace:*
         version: link:../../core
-      '@agent-engine/plugin-bash':
+      '@lhx-agent-engine/plugin-bash':
         specifier: workspace:*
         version: link:../plugin-bash
-      '@agent-engine/plugin-documents':
+      '@lhx-agent-engine/plugin-documents':
         specifier: workspace:*
         version: link:../plugin-documents
-      '@agent-engine/plugin-files':
+      '@lhx-agent-engine/plugin-files':
         specifier: workspace:*
         version: link:../plugin-files
-      '@agent-engine/plugin-git':
+      '@lhx-agent-engine/plugin-git':
         specifier: workspace:*
         version: link:../plugin-git
-      '@agent-engine/plugin-guardrails':
+      '@lhx-agent-engine/plugin-guardrails':
         specifier: workspace:*
         version: link:../plugin-guardrails
-      '@agent-engine/plugin-mcp':
+      '@lhx-agent-engine/plugin-mcp':
         specifier: workspace:*
         version: link:../plugin-mcp
-      '@agent-engine/plugin-memory':
+      '@lhx-agent-engine/plugin-memory':
         specifier: workspace:*
         version: link:../plugin-memory
-      '@agent-engine/plugin-otel':
+      '@lhx-agent-engine/plugin-otel':
         specifier: workspace:*
         version: link:../plugin-otel
-      '@agent-engine/plugin-pgvector':
+      '@lhx-agent-engine/plugin-pgvector':
         specifier: workspace:*
         version: link:../plugin-pgvector
-      '@agent-engine/plugin-redis':
+      '@lhx-agent-engine/plugin-redis':
         specifier: workspace:*
         version: link:../plugin-redis
-      '@agent-engine/plugin-rules':
+      '@lhx-agent-engine/plugin-rules':
         specifier: workspace:*
         version: link:../plugin-rules
-      '@agent-engine/plugin-skills':
+      '@lhx-agent-engine/plugin-skills':
         specifier: workspace:*
         version: link:../plugin-skills
-      '@agent-engine/plugin-web':
+      '@lhx-agent-engine/plugin-web':
         specifier: workspace:*
         version: link:../plugin-web
 
   packages/server:
     dependencies:
-      '@agent-engine/config':
-        specifier: workspace:*
-        version: link:../config
-      '@agent-engine/core':
-        specifier: workspace:*
-        version: link:../core
-      '@agent-engine/preset-default':
-        specifier: workspace:*
-        version: link:../plugins/preset-default
       '@hono/node-server':
         specifier: ^2.1.1
         version: 2.1.1(hono@4.13.3)
+      '@lhx-agent-engine/config':
+        specifier: workspace:*
+        version: link:../config
+      '@lhx-agent-engine/core':
+        specifier: workspace:*
+        version: link:../core
+      '@lhx-agent-engine/preset-default':
+        specifier: workspace:*
+        version: link:../plugins/preset-default
       hono:
         specifier: ^4.13.3
         version: 4.13.3

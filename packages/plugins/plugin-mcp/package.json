@@ -1,9 +1,22 @@
 {
-  "name": "@agent-engine/plugin-mcp",
+  "name": "@lhx-agent-engine/plugin-mcp",
   "version": "0.1.0",
   "description": "MCP 工具来源插件（stdio transport，经 ToolSource 协议注入工具）",
+  "keywords": [
+    "lhx-agent-engine"
+  ],
+  "license": "MIT",
+  "author": "luhanxin",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lhx-space/agent-engine.git",
+    "directory": "packages/plugins/plugin-mcp"
+  },
+  "homepage": "https://github.com/lhx-space/agent-engine/tree/main/packages/plugins/plugin-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/lhx-space/agent-engine/issues"
+  },
   "type": "module",
-  "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
@@ -22,15 +35,23 @@
   "files": [
     "dist"
   ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@agent-engine/config": "workspace:*",
-    "@agent-engine/core": "workspace:*",
+    "@lhx-agent-engine/config": "workspace:*",
+    "@lhx-agent-engine/core": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "zod": "^4.4.3"
+  },
+  "engines": {
+    "node": ">=18.18.0"
   }
 }

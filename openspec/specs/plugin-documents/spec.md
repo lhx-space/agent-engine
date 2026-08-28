@@ -8,7 +8,7 @@ TBD - created by archiving change externalize-documents-plugin. Update Purpose a
 
 ### Requirement: createDocumentsPlugin 装载并注册 ContextContributor
 
-系统 SHALL 提供 `@agent-engine/plugin-documents` 包，导出 `createDocumentsPlugin(documents, options?)`，返回 `Plugin`；其 `install(ctx)` SHALL 装载文档（枚举 sources → 归一化 → 分块 → 索引）后调用 `ctx.registerContextContributor` 注册一个 `ContextContributor`（`name` 为 `@agent-engine/plugin-documents`），每次 run 检索命中 chunk 并注入 `[文档]` 文本。
+系统 SHALL 提供 `@lhx-agent-engine/plugin-documents` 包，导出 `createDocumentsPlugin(documents, options?)`，返回 `Plugin`；其 `install(ctx)` SHALL 装载文档（枚举 sources → 归一化 → 分块 → 索引）后调用 `ctx.registerContextContributor` 注册一个 `ContextContributor`（`name` 为 `@lhx-agent-engine/plugin-documents`），每次 run 检索命中 chunk 并注入 `[文档]` 文本。
 
 #### Scenario: 装载并注入 [文档]
 

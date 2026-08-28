@@ -1,8 +1,22 @@
 {
-  "name": "@agent-engine/docs",
+  "name": "@lhx-agent-engine/docs",
   "version": "0.1.0",
-  "private": true,
   "description": "Agent Engine 文档站点（Rspress）",
+  "keywords": [
+    "lhx-agent-engine"
+  ],
+  "license": "MIT",
+  "author": "luhanxin",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lhx-space/agent-engine.git",
+    "directory": "docs"
+  },
+  "homepage": "https://github.com/lhx-space/agent-engine/tree/main/docs#readme",
+  "bugs": {
+    "url": "https://github.com/lhx-space/agent-engine/issues"
+  },
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "rspress dev",
@@ -11,5 +25,8 @@
   },
   "devDependencies": {
     "rspress": "^1.47.2"
+  },
+  "engines": {
+    "node": ">=18.18.0"
   }
 }

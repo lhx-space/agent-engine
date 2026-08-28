@@ -1,5 +1,5 @@
 import type { Redis } from 'ioredis';
-import type { CacheBackend } from '@agent-engine/core';
+import type { CacheBackend } from '@lhx-agent-engine/core';
 
 /** Redis 缓存后端：TTL KV（JSON 序列化，key 加命名空间前缀，clear 用 SCAN 删前缀）。 */
 export class RedisCacheBackend implements CacheBackend {

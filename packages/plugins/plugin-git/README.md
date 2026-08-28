@@ -1,18 +1,18 @@
-# @agent-engine/plugin-git
+# @lhx-agent-engine/plugin-git
 
 Git tool-suite plugin: registers a single `git` tool, read-only subcommands by default (`status` / `diff` / `log` / `show` / `branch` / `remote` / `rev-parse` / `ls-files` / `blame`), destructive subcommands (`commit` / `push` / `checkout` / `reset` / `clean` / `merge` / `rebase` …) blocked; runs through `SandboxBackend` with optional rtk output compaction.
 
 ## Install
 
 ```bash
-pnpm add @agent-engine/plugin-git
+pnpm add @lhx-agent-engine/plugin-git
 ```
 
 ## Usage
 
 ```ts
-import { createGitPlugin } from '@agent-engine/plugin-git';
-import { resolveSandboxBackend } from '@agent-engine/core';
+import { createGitPlugin } from '@lhx-agent-engine/plugin-git';
+import { resolveSandboxBackend } from '@lhx-agent-engine/core';
 
 const resolution = resolveSandboxBackend('auto', { compact: true });
 if (!resolution.available) throw new Error('no sandbox available');

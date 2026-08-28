@@ -6,7 +6,7 @@
 
 **Goals:**
 
-- `SemanticMemory` 外放 `@agent-engine/plugin-memory`。
+- `SemanticMemory` 外放 `@lhx-agent-engine/plugin-memory`。
 - core 留 `LongTermMemory` 接口 + `noopLongTermMemory` 默认。
 - `assemble` 改为「注入 or no-op」。
 

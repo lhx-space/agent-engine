@@ -45,7 +45,7 @@ TBD - created by archiving change resolve-layer. Update Purpose after archive.
 
 ### Requirement: plugin 工厂注册表
 
-系统 SHALL 通过 `deps.pluginFactories`（`name → () => Plugin | Promise<Plugin>`）解析 `config.plugins` 的字符串名，并与 `deps.defaultPlugins`（组合层按 config 切片激活的额外插件名）去重合并后按名实例化；缺失的插件名 SHALL 报包含该名的可读错误。插件工厂表由组合层（`@agent-engine/preset-default` / server）注入，core 不硬编码能力映射。
+系统 SHALL 通过 `deps.pluginFactories`（`name → () => Plugin | Promise<Plugin>`）解析 `config.plugins` 的字符串名，并与 `deps.defaultPlugins`（组合层按 config 切片激活的额外插件名）去重合并后按名实例化；缺失的插件名 SHALL 报包含该名的可读错误。插件工厂表由组合层（`@lhx-agent-engine/preset-default` / server）注入，core 不硬编码能力映射。
 
 #### Scenario: 按名实例化 plugin
 

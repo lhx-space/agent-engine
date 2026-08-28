@@ -1,11 +1,11 @@
-# @agent-engine/server
+# @lhx-agent-engine/server
 
-Agent Engine HTTP server (Docker deployment). Exposes REST + streaming APIs over Hono, driving `@agent-engine/core`.
+Agent Engine HTTP server (Docker deployment). Exposes REST + streaming APIs over Hono, driving `@lhx-agent-engine/core`.
 
 ## Install
 
 ```bash
-pnpm add @agent-engine/server
+pnpm add @lhx-agent-engine/server
 ```
 
 ## Endpoints
@@ -20,7 +20,7 @@ pnpm add @agent-engine/server
 ## Usage
 
 ```ts
-import { createApp, serve } from '@agent-engine/server';
+import { createApp, serve } from '@lhx-agent-engine/server';
 import { pino } from 'pino'; // optional
 
 const app = createApp({
@@ -39,7 +39,7 @@ serve({/* ServerOptions */}, 8080);
 
 ## Notes
 
-- Capability plugins are wired by default via `@agent-engine/preset-default` (`createPresetPluginFactories` + `defaultCapabilityPlugins` + `createPresetLongTermMemoryFactory`); override or append via `options.pluginFactories` / `options.longTermMemoryFactory`.
+- Capability plugins are wired by default via `@lhx-agent-engine/preset-default` (`createPresetPluginFactories` + `defaultCapabilityPlugins` + `createPresetLongTermMemoryFactory`); override or append via `options.pluginFactories` / `options.longTermMemoryFactory`.
 - `envProviderFactory` resolves the LLM provider from environment variables (DeepSeek default).
 
 ## Status

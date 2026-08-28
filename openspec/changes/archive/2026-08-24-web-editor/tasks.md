@@ -1,6 +1,6 @@
 ## 1. 依赖与代理
 
-- [x] 1.1 `apps/web` 新增依赖 `@agent-engine/config`（workspace:*）
+- [x] 1.1 `apps/web` 新增依赖 `@lhx-agent-engine/config`（workspace:*）
 - [x] 1.2 `rsbuild.config.ts` 加 `server.proxy` `/api` → localhost:8080
 - [x] 1.3 config 包新增 `./schema` 子路径导出（浏览器安全，隔离 Node-only loader）
 
@@ -18,4 +18,4 @@
 
 ## 4. 验证
 
-- [x] 4.1 `pnpm --filter @agent-engine/web build` 通过 + typecheck
+- [x] 4.1 `pnpm --filter @lhx-agent-engine/web build` 通过 + typecheck

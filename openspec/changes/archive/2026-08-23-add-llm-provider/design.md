@@ -2,7 +2,7 @@
 
 `core` 包当前是占位实现。本 change 引入 LLM Provider 层，是 Agent Loop 的前置依赖。技术栈已定：`openai`（v7）+ `@anthropic-ai/sdk`（v0.120），默认 DeepSeek（OpenAI 兼容）。
 
-`ModelConfig`（来自 `@agent-engine/config`）已定义 `provider`（openai-compatible / anthropic / custom）、`baseURL`、`model`、`temperature`、`maxTokens`。注意：**不含 apiKey**——密钥从环境变量读取。
+`ModelConfig`（来自 `@lhx-agent-engine/config`）已定义 `provider`（openai-compatible / anthropic / custom）、`baseURL`、`model`、`temperature`、`maxTokens`。注意：**不含 apiKey**——密钥从环境变量读取。
 
 ## Goals / Non-Goals
 

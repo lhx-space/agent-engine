@@ -2,7 +2,7 @@
 
 ### Requirement: createOtelPlugin
 
-系统 SHALL 提供 `@agent-engine/plugin-otel` 的 `createOtelPlugin(options?)`，返回一个 `Plugin`；`install(ctx)` SHALL 经 `ctx.registerHook` 注入一个覆盖 10 个生命周期点的 hook，每个点用 `@opentelemetry/api` 的 `startActiveSpan` 创建 span、设置 `agent.*` 属性；`onError` 与 hook 方法异常 SHALL `recordException` 并置 `status=ERROR`。hook SHALL 不改写任何入参（返回 void）。
+系统 SHALL 提供 `@lhx-agent-engine/plugin-otel` 的 `createOtelPlugin(options?)`，返回一个 `Plugin`；`install(ctx)` SHALL 经 `ctx.registerHook` 注入一个覆盖 10 个生命周期点的 hook，每个点用 `@opentelemetry/api` 的 `startActiveSpan` 创建 span、设置 `agent.*` 属性；`onError` 与 hook 方法异常 SHALL `recordException` 并置 `status=ERROR`。hook SHALL 不改写任何入参（返回 void）。
 
 #### Scenario: install 注册 hook
 

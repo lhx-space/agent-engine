@@ -7,7 +7,7 @@
 **Goals:**
 
 - 三栏布局（CSS Grid）。
-- 复用 `@agent-engine/config` 的 `AgentConfigSchema` + `AgentConfig` 类型（单一事实来源）。
+- 复用 `@lhx-agent-engine/config` 的 `AgentConfigSchema` + `AgentConfig` 类型（单一事实来源）。
 - 左栏编辑 systemPrompt（template + variables）；中栏编辑 model；右栏 input → run → 展示结果。
 - Rsbuild dev 代理 `/api` → server。
 
@@ -27,7 +27,7 @@
 
 ### D2: 单一事实来源 = config 包
 
-**选择**：WebApp 状态直接是 `AgentConfig`（来自 `@agent-engine/config`），校验用 `AgentConfigSchema`。
+**选择**：WebApp 状态直接是 `AgentConfig`（来自 `@lhx-agent-engine/config`），校验用 `AgentConfigSchema`。
 
 **理由**：与「前端表单校验复用同一份 Zod Schema」一致，不手写第二份类型。
 
@@ -45,7 +45,7 @@
 
 ### D5: config 包拆 `./schema` 子路径（浏览器安全）
 
-**选择**：config 包新增 `./schema` 导出（只含 Zod Schema + 类型，无 jiti/loader）；WebApp 一律 `import from '@agent-engine/config/schema'`。
+**选择**：config 包新增 `./schema` 导出（只含 Zod Schema + 类型，无 jiti/loader）；WebApp 一律 `import from '@lhx-agent-engine/config/schema'`。
 
 **理由**：config 的 `.` 入口会经 loader 带进 `jiti`（Node-only，依赖 `node:module/fs/vm`），浏览器打包直接失败。schema 是浏览器安全的，loader 是 Node 专属；拆子路径让「单一事实来源」真正延伸到前端。
 

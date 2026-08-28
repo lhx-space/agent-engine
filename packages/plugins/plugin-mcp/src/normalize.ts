@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { Client } from '@modelcontextprotocol/sdk/client/index';
-import type { Tool } from '@agent-engine/core/tools';
+import type { Tool } from '@lhx-agent-engine/core/tools';
 
 /** MCP 工具 meta（`listTools()` 返回的单条）。 */
 export interface McpToolMeta {

@@ -1,14 +1,14 @@
 ## Context
 
-内置工具「恒全注册」把 code agent 专属的 file/bash 与鸡肋工具（json/base64/calculator/sitesearch）塞进通用内核，违背「内核与能力解耦」。对标 Claude Code（file/bash 是 code agent 场景工具）与「配置即 Agent」：内核只内置通用原语，垂直能力按 `config.plugins` 声明加载。`@agent-engine/plugin-git` 已开先例（git 是 plugin 不是内置）。
+内置工具「恒全注册」把 code agent 专属的 file/bash 与鸡肋工具（json/base64/calculator/sitesearch）塞进通用内核，违背「内核与能力解耦」。对标 Claude Code（file/bash 是 code agent 场景工具）与「配置即 Agent」：内核只内置通用原语，垂直能力按 `config.plugins` 声明加载。`@lhx-agent-engine/plugin-git` 已开先例（git 是 plugin 不是内置）。
 
 ## Goals / Non-Goals
 
 **Goals:**
 
 - 内置收敛为 `todo` / `datetime` / `web_search` / `web_fetch` 四个通用原语。
-- `read_file` / `write_file` → 内置 plugin `@agent-engine/plugin-files`。
-- `bash` → 内置 plugin `@agent-engine/plugin-bash`。
+- `read_file` / `write_file` → 内置 plugin `@lhx-agent-engine/plugin-files`。
+- `bash` → 内置 plugin `@lhx-agent-engine/plugin-bash`。
 - 移除 `json` / `base64` / `calculator` / `sitesearch`。
 - resolve 按 `config.plugins` 加载内置 plugin（带 security/sandbox 上下文）。
 
@@ -47,10 +47,10 @@
 ## Risks / Trade-offs
 
 - [Breaking：file/bash 默认不注册] → 现有依赖 file/bash 的配置/测试需显式声明 plugin；文档与前端预设同步。
-- [内置 plugin 名与外部 plugin 名冲突] → 内置表优先，外部同名被遮蔽；名字用 `@agent-engine/` 前缀避免冲突。
+- [内置 plugin 名与外部 plugin 名冲突] → 内置表优先，外部同名被遮蔽；名字用 `@lhx-agent-engine/` 前缀避免冲突。
 
 ## Migration Plan
 
-- 配置里需要 file/bash 的 agent，改为 `plugins: ['@agent-engine/plugin-files', '@agent-engine/plugin-bash']`。
+- 配置里需要 file/bash 的 agent，改为 `plugins: ['@lhx-agent-engine/plugin-files', '@lhx-agent-engine/plugin-bash']`。
 - 前端 plugins 面板补这两个预设。
 - 测试：builtin-tools 断言改为「内置 4 个 + plugin 按声明加载」；demo.test 改用 plugin-files。

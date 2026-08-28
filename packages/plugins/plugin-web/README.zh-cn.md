@@ -1,4 +1,4 @@
-# @agent-engine/plugin-web
+# @lhx-agent-engine/plugin-web
 
 Web 工具插件：注册 `web_search`（可插拔 `SearchProvider`：duckduckgo / searxng / tavily / serper + fallback）与 `web_fetch`（domain 约束 + 正文提取）。
 
@@ -7,13 +7,13 @@ core 不再内置 web 工具；本插件解释 `security.webSearch` / `security.
 ## 安装
 
 ```bash
-pnpm add @agent-engine/plugin-web
+pnpm add @lhx-agent-engine/plugin-web
 ```
 
 ## 用法
 
 ```ts
-import { createWebPlugin } from '@agent-engine/plugin-web';
+import { createWebPlugin } from '@lhx-agent-engine/plugin-web';
 
 const webPlugin = createWebPlugin(config.security);
 

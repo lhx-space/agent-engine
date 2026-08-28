@@ -2,8 +2,8 @@ import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from '@rstest/core';
-import type { ContextContributor } from '@agent-engine/core/context';
-import type { PluginContext } from '@agent-engine/core/plugins';
+import type { ContextContributor } from '@lhx-agent-engine/core/context';
+import type { PluginContext } from '@lhx-agent-engine/core/plugins';
 import {
   DocumentIndex,
   FixedSizeChunker,
@@ -95,7 +95,7 @@ describe('createDocumentsPlugin', () => {
     }).install(ctx);
 
     expect(contributors).toHaveLength(1);
-    expect(contributors[0]?.name).toBe('@agent-engine/plugin-documents');
+    expect(contributors[0]?.name).toBe('@lhx-agent-engine/plugin-documents');
     const contribution = await contributors[0]!.contribute({ userInput: 'k8s 故障怎么排查' });
     expect(contribution?.text).toContain('[文档]');
     expect(contribution?.text).toContain('Kubernetes');

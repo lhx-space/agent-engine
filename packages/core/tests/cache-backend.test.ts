@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@rstest/core';
-import { AgentConfigSchema } from '@agent-engine/config';
+import { AgentConfigSchema } from '@lhx-agent-engine/config';
 import { InMemoryCacheBackend } from '../src/cache/cache-backend';
 import type { CacheBackend } from '../src/cache/cache-backend';
 import type { LLMProvider } from '../src/llm/types';

@@ -1,18 +1,18 @@
-# @agent-engine/plugin-bash
+# @lhx-agent-engine/plugin-bash
 
 Sandboxed command-execution plugin: registers a single `bash` tool, gated by `security.bash.enabled`, constrained by `allowCommands` / `denyPatterns` / `allowNetwork`, and run through `SandboxBackend`.
 
 ## Install
 
 ```bash
-pnpm add @agent-engine/plugin-bash
+pnpm add @lhx-agent-engine/plugin-bash
 ```
 
 ## Usage
 
 ```ts
-import { createBashPlugin } from '@agent-engine/plugin-bash';
-import { resolveSandboxBackend } from '@agent-engine/core';
+import { createBashPlugin } from '@lhx-agent-engine/plugin-bash';
+import { resolveSandboxBackend } from '@lhx-agent-engine/core';
 
 const resolution = resolveSandboxBackend('auto');
 if (!resolution.available) throw new Error('no sandbox available');
@@ -34,7 +34,7 @@ const bashPlugin = createBashPlugin(
 >
 > ```yaml
 > plugins:
->   - '@agent-engine/plugin-bash'
+>   - '@lhx-agent-engine/plugin-bash'
 > security:
 >   bash:
 >     enabled: true

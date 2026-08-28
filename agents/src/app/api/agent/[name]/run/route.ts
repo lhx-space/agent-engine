@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { resolveAgentConfig } from '@agent-engine/core';
+import { resolveAgentConfig } from '@lhx-agent-engine/core';
 import {
   createPresetLongTermMemoryFactory,
   createPresetPluginFactories,
   defaultCapabilityPlugins,
-} from '@agent-engine/preset-default';
+} from '@lhx-agent-engine/preset-default';
 import { createLocalHooksPlugin, scanAgentDir } from '@/lib/agent-dir';
 import { providerFactory } from '@/lib/provider';
 

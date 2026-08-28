@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@rstest/core';
-import type { EmbeddingProvider } from '@agent-engine/core/embedding';
+import type { EmbeddingProvider } from '@lhx-agent-engine/core/embedding';
 import { DocumentIndex } from '../src/index';
 
 /** 确定性 mock embedding：按关键词把文本映射到 2 维向量。 */

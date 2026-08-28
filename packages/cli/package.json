@@ -1,12 +1,22 @@
 {
-  "name": "@agent-engine/cli",
+  "name": "@lhx-agent-engine/cli",
   "version": "0.1.0",
   "description": "Agent Engine 命令行入口",
-  "type": "module",
-  "sideEffects": false,
-  "bin": {
-    "agent-engine": "./dist/index.mjs"
+  "keywords": [
+    "lhx-agent-engine"
+  ],
+  "license": "MIT",
+  "author": "luhanxin",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lhx-space/agent-engine.git",
+    "directory": "packages/cli"
   },
+  "homepage": "https://github.com/lhx-space/agent-engine/tree/main/packages/cli#readme",
+  "bugs": {
+    "url": "https://github.com/lhx-space/agent-engine/issues"
+  },
+  "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
@@ -25,13 +35,24 @@
   "files": [
     "dist"
   ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@agent-engine/core": "workspace:*",
+    "@lhx-agent-engine/core": "workspace:*",
     "commander": "^15.0.0"
+  },
+  "engines": {
+    "node": ">=18.18.0"
+  },
+  "bin": {
+    "agent-engine": "./dist/index.mjs"
   }
 }

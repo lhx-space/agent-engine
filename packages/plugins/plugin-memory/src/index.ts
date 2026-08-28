@@ -1,6 +1,6 @@
-import type { EmbeddingProvider } from '@agent-engine/core/embedding';
-import type { LongTermMemory, MemoryBackend } from '@agent-engine/core/memory';
-import type { VectorStore } from '@agent-engine/core/retrieval';
+import type { EmbeddingProvider } from '@lhx-agent-engine/core/embedding';
+import type { LongTermMemory, MemoryBackend } from '@lhx-agent-engine/core/memory';
+import type { VectorStore } from '@lhx-agent-engine/core/retrieval';
 
 /**
  * 开发默认长期语义记忆：`EmbeddingProvider` 向量化 + `VectorStore.query` 召回 + `MemoryBackend` 持久化。

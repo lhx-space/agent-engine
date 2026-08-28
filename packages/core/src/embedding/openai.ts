@@ -1,4 +1,4 @@
-import type { EmbeddingConfig } from '@agent-engine/config';
+import type { EmbeddingConfig } from '@lhx-agent-engine/config';
 import { defaultFetch } from '../tools/utils/http';
 import type { FetchLike } from '../tools/utils/http';
 import type { EmbeddingProvider } from './embedding';

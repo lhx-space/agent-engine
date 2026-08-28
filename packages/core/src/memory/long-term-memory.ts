@@ -1,6 +1,6 @@
 /**
  * 长期记忆抽象（三层记忆③）：跨会话把文本向量化写入向量库并持久化，按 query 语义召回。
- * 实现（如 `SemanticMemory`）已外放为 `@agent-engine/plugin-memory`；core 只保留协议与 no-op 默认。
+ * 实现（如 `SemanticMemory`）已外放为 `@lhx-agent-engine/plugin-memory`；core 只保留协议与 no-op 默认。
  */
 export interface LongTermMemory {
   readonly name: string;

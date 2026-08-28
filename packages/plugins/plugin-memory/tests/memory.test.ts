@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@rstest/core';
-import type { EmbeddingProvider } from '@agent-engine/core/embedding';
-import { InMemoryMemoryBackend } from '@agent-engine/core/memory';
-import { InMemoryVectorStore } from '@agent-engine/core/retrieval';
+import type { EmbeddingProvider } from '@lhx-agent-engine/core/embedding';
+import { InMemoryMemoryBackend } from '@lhx-agent-engine/core/memory';
+import { InMemoryVectorStore } from '@lhx-agent-engine/core/retrieval';
 import { SemanticMemory } from '../src/index';
 
 function makeEmbedding(): EmbeddingProvider {

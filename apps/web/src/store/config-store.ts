@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { AgentConfigSchema, type AgentConfig } from '@agent-engine/config/schema';
+import { AgentConfigSchema, type AgentConfig } from '@lhx-agent-engine/config/schema';
 
 const defaultConfig: AgentConfig = AgentConfigSchema.parse({
   name: 'demo-agent',

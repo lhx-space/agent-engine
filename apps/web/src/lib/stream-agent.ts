@@ -1,4 +1,4 @@
-import type { AgentConfig } from '@agent-engine/config/schema';
+import type { AgentConfig } from '@lhx-agent-engine/config/schema';
 
 /** 与后端 `AgentRunEvent` 对齐的最小事件契约（web 不能 import core）。 */
 export type StreamEvent =

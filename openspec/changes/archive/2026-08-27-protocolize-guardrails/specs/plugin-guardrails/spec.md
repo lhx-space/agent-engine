@@ -2,7 +2,7 @@
 
 ### Requirement: createGuardrailsPlugin 注册 GuardrailRule
 
-系统 SHALL 提供 `@agent-engine/plugin-guardrails` 包，导出 `createGuardrailsPlugin(configs)`，返回 `Plugin`；其 `install(ctx)` SHALL 把 `configs` 编译为 `GuardrailRule[]` 并逐个调用 `ctx.registerGuardrail` 注入内核拦截机制。
+系统 SHALL 提供 `@lhx-agent-engine/plugin-guardrails` 包，导出 `createGuardrailsPlugin(configs)`，返回 `Plugin`；其 `install(ctx)` SHALL 把 `configs` 编译为 `GuardrailRule[]` 并逐个调用 `ctx.registerGuardrail` 注入内核拦截机制。
 
 #### Scenario: 安装注册规则
 

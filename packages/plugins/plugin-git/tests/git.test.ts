@@ -5,7 +5,7 @@ import type {
   SandboxBackend,
   SandboxExecRequest,
   Tool,
-} from '@agent-engine/core';
+} from '@lhx-agent-engine/core';
 import { createGitPlugin } from '../src/index';
 
 function makeCtx(): { ctx: PluginContext; tools: Tool[] } {

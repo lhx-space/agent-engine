@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { AgentConfig } from '@agent-engine/config/schema';
+import type { AgentConfig } from '@lhx-agent-engine/config/schema';
 import { streamAgent, type StreamEvent } from '../lib/stream-agent';
 
 /** 一条步骤（tool 调用 / hook 执行），用于「把每一步清晰化」。 */

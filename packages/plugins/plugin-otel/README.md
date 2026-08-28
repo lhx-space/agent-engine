@@ -1,13 +1,13 @@
-# @agent-engine/plugin-otel
+# @lhx-agent-engine/plugin-otel
 
 OpenTelemetry observability plugin — wires the Agent execution path into OpenTelemetry traces via `PluginContext.registerHook`.
 
 ## Usage
 
 ```ts
-import { createOtelPlugin } from '@agent-engine/plugin-otel';
+import { createOtelPlugin } from '@lhx-agent-engine/plugin-otel';
 
-const plugin = createOtelPlugin({ tracerName: '@agent-engine/plugin-otel' });
+const plugin = createOtelPlugin({ tracerName: '@lhx-agent-engine/plugin-otel' });
 // activate via config.plugins (or inject into pluginFactories)
 ```
 

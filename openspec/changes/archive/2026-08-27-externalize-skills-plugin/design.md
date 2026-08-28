@@ -6,7 +6,7 @@ skills 与 rules 同构：都是「匹配 meta → 检索 → 注入 context」�
 
 **Goals:**
 
-- skills 外放 `@agent-engine/plugin-skills`，走 `ContextContributor` 统一缝（text + tools）。
+- skills 外放 `@lhx-agent-engine/plugin-skills`，走 `ContextContributor` 统一缝（text + tools）。
 - core 删除 skill 硬路径与 `registerSkill` 能力轴。
 - `buildSystemPrompt` 清理 `{{skills}}` 残留。
 

@@ -37,7 +37,7 @@
 
 ### D3: `list_files` 复用 `picomatch`，不手写 glob
 
-**选择**：`@agent-engine/core` 新增 `picomatch` 依赖（MIT、零依赖、micromatch/fast-glob 底层，已在 workspace 传递依赖树中），`list_files` 的 `glob` 过滤用 `picomatch(pattern, { dot: false })` 匹配相对 workspace 的 posix 路径。
+**选择**：`@lhx-agent-engine/core` 新增 `picomatch` 依赖（MIT、零依赖、micromatch/fast-glob 底层，已在 workspace 传递依赖树中），`list_files` 的 `glob` 过滤用 `picomatch(pattern, { dot: false })` 匹配相对 workspace 的 posix 路径。
 
 **理由**：glob 匹配是成熟轮子，手写正则会重蹈「重复造轮子」覆辙（AGENTS.md 核心纪律）。`dot: false` 默认跳过 `.git`、`.DS_Store` 等隐藏项，天然安全。
 

@@ -6,7 +6,7 @@
 
 - `config.tools` 从「无消费方的 `ToolRef[]`」演进为真工具开关轴：`tools.disabled`（按语义名禁用任意已装配工具，含 builtin / plugin / mcp）。
 - `assembleAgentLoop` 在装配末按 `tools.disabled` 移除工具，并在 `todo` 被禁用时不再注入规划引导片段。
-- `@agent-engine/plugin-files` 新增 `list_files` 工具：受 `roots` 约束的目录列举 + 可选 `glob` 过滤 + `maxDepth`/`maxEntries` 防护（复用 `picomatch` 做 glob）。
+- `@lhx-agent-engine/plugin-files` 新增 `list_files` 工具：受 `roots` 约束的目录列举 + 可选 `glob` 过滤 + `maxDepth`/`maxEntries` 防护（复用 `picomatch` 做 glob）。
 - `datetime now` 支持 `timeZone`/`locale`，直接返回 `formatted` 完整本地化串（星期+日期+时分秒），免二次调用。
 - `read_file` 截断改为 UTF-8 安全边界（不切断多字节字符）。
 - 源码归位：`tools/builtin/{file,bash}.ts` → `tools/{file,bash}.ts`（它们已是 plugin 工厂，不再属于「内置」）。
@@ -17,7 +17,7 @@
 
 - `agent-config-schema`: `tools` 子 Schema 由 `ToolRef[]` 改为 `{ disabled: string[] }`（移除未消费的 `ToolRef`/`use`）。
 - `builtin-tools`: `datetime now` 支持 `timeZone`/`locale` 本地化输出；`read_file` UTF-8 安全截断。
-- `plugins`: `@agent-engine/plugin-files` 新增 `list_files`；修正 `assembleAgentLoop` 装配语义（`tools.disabled` 装配末移除 + todo 引导按需注入）。
+- `plugins`: `@lhx-agent-engine/plugin-files` 新增 `list_files`；修正 `assembleAgentLoop` 装配语义（`tools.disabled` 装配末移除 + todo 引导按需注入）。
 
 ## Impact
 

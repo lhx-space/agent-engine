@@ -1,6 +1,6 @@
 ## Why
 
-上一轮把 rules 外放成 `@agent-engine/plugin-rules`，但它仍依赖 core 的 `CapabilityLoader`（能力检索的「具体实现」），且 core 的 `buildSystemPrompt` 还残留 `rulesText` / `{{rules}}` 占位符——这是「能力实现」未彻底外放、协议未收敛的尾巴。
+上一轮把 rules 外放成 `@lhx-agent-engine/plugin-rules`，但它仍依赖 core 的 `CapabilityLoader`（能力检索的「具体实现」），且 core 的 `buildSystemPrompt` 还残留 `rulesText` / `{{rules}}` 占位符——这是「能力实现」未彻底外放、协议未收敛的尾巴。
 
 本 change 落实 D3 检索协议：`plugin-rules` 自建索引（MiniSearch + 可选 `InMemoryVectorStore`），检索编排复用 core 的 `hybridRetrieve`，摆脱 `CapabilityLoader`；同时清掉 `buildSystemPrompt` 的 `rulesText` 残留（规则注入已走 `ContextContributor`）。
 

@@ -2,7 +2,7 @@
 
 ### Requirement: createPresetPluginFactories 聚合全部插件
 
-系统 SHALL 提供 `@agent-engine/preset-default` 包，导出 `createPresetPluginFactories(config)`，返回 `Record<string, PluginFactory>`，覆盖 files / bash / git（安全工具）与 rules / skills / documents / guardrails / web / mcp（能力）。
+系统 SHALL 提供 `@lhx-agent-engine/preset-default` 包，导出 `createPresetPluginFactories(config)`，返回 `Record<string, PluginFactory>`，覆盖 files / bash / git（安全工具）与 rules / skills / documents / guardrails / web / mcp（能力）。
 
 #### Scenario: 工厂齐全
 

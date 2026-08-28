@@ -17,7 +17,7 @@ TBD - created by archiving change web-editor. Update Purpose after archive.
 
 ### Requirement: 单一事实来源
 
-WebApp SHALL 复用 `@agent-engine/config` 的 `AgentConfigSchema` 与 `AgentConfig` 类型作为配置状态与校验的唯一来源。
+WebApp SHALL 复用 `@lhx-agent-engine/config` 的 `AgentConfigSchema` 与 `AgentConfig` 类型作为配置状态与校验的唯一来源。
 
 #### Scenario: 复用 config 类型
 

@@ -1,17 +1,17 @@
-# @agent-engine/plugin-files
+# @lhx-agent-engine/plugin-files
 
 本地文件工具套件插件：注册 `read_file` / `write_file` / `list_files`，受 `security.files.roots` 约束。
 
 ## 安装
 
 ```bash
-pnpm add @agent-engine/plugin-files
+pnpm add @lhx-agent-engine/plugin-files
 ```
 
 ## 用法
 
 ```ts
-import { createFilesPlugin } from '@agent-engine/plugin-files';
+import { createFilesPlugin } from '@lhx-agent-engine/plugin-files';
 
 const filesPlugin = createFilesPlugin({
   roots: ['/workspace'],
@@ -25,7 +25,7 @@ const filesPlugin = createFilesPlugin({
 >
 > ```yaml
 > plugins:
->   - '@agent-engine/plugin-files'
+>   - '@lhx-agent-engine/plugin-files'
 > security:
 >   files:
 >     roots: [/workspace]

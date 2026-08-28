@@ -24,7 +24,7 @@ Agent Engine is a TypeScript harness that runs the **full Agent lifecycle** — 
 ### 1. Install
 
 ```bash
-pnpm add @agent-engine/config @agent-engine/core
+pnpm add @lhx-agent-engine/config @lhx-agent-engine/core
 ```
 
 > The kernel is ESM, Node.js ≥ 20. The example below runs TypeScript directly with [`tsx`](https://tsx.is).
@@ -44,8 +44,8 @@ systemPrompt:
 ### 3. Run it — `run.ts`
 
 ```ts
-import { loadAgentConfig } from '@agent-engine/config';
-import { createProvider, resolveAgentConfig } from '@agent-engine/core';
+import { loadAgentConfig } from '@lhx-agent-engine/config';
+import { createProvider, resolveAgentConfig } from '@lhx-agent-engine/core';
 
 // 1) load YAML/JSON5/TS → AgentConfig (Zod-validated, deep-frozen)
 const config = await loadAgentConfig('agent.yaml');
@@ -172,11 +172,11 @@ rules:
     content: 排查顺序：kubectl get events → describe pod → logs。
     tags: [k8s, kubernetes, 诊断]
 
-# 能力插件（rules/skills/documents/memory/web/mcp/guardrails）由 @agent-engine/preset-default
+# 能力插件（rules/skills/documents/memory/web/mcp/guardrails）由 @lhx-agent-engine/preset-default
 # 按配置切片自动激活；文件 / 命令 / git 仍按需在 plugins 声明（server 层注入工厂）
 plugins:
-  - '@agent-engine/plugin-files'
-  - '@agent-engine/plugin-bash'
+  - '@lhx-agent-engine/plugin-files'
+  - '@lhx-agent-engine/plugin-bash'
 
 # 外部 MCP server → 归一化为标准工具
 mcp:
@@ -278,27 +278,27 @@ config ← core ←┼── server ──(HTTP API)──▶ apps/web (React 19
 docs/ (Rspress) is a standalone site
 ```
 
-| Package                           | Description                                                                                                        | Status         |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------ | -------------- |
-| `@agent-engine/config`            | Config schema + three-format loader (`loadAgentConfig`)                                                            | ✅ implemented |
-| `@agent-engine/core`              | Kernel: engine (AgentLoop / assemble / hooks / backends) + protocols (retrieval / ToolSource / ContextContributor) | ✅ implemented |
-| `@agent-engine/server`            | HTTP server (REST + streaming) with env-key provider factory + preset-default                                      | ✅ implemented |
-| `@agent-engine/preset-default`    | Aggregates all capability plugins + config-slice activation + long-term memory factory                             | ✅ implemented |
-| `@agent-engine/plugin-rules`      | context rules: `always` inject + on-demand `hybridRetrieve`                                                        | ✅ implemented |
-| `@agent-engine/plugin-skills`     | skill packs (path/npm/git): load + retrieve + bundle tools                                                         | ✅ implemented |
-| `@agent-engine/plugin-documents`  | document ingestion (md/html/pdf/docx/epub) → chunk → `hybridRetrieve`                                              | ✅ implemented |
-| `@agent-engine/plugin-memory`     | semantic long-term memory (`SemanticMemory`)                                                                       | ✅ implemented |
-| `@agent-engine/plugin-pgvector`   | pgvector vector store + long-term memory KV persistence                                                            | ✅ implemented |
-| `@agent-engine/plugin-redis`      | Redis cache backend (TTL KV)                                                                                       | ✅ implemented |
-| `@agent-engine/plugin-web`        | `web_search` / `web_fetch` (multi search provider)                                                                 | ✅ implemented |
-| `@agent-engine/plugin-mcp`        | MCP client (stdio) → normalized tools                                                                              | ✅ implemented |
-| `@agent-engine/plugin-guardrails` | compile declarative `guardrails` config → executable rules                                                         | ✅ implemented |
-| `@agent-engine/plugin-files`      | `read_file` / `write_file` / `list_files`                                                                          | ✅ implemented |
-| `@agent-engine/plugin-bash`       | sandboxed `bash`                                                                                                   | ✅ implemented |
-| `@agent-engine/plugin-git`        | git tool suite (read-only default, sandboxed)                                                                      | ✅ implemented |
-| `@agent-engine/plugin-otel`       | OpenTelemetry observability                                                                                        | ✅ implemented |
-| `@agent-engine/cli`               | CLI entry                                                                                                          | 📦 scaffold    |
-| `@agent-engine/web`               | Integrated platform (`apps/web`)                                                                                   | 🚧 partial     |
+| Package                               | Description                                                                                                        | Status         |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | -------------- |
+| `@lhx-agent-engine/config`            | Config schema + three-format loader (`loadAgentConfig`)                                                            | ✅ implemented |
+| `@lhx-agent-engine/core`              | Kernel: engine (AgentLoop / assemble / hooks / backends) + protocols (retrieval / ToolSource / ContextContributor) | ✅ implemented |
+| `@lhx-agent-engine/server`            | HTTP server (REST + streaming) with env-key provider factory + preset-default                                      | ✅ implemented |
+| `@lhx-agent-engine/preset-default`    | Aggregates all capability plugins + config-slice activation + long-term memory factory                             | ✅ implemented |
+| `@lhx-agent-engine/plugin-rules`      | context rules: `always` inject + on-demand `hybridRetrieve`                                                        | ✅ implemented |
+| `@lhx-agent-engine/plugin-skills`     | skill packs (path/npm/git): load + retrieve + bundle tools                                                         | ✅ implemented |
+| `@lhx-agent-engine/plugin-documents`  | document ingestion (md/html/pdf/docx/epub) → chunk → `hybridRetrieve`                                              | ✅ implemented |
+| `@lhx-agent-engine/plugin-memory`     | semantic long-term memory (`SemanticMemory`)                                                                       | ✅ implemented |
+| `@lhx-agent-engine/plugin-pgvector`   | pgvector vector store + long-term memory KV persistence                                                            | ✅ implemented |
+| `@lhx-agent-engine/plugin-redis`      | Redis cache backend (TTL KV)                                                                                       | ✅ implemented |
+| `@lhx-agent-engine/plugin-web`        | `web_search` / `web_fetch` (multi search provider)                                                                 | ✅ implemented |
+| `@lhx-agent-engine/plugin-mcp`        | MCP client (stdio) → normalized tools                                                                              | ✅ implemented |
+| `@lhx-agent-engine/plugin-guardrails` | compile declarative `guardrails` config → executable rules                                                         | ✅ implemented |
+| `@lhx-agent-engine/plugin-files`      | `read_file` / `write_file` / `list_files`                                                                          | ✅ implemented |
+| `@lhx-agent-engine/plugin-bash`       | sandboxed `bash`                                                                                                   | ✅ implemented |
+| `@lhx-agent-engine/plugin-git`        | git tool suite (read-only default, sandboxed)                                                                      | ✅ implemented |
+| `@lhx-agent-engine/plugin-otel`       | OpenTelemetry observability                                                                                        | ✅ implemented |
+| `@lhx-agent-engine/cli`               | CLI entry                                                                                                          | 📦 scaffold    |
+| `@lhx-agent-engine/web`               | Integrated platform (`apps/web`)                                                                                   | 🚧 partial     |
 
 ## Development
 

@@ -1,4 +1,4 @@
-# @agent-engine/plugin-rules
+# @lhx-agent-engine/plugin-rules
 
 Rule context injection plugin: registers a `ContextContributor` that injects `always` rules in full and retrieves `on-demand` rules (BM25, or BM25 + vector RRF when an embedding provider is supplied) into the system prompt on every run.
 
@@ -7,13 +7,13 @@ The plugin builds its own index (MiniSearch + optional `InMemoryVectorStore`) an
 ## Install
 
 ```bash
-pnpm add @agent-engine/plugin-rules
+pnpm add @lhx-agent-engine/plugin-rules
 ```
 
 ## Usage
 
 ```ts
-import { createRulesPlugin } from '@agent-engine/plugin-rules';
+import { createRulesPlugin } from '@lhx-agent-engine/plugin-rules';
 
 const rulesPlugin = createRulesPlugin(config.rules, {
   embedding: embeddingProvider, // optional; BM25-only when omitted
@@ -23,7 +23,7 @@ const rulesPlugin = createRulesPlugin(config.rules, {
 // 装配时传入 plugins: [rulesPlugin]
 ```
 
-> In config, the `rules` slice is interpreted by this plugin (D1-A: field unchanged, zero migration). Assembly is provided by the composition layer (`@agent-engine/preset-default` in Phase 4), not by core.
+> In config, the `rules` slice is interpreted by this plugin (D1-A: field unchanged, zero migration). Assembly is provided by the composition layer (`@lhx-agent-engine/preset-default` in Phase 4), not by core.
 >
 > ```yaml
 > rules:

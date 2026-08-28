@@ -1,9 +1,9 @@
 import MiniSearch from 'minisearch';
-import type { ContextContributor } from '@agent-engine/core/context';
-import type { EmbeddingProvider } from '@agent-engine/core/embedding';
-import type { Plugin } from '@agent-engine/core/plugins';
-import { hybridRetrieve, InMemoryVectorStore } from '@agent-engine/core/retrieval';
-import type { VectorStore } from '@agent-engine/core/retrieval';
+import type { ContextContributor } from '@lhx-agent-engine/core/context';
+import type { EmbeddingProvider } from '@lhx-agent-engine/core/embedding';
+import type { Plugin } from '@lhx-agent-engine/core/plugins';
+import { hybridRetrieve, InMemoryVectorStore } from '@lhx-agent-engine/core/retrieval';
+import type { VectorStore } from '@lhx-agent-engine/core/retrieval';
 import type { Skill } from './types';
 
 export type { Skill } from './types';
@@ -95,7 +95,7 @@ export function createSkillsPlugin(skills: Skill[], options: SkillsPluginOptions
   const index = skills.length > 0 ? new SkillIndex(skills, options.embedding) : undefined;
 
   const contributor: ContextContributor = {
-    name: '@agent-engine/plugin-skills',
+    name: '@lhx-agent-engine/plugin-skills',
     async contribute({ userInput }) {
       if (!index) return undefined;
       const hits = await index.retrieve(userInput, topK);
@@ -107,7 +107,7 @@ export function createSkillsPlugin(skills: Skill[], options: SkillsPluginOptions
   };
 
   return {
-    name: '@agent-engine/plugin-skills',
+    name: '@lhx-agent-engine/plugin-skills',
     description: '技能上下文注入（检索命中注入 instruction + 捆绑工具）',
     version: '0.1.0',
     tags: ['skills', '技能', '工具'],

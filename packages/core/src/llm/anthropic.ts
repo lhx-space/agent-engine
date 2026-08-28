@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type { BaseModelConfig } from '@agent-engine/config';
+import type { BaseModelConfig } from '@lhx-agent-engine/config';
 import {
   AbortError,
   type ChatCompletionParams,

@@ -9,8 +9,8 @@ model:
   temperature: 0.2
   maxTokens: 4096
 plugins:
-  - '@agent-engine/plugin-files'
-  - '@agent-engine/plugin-git'
+  - '@lhx-agent-engine/plugin-files'
+  - '@lhx-agent-engine/plugin-git'
 guardrails:
   - id: deny-write
     on: beforeToolCall

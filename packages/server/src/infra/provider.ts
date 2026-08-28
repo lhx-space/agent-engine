@@ -1,6 +1,6 @@
-import { createProvider } from '@agent-engine/core';
-import type { ProviderFactory } from '@agent-engine/core';
-import type { BaseModelConfig } from '@agent-engine/config';
+import { createProvider } from '@lhx-agent-engine/core';
+import type { ProviderFactory } from '@lhx-agent-engine/core';
+import type { BaseModelConfig } from '@lhx-agent-engine/config';
 
 /**
  * 运行时环境密钥 → config.apiKey 的映射（部署层职责，内核不读 process.env）。

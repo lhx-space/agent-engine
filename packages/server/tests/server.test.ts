@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@rstest/core';
-import { AgentConfigSchema } from '@agent-engine/config';
-import type { LLMProvider } from '@agent-engine/core';
+import { AgentConfigSchema } from '@lhx-agent-engine/config';
+import type { LLMProvider } from '@lhx-agent-engine/core';
 import { createApp } from '../src/app';
 
 function makeProvider(): LLMProvider {
@@ -100,7 +100,7 @@ describe('server-api', () => {
     expect(lines[lines.length - 1]?.type).toBe('done');
   });
 
-  it('config.plugins 声明 @agent-engine/plugin-files 后 server 注入 factory', async () => {
+  it('config.plugins 声明 @lhx-agent-engine/plugin-files 后 server 注入 factory', async () => {
     let capturedTools: string[] = [];
     const app = createApp({
       providerFactory: () => ({
@@ -116,7 +116,7 @@ describe('server-api', () => {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        config: makeConfig({ plugins: ['@agent-engine/plugin-files'] }),
+        config: makeConfig({ plugins: ['@lhx-agent-engine/plugin-files'] }),
         input: 'hi',
       }),
     });

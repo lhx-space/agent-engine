@@ -1,4 +1,4 @@
-import type { AgentConfig } from '@agent-engine/config/schema';
+import type { AgentConfig } from '@lhx-agent-engine/config/schema';
 
 export interface EnvHint {
   name: string;

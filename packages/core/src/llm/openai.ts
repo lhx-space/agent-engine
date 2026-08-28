@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import type { BaseModelConfig } from '@agent-engine/config';
+import type { BaseModelConfig } from '@lhx-agent-engine/config';
 import type {
   ChatCompletionParams,
   ChatCompletionResult,

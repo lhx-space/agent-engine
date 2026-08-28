@@ -1,11 +1,11 @@
-# @agent-engine/plugin-redis
+# @lhx-agent-engine/plugin-redis
 
 Redis cache backend: implements core's `CacheBackend` (TTL KV) with JSON serialization and key-namespace isolation.
 
 ## Install
 
 ```bash
-pnpm add @agent-engine/plugin-redis
+pnpm add @lhx-agent-engine/plugin-redis
 ```
 
 ## Usage
@@ -13,16 +13,16 @@ pnpm add @agent-engine/plugin-redis
 Connection URL is read from `REDIS_URL` by default (falls back to `redis://localhost:6379`).
 
 ```ts
-import { createRedisPlugin } from '@agent-engine/plugin-redis';
+import { createRedisPlugin } from '@lhx-agent-engine/plugin-redis';
 
 const plugin = createRedisPlugin({ url: process.env.REDIS_URL });
 ```
 
-`preset-default` already wires the factory (`@agent-engine/plugin-redis`). Activate it per-agent via `plugins` and select the cache backend by name:
+`preset-default` already wires the factory (`@lhx-agent-engine/plugin-redis`). Activate it per-agent via `plugins` and select the cache backend by name:
 
 ```yaml
 plugins:
-  - '@agent-engine/plugin-redis'
+  - '@lhx-agent-engine/plugin-redis'
 cache:
   backend: redis
 ```

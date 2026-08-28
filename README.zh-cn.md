@@ -24,7 +24,7 @@ Agent Engine 是一个 TypeScript 内核，跑通 Agent 的**完整生命周期*
 ### 1. 安装
 
 ```bash
-pnpm add @agent-engine/config @agent-engine/core
+pnpm add @lhx-agent-engine/config @lhx-agent-engine/core
 ```
 
 > 内核为 ESM，Node.js ≥ 20。下面的例子用 [`tsx`](https://tsx.is) 直接跑 TypeScript。
@@ -44,8 +44,8 @@ systemPrompt:
 ### 3. 跑起来 —— `run.ts`
 
 ```ts
-import { loadAgentConfig } from '@agent-engine/config';
-import { createProvider, resolveAgentConfig } from '@agent-engine/core';
+import { loadAgentConfig } from '@lhx-agent-engine/config';
+import { createProvider, resolveAgentConfig } from '@lhx-agent-engine/core';
 
 // 1) 加载 YAML/JSON5/TS → AgentConfig（Zod 校验 + 深度冻结）
 const config = await loadAgentConfig('agent.yaml');
@@ -172,11 +172,11 @@ rules:
     content: 排查顺序：kubectl get events → describe pod → logs。
     tags: [k8s, kubernetes, 诊断]
 
-# 能力插件（rules/skills/documents/memory/web/mcp/guardrails）由 @agent-engine/preset-default
+# 能力插件（rules/skills/documents/memory/web/mcp/guardrails）由 @lhx-agent-engine/preset-default
 # 按配置切片自动激活；文件 / 命令 / git 仍按需在 plugins 声明（server 层注入工厂）
 plugins:
-  - '@agent-engine/plugin-files'
-  - '@agent-engine/plugin-bash'
+  - '@lhx-agent-engine/plugin-files'
+  - '@lhx-agent-engine/plugin-bash'
 
 # 外部 MCP server → 归一化为标准工具
 mcp:
@@ -278,27 +278,27 @@ config ← core ←┼── server ──(HTTP API)──▶ apps/web（React 1
 docs/（Rspress）为独立站点
 ```
 
-| 包                                | 说明                                                                                              | 状态        |
-| --------------------------------- | ------------------------------------------------------------------------------------------------- | ----------- |
-| `@agent-engine/config`            | 配置 Schema + 三格式加载（`loadAgentConfig`）                                                     | ✅ 已实现   |
-| `@agent-engine/core`              | 内核：引擎（AgentLoop / assemble / hooks / 后端）+ 协议（检索 / ToolSource / ContextContributor） | ✅ 已实现   |
-| `@agent-engine/server`            | HTTP 服务（REST + 流式），内置环境变量密钥工厂 + preset-default                                   | ✅ 已实现   |
-| `@agent-engine/preset-default`    | 聚合全部能力插件 + 按配置切片激活 + 长期记忆工厂                                                  | ✅ 已实现   |
-| `@agent-engine/plugin-rules`      | 上下文规则：`always` 注入 + on-demand `hybridRetrieve`                                            | ✅ 已实现   |
-| `@agent-engine/plugin-skills`     | 技能包（path/npm/git）：加载 + 检索 + 捆绑工具                                                    | ✅ 已实现   |
-| `@agent-engine/plugin-documents`  | 文档摄入（md/html/pdf/docx/epub）→ 分块 → `hybridRetrieve`                                        | ✅ 已实现   |
-| `@agent-engine/plugin-memory`     | 语义长期记忆（`SemanticMemory`）                                                                  | ✅ 已实现   |
-| `@agent-engine/plugin-pgvector`   | pgvector 向量存储 + 长期记忆 KV 持久化                                                            | ✅ 已实现   |
-| `@agent-engine/plugin-redis`      | Redis 缓存后端（TTL KV）                                                                          | ✅ 已实现   |
-| `@agent-engine/plugin-web`        | `web_search` / `web_fetch`（多搜索 provider）                                                     | ✅ 已实现   |
-| `@agent-engine/plugin-mcp`        | MCP client（stdio）→ 归一化为标准工具                                                             | ✅ 已实现   |
-| `@agent-engine/plugin-guardrails` | 声明式 `guardrails` 配置编译为可执行规则                                                          | ✅ 已实现   |
-| `@agent-engine/plugin-files`      | `read_file` / `write_file` / `list_files`                                                         | ✅ 已实现   |
-| `@agent-engine/plugin-bash`       | 沙箱 `bash`                                                                                       | ✅ 已实现   |
-| `@agent-engine/plugin-git`        | git 工具套件（只读默认、经沙箱）                                                                  | ✅ 已实现   |
-| `@agent-engine/plugin-otel`       | OpenTelemetry 可观测插件                                                                          | ✅ 已实现   |
-| `@agent-engine/cli`               | 命令行入口                                                                                        | 📦 骨架     |
-| `@agent-engine/web`               | 一体化平台（`apps/web`）                                                                          | 🚧 部分实现 |
+| 包                                    | 说明                                                                                              | 状态        |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------- | ----------- |
+| `@lhx-agent-engine/config`            | 配置 Schema + 三格式加载（`loadAgentConfig`）                                                     | ✅ 已实现   |
+| `@lhx-agent-engine/core`              | 内核：引擎（AgentLoop / assemble / hooks / 后端）+ 协议（检索 / ToolSource / ContextContributor） | ✅ 已实现   |
+| `@lhx-agent-engine/server`            | HTTP 服务（REST + 流式），内置环境变量密钥工厂 + preset-default                                   | ✅ 已实现   |
+| `@lhx-agent-engine/preset-default`    | 聚合全部能力插件 + 按配置切片激活 + 长期记忆工厂                                                  | ✅ 已实现   |
+| `@lhx-agent-engine/plugin-rules`      | 上下文规则：`always` 注入 + on-demand `hybridRetrieve`                                            | ✅ 已实现   |
+| `@lhx-agent-engine/plugin-skills`     | 技能包（path/npm/git）：加载 + 检索 + 捆绑工具                                                    | ✅ 已实现   |
+| `@lhx-agent-engine/plugin-documents`  | 文档摄入（md/html/pdf/docx/epub）→ 分块 → `hybridRetrieve`                                        | ✅ 已实现   |
+| `@lhx-agent-engine/plugin-memory`     | 语义长期记忆（`SemanticMemory`）                                                                  | ✅ 已实现   |
+| `@lhx-agent-engine/plugin-pgvector`   | pgvector 向量存储 + 长期记忆 KV 持久化                                                            | ✅ 已实现   |
+| `@lhx-agent-engine/plugin-redis`      | Redis 缓存后端（TTL KV）                                                                          | ✅ 已实现   |
+| `@lhx-agent-engine/plugin-web`        | `web_search` / `web_fetch`（多搜索 provider）                                                     | ✅ 已实现   |
+| `@lhx-agent-engine/plugin-mcp`        | MCP client（stdio）→ 归一化为标准工具                                                             | ✅ 已实现   |
+| `@lhx-agent-engine/plugin-guardrails` | 声明式 `guardrails` 配置编译为可执行规则                                                          | ✅ 已实现   |
+| `@lhx-agent-engine/plugin-files`      | `read_file` / `write_file` / `list_files`                                                         | ✅ 已实现   |
+| `@lhx-agent-engine/plugin-bash`       | 沙箱 `bash`                                                                                       | ✅ 已实现   |
+| `@lhx-agent-engine/plugin-git`        | git 工具套件（只读默认、经沙箱）                                                                  | ✅ 已实现   |
+| `@lhx-agent-engine/plugin-otel`       | OpenTelemetry 可观测插件                                                                          | ✅ 已实现   |
+| `@lhx-agent-engine/cli`               | 命令行入口                                                                                        | 📦 骨架     |
+| `@lhx-agent-engine/web`               | 一体化平台（`apps/web`）                                                                          | 🚧 部分实现 |
 
 ## 开发
 

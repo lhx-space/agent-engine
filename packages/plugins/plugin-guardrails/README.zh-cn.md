@@ -1,4 +1,4 @@
-# @agent-engine/plugin-guardrails
+# @lhx-agent-engine/plugin-guardrails
 
 声明式 guardrail 插件：把 `config.guardrails`（声明式配置）编译为可执行 `GuardrailRule[]`，并经 `ctx.registerGuardrail` 注入内核拦截机制。
 
@@ -7,13 +7,13 @@ core 只保留 `GuardrailRule` 协议（接口）与 `AgentLoop` 拦截机制；
 ## 安装
 
 ```bash
-pnpm add @agent-engine/plugin-guardrails
+pnpm add @lhx-agent-engine/plugin-guardrails
 ```
 
 ## 用法
 
 ```ts
-import { createGuardrailsPlugin } from '@agent-engine/plugin-guardrails';
+import { createGuardrailsPlugin } from '@lhx-agent-engine/plugin-guardrails';
 
 const guardrailsPlugin = createGuardrailsPlugin(config.guardrails);
 

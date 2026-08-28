@@ -58,4 +58,4 @@
 
 ## Migration Plan
 
-`@agent-engine/server` 现为 stub（name/version），直接替换为 `createApp`/`serve` 实现，无迁移。
+`@lhx-agent-engine/server` 现为 stub（name/version），直接替换为 `createApp`/`serve` 实现，无迁移。

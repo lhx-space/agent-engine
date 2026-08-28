@@ -1,6 +1,6 @@
-import type { GuardrailRuleConfig } from '@agent-engine/config';
-import type { GuardrailRule } from '@agent-engine/core/guardrails';
-import type { Plugin } from '@agent-engine/core/plugins';
+import type { GuardrailRuleConfig } from '@lhx-agent-engine/config';
+import type { GuardrailRule } from '@lhx-agent-engine/core/guardrails';
+import type { Plugin } from '@lhx-agent-engine/core/plugins';
 
 /**
  * 把一条声明式 guardrail 配置编译为可执行 `GuardrailRule`。
@@ -45,7 +45,7 @@ export function compileGuardrails(configs: GuardrailRuleConfig[]): GuardrailRule
  */
 export function createGuardrailsPlugin(configs: GuardrailRuleConfig[]): Plugin {
   return {
-    name: '@agent-engine/plugin-guardrails',
+    name: '@lhx-agent-engine/plugin-guardrails',
     description: '声明式 guardrail 编译（config.guardrails → GuardrailRule）',
     version: '0.1.0',
     tags: ['guardrail', '安全', '拦截'],

@@ -1,13 +1,13 @@
 import { randomUUID } from 'node:crypto';
-import type { AgentConfig } from '@agent-engine/config';
-import { AgentConfigSchema, deepFreeze, sanitizeConfigValue } from '@agent-engine/config';
-import { resolveAgentConfig } from '@agent-engine/core';
-import type { AgentLoop } from '@agent-engine/core';
+import type { AgentConfig } from '@lhx-agent-engine/config';
+import { AgentConfigSchema, deepFreeze, sanitizeConfigValue } from '@lhx-agent-engine/config';
+import { resolveAgentConfig } from '@lhx-agent-engine/core';
+import type { AgentLoop } from '@lhx-agent-engine/core';
 import {
   createPresetLongTermMemoryFactory,
   createPresetPluginFactories,
   defaultCapabilityPlugins,
-} from '@agent-engine/preset-default';
+} from '@lhx-agent-engine/preset-default';
 import { envProviderFactory } from '../infra/provider';
 import type { SessionStoreBackend } from '../infra/session-store';
 import type { ServerOptions } from '../types';

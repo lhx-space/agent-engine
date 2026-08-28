@@ -1,7 +1,7 @@
 import { Button, Form, Input, InputNumber, Modal, Select, Space, Tag, Typography } from 'antd';
 import { ApiOutlined } from '@ant-design/icons';
 import { useState } from 'react';
-import type { ModelConfig, ModelProvider } from '@agent-engine/config/schema';
+import type { ModelConfig, ModelProvider } from '@lhx-agent-engine/config/schema';
 
 const PROVIDERS: ModelProvider[] = ['openai-compatible', 'anthropic', 'custom'];
 

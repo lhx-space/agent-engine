@@ -1,11 +1,11 @@
-# @agent-engine/plugin-pgvector
+# @lhx-agent-engine/plugin-pgvector
 
 pgvector-backed vector store + long-term memory KV persistence. Implements core's `VectorStore` (semantic retrieval) and `MemoryBackend` (cross-session KV) on a single PostgreSQL instance.
 
 ## Install
 
 ```bash
-pnpm add @agent-engine/plugin-pgvector
+pnpm add @lhx-agent-engine/plugin-pgvector
 ```
 
 ## Usage
@@ -13,16 +13,16 @@ pnpm add @agent-engine/plugin-pgvector
 Connection string is read from `DATABASE_URL` by default; pass `connectionString` explicitly to override.
 
 ```ts
-import { createPgvectorPlugin } from '@agent-engine/plugin-pgvector';
+import { createPgvectorPlugin } from '@lhx-agent-engine/plugin-pgvector';
 
 const plugin = createPgvectorPlugin({ connectionString: process.env.DATABASE_URL });
 ```
 
-`preset-default` already wires the factory (`@agent-engine/plugin-pgvector`). Activate it per-agent via `plugins` and select the KV backend by name:
+`preset-default` already wires the factory (`@lhx-agent-engine/plugin-pgvector`). Activate it per-agent via `plugins` and select the KV backend by name:
 
 ```yaml
 plugins:
-  - '@agent-engine/plugin-pgvector'
+  - '@lhx-agent-engine/plugin-pgvector'
 memory:
   longTerm:
     backend: pg # 选中 PgMemoryBackend；向量后端取首个注册的 vectorStore（pgvector）

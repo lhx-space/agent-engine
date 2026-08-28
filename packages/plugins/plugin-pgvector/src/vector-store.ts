@@ -1,5 +1,5 @@
 import type { Pool } from 'pg';
-import type { VectorMatch, VectorRecord, VectorStore } from '@agent-engine/core';
+import type { VectorMatch, VectorRecord, VectorStore } from '@lhx-agent-engine/core';
 
 /** 把 JS 数值数组转成 pgvector 的 `vector` 字面量（如 `[0.1,0.2]`）。 */
 function toVectorLiteral(vector: number[]): string {

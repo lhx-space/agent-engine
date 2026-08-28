@@ -1,6 +1,6 @@
-import type { McpServer } from '@agent-engine/config';
-import type { ToolSource } from '@agent-engine/core';
-import type { Plugin } from '@agent-engine/core/plugins';
+import type { McpServer } from '@lhx-agent-engine/config';
+import type { ToolSource } from '@lhx-agent-engine/core';
+import type { Plugin } from '@lhx-agent-engine/core/plugins';
 import { connectMcpServers } from './client';
 import { resolveMcpServers } from './mcp';
 
@@ -20,14 +20,14 @@ export type { McpConnection, ResolvedMcpServer } from './types';
  */
 export function createMcpPlugin(servers: McpServer[]): Plugin {
   return {
-    name: '@agent-engine/plugin-mcp',
+    name: '@lhx-agent-engine/plugin-mcp',
     description: 'MCP 工具来源（stdio transport，经 ToolSource 注入）',
     version: '0.1.0',
     tags: ['mcp', '工具来源'],
     install(ctx) {
       if (servers.length === 0) return;
       const source: ToolSource = {
-        name: '@agent-engine/plugin-mcp',
+        name: '@lhx-agent-engine/plugin-mcp',
         async resolve() {
           const { tools, errors, dispose } = await connectMcpServers(resolveMcpServers(servers));
           for (const { name, error } of errors) {

@@ -4,7 +4,7 @@ import {
   type AgentConfig,
   type ModelConfig,
   type SecurityConfig,
-} from '@agent-engine/config/schema';
+} from '@lhx-agent-engine/config/schema';
 
 export type ExportFormat = 'yaml' | 'json';
 

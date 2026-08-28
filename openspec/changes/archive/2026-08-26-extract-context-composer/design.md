@@ -21,4 +21,4 @@ review 结论：`AgentLoop` 兼任「ReAct 循环」与「上下文组装」两�
 
 ## Migration Plan
 
-- 无破坏；`SystemPromptInput` 仍可从 `@agent-engine/core/agent` 导入。
+- 无破坏；`SystemPromptInput` 仍可从 `@lhx-agent-engine/core/agent` 导入。

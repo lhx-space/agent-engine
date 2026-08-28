@@ -1,9 +1,22 @@
 {
-  "name": "@agent-engine/preset-default",
+  "name": "@lhx-agent-engine/preset-default",
   "version": "0.1.0",
   "description": "默认全家桶：聚合全部能力插件（rules/skills/documents/memory/web/mcp + files/bash/git + guardrails）",
+  "keywords": [
+    "lhx-agent-engine"
+  ],
+  "license": "MIT",
+  "author": "luhanxin",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lhx-space/agent-engine.git",
+    "directory": "packages/plugins/preset-default"
+  },
+  "homepage": "https://github.com/lhx-space/agent-engine/tree/main/packages/plugins/preset-default#readme",
+  "bugs": {
+    "url": "https://github.com/lhx-space/agent-engine/issues"
+  },
   "type": "module",
-  "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
@@ -22,26 +35,34 @@
   "files": [
     "dist"
   ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@agent-engine/config": "workspace:*",
-    "@agent-engine/core": "workspace:*",
-    "@agent-engine/plugin-bash": "workspace:*",
-    "@agent-engine/plugin-documents": "workspace:*",
-    "@agent-engine/plugin-files": "workspace:*",
-    "@agent-engine/plugin-git": "workspace:*",
-    "@agent-engine/plugin-guardrails": "workspace:*",
-    "@agent-engine/plugin-mcp": "workspace:*",
-    "@agent-engine/plugin-memory": "workspace:*",
-    "@agent-engine/plugin-otel": "workspace:*",
-    "@agent-engine/plugin-pgvector": "workspace:*",
-    "@agent-engine/plugin-redis": "workspace:*",
-    "@agent-engine/plugin-rules": "workspace:*",
-    "@agent-engine/plugin-skills": "workspace:*",
-    "@agent-engine/plugin-web": "workspace:*"
+    "@lhx-agent-engine/config": "workspace:*",
+    "@lhx-agent-engine/core": "workspace:*",
+    "@lhx-agent-engine/plugin-bash": "workspace:*",
+    "@lhx-agent-engine/plugin-documents": "workspace:*",
+    "@lhx-agent-engine/plugin-files": "workspace:*",
+    "@lhx-agent-engine/plugin-git": "workspace:*",
+    "@lhx-agent-engine/plugin-guardrails": "workspace:*",
+    "@lhx-agent-engine/plugin-mcp": "workspace:*",
+    "@lhx-agent-engine/plugin-memory": "workspace:*",
+    "@lhx-agent-engine/plugin-otel": "workspace:*",
+    "@lhx-agent-engine/plugin-pgvector": "workspace:*",
+    "@lhx-agent-engine/plugin-redis": "workspace:*",
+    "@lhx-agent-engine/plugin-rules": "workspace:*",
+    "@lhx-agent-engine/plugin-skills": "workspace:*",
+    "@lhx-agent-engine/plugin-web": "workspace:*"
+  },
+  "engines": {
+    "node": ">=18.18.0"
   }
 }

@@ -1,4 +1,4 @@
-import type { Tool } from '@agent-engine/core/tools';
+import type { Tool } from '@lhx-agent-engine/core/tools';
 
 /** 已连接的 MCP server：暴露归一化工具与关闭句柄。 */
 export interface McpConnection {

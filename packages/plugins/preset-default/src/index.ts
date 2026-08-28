@@ -1,24 +1,24 @@
-import type { AgentConfig, DocumentsConfig, SecurityConfig } from '@agent-engine/config';
-import { createEmbeddingProvider, resolveSandboxBackend } from '@agent-engine/core';
+import type { AgentConfig, DocumentsConfig, SecurityConfig } from '@lhx-agent-engine/config';
+import { createEmbeddingProvider, resolveSandboxBackend } from '@lhx-agent-engine/core';
 import type {
   LongTermMemory,
   LongTermMemoryFactoryDeps,
   PluginFactory,
   SandboxBackend,
-} from '@agent-engine/core';
-import { createBashPlugin } from '@agent-engine/plugin-bash';
-import { createDocumentsPlugin } from '@agent-engine/plugin-documents';
-import { createFilesPlugin } from '@agent-engine/plugin-files';
-import { createGitPlugin } from '@agent-engine/plugin-git';
-import { createGuardrailsPlugin } from '@agent-engine/plugin-guardrails';
-import { createMcpPlugin } from '@agent-engine/plugin-mcp';
-import { createSemanticMemory } from '@agent-engine/plugin-memory';
-import { createOtelPlugin } from '@agent-engine/plugin-otel';
-import { createPgvectorPlugin } from '@agent-engine/plugin-pgvector';
-import { createRedisPlugin } from '@agent-engine/plugin-redis';
-import { createRulesPlugin } from '@agent-engine/plugin-rules';
-import { createSkillsPlugin, resolveSkills } from '@agent-engine/plugin-skills';
-import { createWebPlugin } from '@agent-engine/plugin-web';
+} from '@lhx-agent-engine/core';
+import { createBashPlugin } from '@lhx-agent-engine/plugin-bash';
+import { createDocumentsPlugin } from '@lhx-agent-engine/plugin-documents';
+import { createFilesPlugin } from '@lhx-agent-engine/plugin-files';
+import { createGitPlugin } from '@lhx-agent-engine/plugin-git';
+import { createGuardrailsPlugin } from '@lhx-agent-engine/plugin-guardrails';
+import { createMcpPlugin } from '@lhx-agent-engine/plugin-mcp';
+import { createSemanticMemory } from '@lhx-agent-engine/plugin-memory';
+import { createOtelPlugin } from '@lhx-agent-engine/plugin-otel';
+import { createPgvectorPlugin } from '@lhx-agent-engine/plugin-pgvector';
+import { createRedisPlugin } from '@lhx-agent-engine/plugin-redis';
+import { createRulesPlugin } from '@lhx-agent-engine/plugin-rules';
+import { createSkillsPlugin, resolveSkills } from '@lhx-agent-engine/plugin-skills';
+import { createWebPlugin } from '@lhx-agent-engine/plugin-web';
 
 /** 解析沙箱后端；不可用则抛错（bash/git 绝不回退宿主进程裸奔）。 */
 function resolveSandbox(security: SecurityConfig): SandboxBackend {
@@ -50,42 +50,43 @@ export function createPresetPluginFactories(config: AgentConfig): Record<string,
   const documents = config.documents ?? EMPTY_DOCUMENTS;
 
   return {
-    '@agent-engine/plugin-files': () => createFilesPlugin(config.security.files),
-    '@agent-engine/plugin-bash': () =>
+    '@lhx-agent-engine/plugin-files': () => createFilesPlugin(config.security.files),
+    '@lhx-agent-engine/plugin-bash': () =>
       createBashPlugin(config.security.bash, resolveSandbox(config.security)),
-    '@agent-engine/plugin-git': () => createGitPlugin({ sandbox: resolveSandbox(config.security) }),
-    '@agent-engine/plugin-rules': () => createRulesPlugin(config.rules, { embedding }),
-    '@agent-engine/plugin-skills': async () => {
+    '@lhx-agent-engine/plugin-git': () =>
+      createGitPlugin({ sandbox: resolveSandbox(config.security) }),
+    '@lhx-agent-engine/plugin-rules': () => createRulesPlugin(config.rules, { embedding }),
+    '@lhx-agent-engine/plugin-skills': async () => {
       const { skills } = await resolveSkills(config.skills);
       return createSkillsPlugin(skills, { embedding });
     },
-    '@agent-engine/plugin-documents': () => createDocumentsPlugin(documents, { embedding }),
-    '@agent-engine/plugin-guardrails': () => createGuardrailsPlugin(config.guardrails),
-    '@agent-engine/plugin-web': () => createWebPlugin(config.security),
-    '@agent-engine/plugin-mcp': () => createMcpPlugin(config.mcp?.servers ?? []),
+    '@lhx-agent-engine/plugin-documents': () => createDocumentsPlugin(documents, { embedding }),
+    '@lhx-agent-engine/plugin-guardrails': () => createGuardrailsPlugin(config.guardrails),
+    '@lhx-agent-engine/plugin-web': () => createWebPlugin(config.security),
+    '@lhx-agent-engine/plugin-mcp': () => createMcpPlugin(config.mcp?.servers ?? []),
     // 可观测（opt-in 经 config.plugins 声明；exporter 由用户经 OTel SDK 配置）。
-    '@agent-engine/plugin-otel': () => createOtelPlugin(),
+    '@lhx-agent-engine/plugin-otel': () => createOtelPlugin(),
     // pgvector 持久化（opt-in 经 config.plugins 声明；连接串读 DATABASE_URL）。
-    '@agent-engine/plugin-pgvector': () => createPgvectorPlugin(),
+    '@lhx-agent-engine/plugin-pgvector': () => createPgvectorPlugin(),
     // redis 缓存（opt-in 经 config.plugins 声明；连接串读 REDIS_URL）。
-    '@agent-engine/plugin-redis': () => createRedisPlugin(),
+    '@lhx-agent-engine/plugin-redis': () => createRedisPlugin(),
   };
 }
 
 /** 按 config 能力切片返回需自动装配的能力插件名（D1-A 零迁移）。 */
 export function defaultCapabilityPlugins(config: AgentConfig): string[] {
   const names: string[] = [];
-  if (config.rules.length > 0) names.push('@agent-engine/plugin-rules');
-  if (config.skills.length > 0) names.push('@agent-engine/plugin-skills');
+  if (config.rules.length > 0) names.push('@lhx-agent-engine/plugin-rules');
+  if (config.skills.length > 0) names.push('@lhx-agent-engine/plugin-skills');
   if (config.documents && config.documents.sources.length > 0) {
-    names.push('@agent-engine/plugin-documents');
+    names.push('@lhx-agent-engine/plugin-documents');
   }
-  if (config.guardrails.length > 0) names.push('@agent-engine/plugin-guardrails');
+  if (config.guardrails.length > 0) names.push('@lhx-agent-engine/plugin-guardrails');
   if (config.mcp?.servers && config.mcp.servers.length > 0) {
-    names.push('@agent-engine/plugin-mcp');
+    names.push('@lhx-agent-engine/plugin-mcp');
   }
   // web_search / web_fetch 是通用工具，恒激活。
-  names.push('@agent-engine/plugin-web');
+  names.push('@lhx-agent-engine/plugin-web');
   return names;
 }
 

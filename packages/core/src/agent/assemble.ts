@@ -3,7 +3,7 @@ import type {
   SecurityConfig,
   SessionMemory,
   ToolsConfig,
-} from '@agent-engine/config';
+} from '@lhx-agent-engine/config';
 import { InMemoryCacheBackend } from '../cache/cache-backend';
 import type { CacheBackend } from '../cache/cache-backend';
 import { mergeBundles } from '../capability/bundle';
@@ -55,7 +55,7 @@ export interface AssembleAgentLoopOptions {
   hooks?: HookPipeline;
   guardrails?: GuardrailRule[];
   memory?: ConversationMemory;
-  /** 长期记忆实现（缺省 no-op；语义实现由 `@agent-engine/plugin-memory` 提供）。 */
+  /** 长期记忆实现（缺省 no-op；语义实现由 `@lhx-agent-engine/plugin-memory` 提供）。 */
   longTermMemory?: LongTermMemory;
   /** 长期记忆工厂（优先于 no-op；用解析出的 vectorStore / embedding / memoryBackend 创建实现）。 */
   longTermMemoryFactory?: (deps: LongTermMemoryFactoryDeps) => LongTermMemory;
@@ -203,7 +203,7 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
   const embeddingProvider: EmbeddingProvider | undefined =
     merged.embeddingProviders[0] ?? options.embeddingProvider;
 
-  // 5.7 长期记忆：实现已外放为 `@agent-engine/plugin-memory`（SemanticMemory）；core 默认 no-op。
+  // 5.7 长期记忆：实现已外放为 `@lhx-agent-engine/plugin-memory`（SemanticMemory）；core 默认 no-op。
   const longTermMemory: LongTermMemory =
     options.longTermMemory ??
     options.longTermMemoryFactory?.({
@@ -225,7 +225,7 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     });
 
   // 5.9 guardrail 装配：预置可执行规则 + 插件注册的规则，合并成 `GuardrailRule[]`（core 只认协议）。
-  // 声明式 `config.guardrails` 的解释已外放为 `@agent-engine/plugin-guardrails`（经 registerGuardrail 注入）。
+  // 声明式 `config.guardrails` 的解释已外放为 `@lhx-agent-engine/plugin-guardrails`（经 registerGuardrail 注入）。
   const guardrails: GuardrailRule[] = [...(options.guardrails ?? []), ...merged.guardrails];
 
   const agent = new AgentLoop({

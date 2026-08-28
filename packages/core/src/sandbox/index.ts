@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import type { SandboxBackendKind } from '@agent-engine/config';
+import type { SandboxBackendKind } from '@lhx-agent-engine/config';
 import { createDockerSandbox } from './docker';
 import { createNsJailSandbox } from './nsjail';
 import type { ResolveSandboxDeps, SandboxBackendOptions, SandboxResolution } from './types';

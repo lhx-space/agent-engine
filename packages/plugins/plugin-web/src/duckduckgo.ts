@@ -1,5 +1,5 @@
-import { defaultFetch } from '@agent-engine/core';
-import type { FetchLike } from '@agent-engine/core';
+import { defaultFetch } from '@lhx-agent-engine/core';
+import type { FetchLike } from '@lhx-agent-engine/core';
 import type { SearchProvider, SearchResult } from './search';
 
 interface DuckDuckGoTopic {

@@ -1,17 +1,17 @@
-# @agent-engine/plugin-mcp
+# @lhx-agent-engine/plugin-mcp
 
 MCP 工具来源插件：注册一个 `ToolSource`，装配时连接全部 `mcp.servers`（stdio transport）并把归一化工具注入内核。core 只保留 `ToolSource` 协议；本插件持有 MCP client。
 
 ## 安装
 
 ```bash
-pnpm add @agent-engine/plugin-mcp
+pnpm add @lhx-agent-engine/plugin-mcp
 ```
 
 ## 用法
 
 ```ts
-import { createMcpPlugin } from '@agent-engine/plugin-mcp';
+import { createMcpPlugin } from '@lhx-agent-engine/plugin-mcp';
 
 const mcpPlugin = createMcpPlugin(config.mcp?.servers ?? []);
 

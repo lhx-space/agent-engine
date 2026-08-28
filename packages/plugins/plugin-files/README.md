@@ -1,17 +1,17 @@
-# @agent-engine/plugin-files
+# @lhx-agent-engine/plugin-files
 
 Local file tool-suite plugin: registers `read_file` / `write_file` / `list_files`, constrained by `security.files.roots`.
 
 ## Install
 
 ```bash
-pnpm add @agent-engine/plugin-files
+pnpm add @lhx-agent-engine/plugin-files
 ```
 
 ## Usage
 
 ```ts
-import { createFilesPlugin } from '@agent-engine/plugin-files';
+import { createFilesPlugin } from '@lhx-agent-engine/plugin-files';
 
 const filesPlugin = createFilesPlugin({
   roots: ['/workspace'],
@@ -25,7 +25,7 @@ const filesPlugin = createFilesPlugin({
 >
 > ```yaml
 > plugins:
->   - '@agent-engine/plugin-files'
+>   - '@lhx-agent-engine/plugin-files'
 > security:
 >   files:
 >     roots: [/workspace]

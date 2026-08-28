@@ -1,4 +1,4 @@
-import type { AgentLoop } from '@agent-engine/core';
+import type { AgentLoop } from '@lhx-agent-engine/core';
 
 /** 一个已装配会话：常驻 AgentLoop + 资源释放 + 最近活跃时间戳。 */
 export interface StoredSession {

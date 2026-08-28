@@ -41,5 +41,5 @@ server 当前硬依赖 pino（`logger.ts` + `app.ts` 直接 `logger.info/error`�
 
 ## Migration Plan
 
-- 外部 `import { logger } from '@agent-engine/server'` → `createApp({ logger: pino() })` 或直接用 `consoleLogger`。
+- 外部 `import { logger } from '@lhx-agent-engine/server'` → `createApp({ logger: pino() })` 或直接用 `consoleLogger`。
 - 无配置字段变化。

@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@rstest/core';
-import { AgentConfigSchema } from '@agent-engine/config';
+import { AgentConfigSchema } from '@lhx-agent-engine/config';
 import { createEmbeddingProvider } from '../src/embedding/openai';
 import type { LLMProvider } from '../src/llm/types';
 import { resolveAgentConfig } from '../src/resolve/resolve';

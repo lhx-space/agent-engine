@@ -27,7 +27,7 @@ TBD - created by archiving change add-context-assembly. Update Purpose after arc
 
 ### Requirement: system prompt 组装
 
-系统 SHALL 提供 `buildSystemPrompt(options)`，渲染 `systemPrompt.template` 的用户变量，返回本次调用的 system prompt。rules / skills 能力注入已外放为 `@agent-engine/plugin-rules` / `@agent-engine/plugin-skills` 的 `ContextContributor`，SHALL 不再占用 `buildSystemPrompt` 的模板占位符。
+系统 SHALL 提供 `buildSystemPrompt(options)`，渲染 `systemPrompt.template` 的用户变量，返回本次调用的 system prompt。rules / skills 能力注入已外放为 `@lhx-agent-engine/plugin-rules` / `@lhx-agent-engine/plugin-skills` 的 `ContextContributor`，SHALL 不再占用 `buildSystemPrompt` 的模板占位符。
 
 #### Scenario: 模板渲染用户变量
 

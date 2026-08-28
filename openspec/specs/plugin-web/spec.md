@@ -8,7 +8,7 @@ TBD - created by archiving change externalize-web-plugin. Update Purpose after a
 
 ### Requirement: createWebPlugin 注册 web 工具
 
-系统 SHALL 提供 `@agent-engine/plugin-web` 包，导出 `createWebPlugin(security, deps?)`，返回 `Plugin`；其 `install(ctx)` SHALL 注册 `web_search`（按 `security.webSearch.provider` 解析 `SearchProvider`）与 `web_fetch`。`deps` SHALL 可注入 `searchProvider` / `fetchImpl` 以便测试。
+系统 SHALL 提供 `@lhx-agent-engine/plugin-web` 包，导出 `createWebPlugin(security, deps?)`，返回 `Plugin`；其 `install(ctx)` SHALL 注册 `web_search`（按 `security.webSearch.provider` 解析 `SearchProvider`）与 `web_fetch`。`deps` SHALL 可注入 `searchProvider` / `fetchImpl` 以便测试。
 
 #### Scenario: 注册 web_search / web_fetch
 

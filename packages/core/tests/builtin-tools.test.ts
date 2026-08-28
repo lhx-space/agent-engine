@@ -2,7 +2,7 @@ import { describe, expect, it } from '@rstest/core';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import type { BashPolicy, FilePolicy, SecurityConfig } from '@agent-engine/config';
+import type { BashPolicy, FilePolicy, SecurityConfig } from '@lhx-agent-engine/config';
 import type { SandboxBackend, SandboxExecResult } from '../src/sandbox/types';
 import { ToolRegistry } from '../src/tools/registry';
 import { createBashTool } from '../src/tools/bash';

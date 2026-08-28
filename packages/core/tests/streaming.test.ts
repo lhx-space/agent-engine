@@ -1,6 +1,6 @@
 import { describe, expect, it, rs } from '@rstest/core';
 import { z } from 'zod';
-import { AgentConfigSchema, type AgentConfig } from '@agent-engine/config';
+import { AgentConfigSchema, type AgentConfig } from '@lhx-agent-engine/config';
 import { resolveAgentConfig } from '../src/resolve/resolve';
 import type { AgentRunEvent, ChatMessage, LLMProvider } from '../src';
 

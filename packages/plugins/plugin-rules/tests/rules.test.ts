@@ -1,8 +1,8 @@
 import { describe, expect, it } from '@rstest/core';
-import type { Rule } from '@agent-engine/config';
-import type { ContextContributor } from '@agent-engine/core/context';
-import type { EmbeddingProvider } from '@agent-engine/core/embedding';
-import type { PluginContext } from '@agent-engine/core/plugins';
+import type { Rule } from '@lhx-agent-engine/config';
+import type { ContextContributor } from '@lhx-agent-engine/core/context';
+import type { EmbeddingProvider } from '@lhx-agent-engine/core/embedding';
+import type { PluginContext } from '@lhx-agent-engine/core/plugins';
 import { createRulesPlugin, loadRulesText } from '../src/index';
 
 function makeCtx(): { ctx: PluginContext; contributors: ContextContributor[] } {
@@ -52,7 +52,7 @@ describe('createRulesPlugin', () => {
     const { ctx, contributors } = makeCtx();
     await createRulesPlugin(rules).install(ctx);
     expect(contributors).toHaveLength(1);
-    expect(contributors[0]?.name).toBe('@agent-engine/plugin-rules');
+    expect(contributors[0]?.name).toBe('@lhx-agent-engine/plugin-rules');
   });
 
   it('always 强制注入 + on-demand BM25 召回', async () => {

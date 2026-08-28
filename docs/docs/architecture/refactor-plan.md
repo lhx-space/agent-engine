@@ -45,14 +45,14 @@ plugins（能力：全部外置，各一个包，走统一缝接入）
 
 ### ➡️ 外放成插件包
 
-| 现在在 core                                     | 迁移到                           |
-| ----------------------------------------------- | -------------------------------- |
-| rules 文本注入                                  | `@agent-engine/plugin-rules`     |
-| skills（检索 + 工具注册 + `loadSkillFromPath`） | `@agent-engine/plugin-skills`    |
-| documents / RAG                                 | `@agent-engine/plugin-documents` |
-| 长期语义记忆（`SemanticMemory`）                | `@agent-engine/plugin-memory`    |
-| MCP client（两可）                              | `@agent-engine/plugin-mcp`       |
-| `web_search` / `web_fetch`                      | `@agent-engine/plugin-web`       |
+| 现在在 core                                     | 迁移到                               |
+| ----------------------------------------------- | ------------------------------------ |
+| rules 文本注入                                  | `@lhx-agent-engine/plugin-rules`     |
+| skills（检索 + 工具注册 + `loadSkillFromPath`） | `@lhx-agent-engine/plugin-skills`    |
+| documents / RAG                                 | `@lhx-agent-engine/plugin-documents` |
+| 长期语义记忆（`SemanticMemory`）                | `@lhx-agent-engine/plugin-memory`    |
+| MCP client（两可）                              | `@lhx-agent-engine/plugin-mcp`       |
+| `web_search` / `web_fetch`                      | `@lhx-agent-engine/plugin-web`       |
 
 ## 四、能力 ↔ 内核协议（外放的核心约束）
 
@@ -69,7 +69,7 @@ plugins（能力：全部外置，各一个包，走统一缝接入）
 | 检索策略        | `Retriever` / `Reranker`                                                                                                                                          | 自定义召回 / 重排          |
 | 后端抽象        | `EmbeddingProvider` / `VectorStore` / `CacheBackend` / `MemoryBackend` / `SandboxBackend` / `LongTermMemory` / `Summarizer` / `TokenCounter` / `ContextCompactor` | 可插拔后端                 |
 | 外部工具来源    | `ToolSource`（D4 新增薄接口）                                                                                                                                     | MCP 等外部工具             |
-| config 切片类型 | `@agent-engine/config` 的能力切片类型（`Rule` / `Skill` / `SkillRef` / …）                                                                                        | 读自己的 config 切片       |
+| config 切片类型 | `@lhx-agent-engine/config` 的能力切片类型（`Rule` / `Skill` / `SkillRef` / …）                                                                                    | 读自己的 config 切片       |
 
 ### B. 能力包不得依赖的 core 内部（Phase 3 删除）
 
@@ -89,7 +89,7 @@ plugins（能力：全部外置，各一个包，走统一缝接入）
 - **D2 统一缝形状**：`ContextContributor.contribute()` 的入参/返回与工具生命周期（临时注册 vs 常驻）。
 - **D3 检索策略归属**：`Retriever`（含 `hybridRetrieve`）留 core；「索引构建」归插件——能力自建索引，复用 core 的混合检索。RRF 只此一份。能力包不依赖 `CapabilityLoader` / `CapabilityRegistry`（见 §四.B）。
 - **D4 MCP 归属**：core 留「外部工具来源」薄接口（`ToolSource`：`name` + `listTools() → Tool[]` + `dispose()`），MCP 实现放 `plugin-mcp`。二选一，取「薄接口 + 插件实现」。
-- **D5 开箱即用**：全外放后要 `@agent-engine/preset-default`（全家桶），否则用户装 5 个包才能干活。
+- **D5 开箱即用**：全外放后要 `@lhx-agent-engine/preset-default`（全家桶），否则用户装 5 个包才能干活。
 
 ## 六、分阶段路线
 
@@ -127,7 +127,7 @@ plugins（能力：全部外置，各一个包，走统一缝接入）
 
 ### Phase 4 —— 体验：全家桶 + 迁移指南
 
-- **目标**：`@agent-engine/preset-default` 聚合全部能力插件，config 一行还原今天的能力。
+- **目标**：`@lhx-agent-engine/preset-default` 聚合全部能力插件，config 一行还原今天的能力。
 - **OpenSpec**：`preset-default`。
 
 ## 七、兼容与回滚
