@@ -78,6 +78,26 @@ const result = await provider.chatCompletion({ messages: [{ role: 'user', conten
 
 **Sampling parameters** are normalized across providers as **config default + per-call override** (`params.X ?? config.X`): `temperature`, `maxTokens`, `topP`, `frequencyPenalty`, `presencePenalty`, `stop`, `seed`. Each provider only forwards what its protocol supports (Anthropic ignores `frequencyPenalty` / `presencePenalty` / `seed`).
 
+**Resilience & routing** (failover + model routing):
+
+```ts
+import { createResilientProvider, createRoutingProvider } from '@agent-engine/core';
+
+// failover: retry with backoff, then fall through to the next model
+const resilient = createResilientProvider([deepseek, claude, glm], {
+  maxRetries: 2,
+  baseDelayMs: 500,
+});
+
+// routing: switch by complexity / capability tag (wraps the resilient provider)
+const routed = createRoutingProvider(resilient, [
+  { name: 'reasoning', provider: reasoner, when: { minInputTokens: 8000 } },
+  { name: 'vision', provider: vlm, when: { capabilities: ['vision'] } },
+]);
+
+await routed.chatCompletion({ messages, capabilities: ['vision'] });
+```
+
 ### 2. Tools
 
 Register a custom tool; `inputSchema` is Zod (validated at runtime + converted to JSON Schema for the LLM).
@@ -375,26 +395,26 @@ await cache.delete('user:1');
 
 ## Subpath exports
 
-| Subpath                 | Module     | Highlights                                                                                                                                                                       |
-| ----------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@agent-engine/core`    | —          | `AgentLoop`, `assembleAgentLoop`, `resolveAgentConfig`, all backends & types                                                                                                     |
-| `.../llm`               | LLM        | `createProvider` / `createOpenAIProvider` / `createAnthropicProvider`, `LLMProvider`, `FinishReason`, `CompletionError`, `AbortError`, sampling params                           |
-| `.../tools`             | Tools      | `Tool`, `ToolRegistry`, `registerBuiltinTools` (todo/datetime), `create*FileTool`, `createBashTool`, utils (`defaultFetch`, `resolveWithinRoot`, `TodoStore`, `checkBashPolicy`) |
-| `.../agent`             | Agent      | `AgentLoop`, `assembleAgentLoop`, `ToolApproval` (HITL), `AgentRunOutcome`                                                                                                       |
-| `.../hooks`             | Hooks      | `Hook`, `HookPipeline`, `HookPoint`, `HookTrace`                                                                                                                                 |
-| `.../guardrails`        | Guardrails | `GuardrailRule`, `GuardrailContext`, `GuardrailResult` (protocol only)                                                                                                           |
-| `.../context`           | Context    | `ContextComposer`, `buildSystemPrompt`, `renderTemplate`, `ContextContributor`, `TokenCounter`, `ContextCompactor`                                                               |
-| `.../memory`            | Memory     | `ConversationMemory`, `MemoryBackend`, `Summarizer`, `LongTermMemory`, `noopLongTermMemory`, `LLMSummarizer`                                                                     |
-| `.../retrieval`         | Retrieval  | `hybridRetrieve`, `Retriever`, `Reranker`, `IdentityReranker`, `noopRetriever`, `reciprocalRankFusion`, `InMemoryVectorStore`, `VectorStore`                                     |
-| `.../embedding`         | Embedding  | `EmbeddingProvider`, `createEmbeddingProvider`                                                                                                                                   |
-| `.../plugins`           | Plugins    | `Plugin`, `PluginContext`, `PluginManager`                                                                                                                                       |
-| `.../capability`        | Capability | `CapabilityBundle`, `mergeBundles`                                                                                                                                               |
-| `.../capability-source` | Sources    | `ToolSource`                                                                                                                                                                     |
-| `.../resolve`           | Resolve    | `resolveAgentConfig` (config → `ResolvedAgent`)                                                                                                                                  |
-| `.../sandbox`           | Sandbox    | `SandboxBackend` (docker/nsjail), `WasiFunctionSandbox`                                                                                                                          |
-| `.../events`            | Events     | `EventBus`, `AgentEngineEvent`                                                                                                                                                   |
-| `.../structured-output` | Structured | `extractStructured` (JSON mode + Zod + retry)                                                                                                                                    |
-| `.../cache`             | Cache      | `CacheBackend`, `InMemoryCacheBackend`                                                                                                                                           |
+| Subpath                 | Module     | Highlights                                                                                                                                                                                                  |
+| ----------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@agent-engine/core`    | —          | `AgentLoop`, `assembleAgentLoop`, `resolveAgentConfig`, all backends & types                                                                                                                                |
+| `.../llm`               | LLM        | `createProvider` / `createOpenAIProvider` / `createAnthropicProvider`, `createResilientProvider` / `createRoutingProvider`, `LLMProvider`, `FinishReason`, `CompletionError`, `AbortError`, sampling params |
+| `.../tools`             | Tools      | `Tool`, `ToolRegistry`, `registerBuiltinTools` (todo/datetime), `create*FileTool`, `createBashTool`, utils (`defaultFetch`, `resolveWithinRoot`, `TodoStore`, `checkBashPolicy`)                            |
+| `.../agent`             | Agent      | `AgentLoop`, `assembleAgentLoop`, `ToolApproval` (HITL), `AgentRunOutcome`                                                                                                                                  |
+| `.../hooks`             | Hooks      | `Hook`, `HookPipeline`, `HookPoint`, `HookTrace`                                                                                                                                                            |
+| `.../guardrails`        | Guardrails | `GuardrailRule`, `GuardrailContext`, `GuardrailResult` (protocol only)                                                                                                                                      |
+| `.../context`           | Context    | `ContextComposer`, `buildSystemPrompt`, `renderTemplate`, `ContextContributor`, `TokenCounter`, `ContextCompactor`                                                                                          |
+| `.../memory`            | Memory     | `ConversationMemory`, `MemoryBackend`, `Summarizer`, `LongTermMemory`, `noopLongTermMemory`, `LLMSummarizer`                                                                                                |
+| `.../retrieval`         | Retrieval  | `hybridRetrieve`, `Retriever`, `Reranker`, `IdentityReranker`, `noopRetriever`, `reciprocalRankFusion`, `InMemoryVectorStore`, `VectorStore`                                                                |
+| `.../embedding`         | Embedding  | `EmbeddingProvider`, `createEmbeddingProvider`                                                                                                                                                              |
+| `.../plugins`           | Plugins    | `Plugin`, `PluginContext`, `PluginManager`                                                                                                                                                                  |
+| `.../capability`        | Capability | `CapabilityBundle`, `mergeBundles`                                                                                                                                                                          |
+| `.../capability-source` | Sources    | `ToolSource`                                                                                                                                                                                                |
+| `.../resolve`           | Resolve    | `resolveAgentConfig` (config → `ResolvedAgent`)                                                                                                                                                             |
+| `.../sandbox`           | Sandbox    | `SandboxBackend` (docker/nsjail), `WasiFunctionSandbox`                                                                                                                                                     |
+| `.../events`            | Events     | `EventBus`, `AgentEngineEvent`                                                                                                                                                                              |
+| `.../structured-output` | Structured | `extractStructured` (JSON mode + Zod + retry)                                                                                                                                                               |
+| `.../cache`             | Cache      | `CacheBackend`, `InMemoryCacheBackend`                                                                                                                                                                      |
 
 ## Capability map
 
@@ -417,7 +437,7 @@ Things that **used to be in core** now live in capability plugins (each keeps it
 
 - **Thin kernel**: the kernel keeps the engine + protocols; domain capabilities are externalized as `plugin-*`. Nothing in core reads `config.rules` / `config.skills` / `config.documents` / `config.mcp` — plugins interpret those slices.
 - **Self-built kernel + SDK reuse**: loop / plugins / hooks / guardrails protocol are self-built; LLM / vectors reuse official SDKs. No LangChain.
-- **Multi-model boundary**: `LLMProvider` covers chat only; embedding is a separate `EmbeddingProvider`.
+- **Multi-model boundary**: `LLMProvider` covers chat only; embedding is a separate `EmbeddingProvider`. Same-protocol models combine via **routing** (`createRoutingProvider`) and **failover** (`createResilientProvider`) — no new slots.
 - **hooks vs guardrails**: hooks observe/rewrite; guardrails block.
 
 ## Dependencies
