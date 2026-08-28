@@ -28,7 +28,7 @@
     "@rsbuild/core": "^2.1.13",
     "@rsbuild/plugin-react": "^2.1.0",
     "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0"
+    "@types/react-dom": "^19.2.5"
   },
   "dependencies": {
     "@lhx-agent-engine/config": "workspace:*",
