@@ -9,7 +9,12 @@ services:
     ports:
       - '5432:5432'
     volumes:
-      - pgvector-data:./data
+      - ../.data/pgvector:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U agent -d agent']
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   redis:
     image: redis:7-alpine
@@ -17,8 +22,16 @@ services:
     ports:
       - '6379:6379'
     volumes:
-      - redis-data:./data
+      - ../.data/redis:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
-volumes:
-  pgvector-data:
-  redis-data:
+  # bash/git 工具的执行沙箱镜像（SandboxBackend 的 docker 后端）。
+  # 注意：这是「镜像」不是「常驻服务」——bash/git 工具执行时经 `docker run agent-engine/sandbox` 按需使用。
+  # 所以它只需「构建」一次（docker compose build），不用「启动」；up 时它跑完 bash 立即退出（无害）。
+  sandbox:
+    build: ./sandbox
+    image: agent-engine/sandbox

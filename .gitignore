@@ -33,3 +33,6 @@ Thumbs.db
 
 # next.js
 .next/
+
+# docker 数据目录
+.data/
