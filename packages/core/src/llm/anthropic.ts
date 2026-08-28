@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type { ModelConfig } from '@agent-engine/config';
+import type { BaseModelConfig } from '@agent-engine/config';
 import {
   AbortError,
   type ChatCompletionParams,
@@ -121,7 +121,7 @@ function mapToolChoice(choice: ToolChoice | undefined): Anthropic.ToolChoice | u
   return { type: 'tool', name: choice.function.name };
 }
 
-export function createAnthropicProvider(config: ModelConfig): LLMProvider {
+export function createAnthropicProvider(config: BaseModelConfig): LLMProvider {
   // 内核只消费配置里显式提供的 apiKey；环境变量兜底由上层（server/cli）的 providerFactory 注入。
   const apiKey = config.apiKey ?? '';
   if (!apiKey) {

@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import type { ModelConfig } from '@agent-engine/config';
+import type { BaseModelConfig } from '@agent-engine/config';
 import type {
   ChatCompletionParams,
   ChatCompletionResult,
@@ -11,7 +11,7 @@ import type {
   ToolDefinition,
 } from './types';
 
-function resolveApiKey(config: ModelConfig): string {
+function resolveApiKey(config: BaseModelConfig): string {
   // 内核只消费配置里显式提供的 apiKey；环境变量兜底由上层（server/cli）的 providerFactory 注入。
   return config.apiKey ?? '';
 }
@@ -123,7 +123,7 @@ function normalizeOpenAIFinishReason(reason: string | null | undefined): FinishR
   }
 }
 
-export function createOpenAIProvider(config: ModelConfig): LLMProvider {
+export function createOpenAIProvider(config: BaseModelConfig): LLMProvider {
   const apiKey = resolveApiKey(config);
   if (!apiKey) {
     throw new Error(
