@@ -1,5 +1,7 @@
 # Agent Engine
 
+[![CI](https://github.com/lhx-space/agent-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/lhx-space/agent-engine/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 > **配置即 Agent（Configuration as Agent）** —— 一个通用、可配置化的 **Agent 内核执行引擎（harness）**。
 
 Agent Engine 是一个 TypeScript 内核，跑通 Agent 的**完整生命周期**——装配、ReAct 循环、记忆、检索、安全拦截——让你**只写配置、不改内核**，就能搭出一个垂直领域 Agent。
@@ -18,6 +20,19 @@ Agent Engine 是一个 TypeScript 内核，跑通 Agent 的**完整生命周期*
 | 不可信模型乱跑命令                          | 四层防御：配置 allowlist → guardrail → docker/nsjail 沙箱 → 限额 & 审计                  |
 | 大量文档要喂给 Agent                        | `documents` 轴：归一化 → Markdown → 分块 → 检索 → 注入 `[文档]`                          |
 | 被 LangChain 等框架绑架                     | 内核自研 + 只用官方 SDK（`openai` / `@anthropic-ai/sdk` / `@modelcontextprotocol/sdk`）  |
+
+## 状态与边界
+
+| 能力                                                                                          | 状态                                        |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| 单 Agent 执行（loop / 工具 / 记忆 / 检索 / 安全）                                             | ✅ 稳定                                     |
+| 能力插件全家桶（rules / skills / documents / memory / web / mcp / files / bash / git / otel） | ✅ 稳定                                     |
+| 远程 MCP（streamable-http / sse）                                                             | ✅ 稳定                                     |
+| 模型路由 + 容错 + LLM 响应缓存                                                                | ✅ 稳定                                     |
+| pgvector / redis 后端                                                                         | ⚠️ 已实现，待真实联调验证                   |
+| 语义长期记忆                                                                                  | ⚠️ 需配 embedding（DeepSeek 无 embeddings） |
+| 多 Agent 编排（`orchestration`）                                                              | 🚧 规划中（schema 占位）                    |
+| CLI                                                                                           | 📦 待实现（经 server / Next.js 宿主运行）   |
 
 ## 快速开始
 

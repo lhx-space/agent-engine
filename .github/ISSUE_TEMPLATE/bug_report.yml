@@ -1,0 +1,27 @@
+name: Bug report
+description: 报告一个 bug
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: 描述
+      description: 清晰描述 bug 现象。
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+      description: 如何复现（命令 / 配置 / 输入）。
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+  - type: input
+    id: version
+    attributes:
+      label: 版本 / 环境
+      placeholder: 如 node 22 / pnpm 10 / macOS

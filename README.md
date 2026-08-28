@@ -1,5 +1,7 @@
 # Agent Engine
 
+[![CI](https://github.com/lhx-space/agent-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/lhx-space/agent-engine/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 > **Configuration as Agent** — a universal, configurable **Agent kernel execution engine (harness)**.
 
 Agent Engine is a TypeScript harness that runs the **full Agent lifecycle** — assembly, the ReAct loop, memory, retrieval, safety — so you build a vertical-domain Agent by **writing config only, with zero kernel changes**.
@@ -18,6 +20,19 @@ Agent Engine is a TypeScript harness that runs the **full Agent lifecycle** — 
 | Untrusted model runs arbitrary commands                   | Four-layer defense: config allowlist → guardrail → docker/nsjail sandbox → limits & audit             |
 | Large document corpora                                    | `documents` axis: normalize → Markdown → chunk → retrieve → inject `[文档]`                           |
 | Vendor lock-in (LangChain etc.)                           | Self-built kernel + official SDKs only (`openai` / `@anthropic-ai/sdk` / `@modelcontextprotocol/sdk`) |
+
+## Status & Boundaries
+
+| Capability                                                                                       | Status                                                      |
+| ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| Single-agent execution (loop / tools / memory / retrieval / safety)                              | ✅ stable                                                   |
+| Capability plugins (rules / skills / documents / memory / web / mcp / files / bash / git / otel) | ✅ stable                                                   |
+| Remote MCP (streamable-http / sse)                                                               | ✅ stable                                                   |
+| Model routing + failover + LLM response cache                                                    | ✅ stable                                                   |
+| pgvector / redis backends                                                                        | ⚠️ implemented, pending real integration test               |
+| Semantic long-term memory                                                                        | ⚠️ needs an embedding provider (DeepSeek has no embeddings) |
+| Multi-agent orchestration (`orchestration`)                                                      | 🚧 planned (schema placeholder)                             |
+| CLI                                                                                              | 📦 scaffold (run via server / Next.js host)                 |
 
 ## Quick Start
 

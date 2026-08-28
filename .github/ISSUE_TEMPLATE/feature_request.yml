@@ -1,0 +1,20 @@
+name: Feature request
+description: 提议一个新特性
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 背景与动机
+      description: 这个特性解决什么问题？
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 提议方案
+      description: 你期望的行为 / API。
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 备选方案
