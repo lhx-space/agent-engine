@@ -16,6 +16,7 @@ import type { EmbeddingProvider } from '../embedding/embedding';
 import { EventBus } from '../events/event-bus';
 import type { HookPipeline } from '../hooks/pipeline';
 import type { LLMProvider } from '../llm/types';
+import { createCachingProvider } from '../llm/caching';
 import { ConversationMemory } from '../memory/conversation-memory';
 import type { LongTermMemory } from '../memory/long-term-memory';
 import { noopLongTermMemory } from '../memory/long-term-memory';
@@ -199,6 +200,8 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     merged.cacheBackends,
     'cache.backend',
   );
+  // LLM 响应缓存：CacheBackend（in-memory / redis）在此被真正消费。
+  const provider = createCachingProvider(options.provider, cacheBackend);
   const vectorStore: VectorStore = merged.vectorStores[0] ?? new InMemoryVectorStore();
   const embeddingProvider: EmbeddingProvider | undefined =
     merged.embeddingProviders[0] ?? options.embeddingProvider;
@@ -229,7 +232,7 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
   const guardrails: GuardrailRule[] = [...(options.guardrails ?? []), ...merged.guardrails];
 
   const agent = new AgentLoop({
-    provider: options.provider,
+    provider,
     registry: options.registry,
     systemPrompt,
     hooks: options.hooks,

@@ -8,6 +8,7 @@ export { AbortError, CompletionError } from './llm/types';
 export { createOpenAIProvider } from './llm/openai';
 export { createAnthropicProvider } from './llm/anthropic';
 export { createResilientProvider, isRetryableError } from './llm/resilient';
+export { createCachingProvider } from './llm/caching';
 export { createRoutingProvider } from './llm/routing';
 export type { ModelRoute } from './llm/routing';
 export type { LLMRetryConfig } from './llm/resilient';
