@@ -25,14 +25,18 @@ interface RouteContext {
 export async function POST(request: NextRequest, context: RouteContext): Promise<NextResponse> {
   const { name } = await context.params;
 
-  const body = (await request.json().catch(() => ({}))) as { input?: unknown };
+  const body = (await request.json().catch(() => ({}))) as { input?: unknown; apiKey?: unknown };
   const input = typeof body.input === 'string' ? body.input : '';
   if (!input) {
     return NextResponse.json({ error: 'input is required' }, { status: 400 });
   }
+  const apiKey = typeof body.apiKey === 'string' ? body.apiKey : '';
 
   try {
     const { config, hooks } = await scanAgentDir(name);
+    if (apiKey) {
+      config.model = { ...config.model, apiKey };
+    }
 
     const pluginFactories = createPresetPluginFactories(config);
     if (hooks.length > 0) {

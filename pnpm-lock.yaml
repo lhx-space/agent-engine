@@ -53,6 +53,9 @@ importers:
 
   agents:
     dependencies:
+      '@ant-design/icons':
+        specifier: ^6.3.2
+        version: 6.3.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@lhx-agent-engine/config':
         specifier: workspace:*
         version: link:../packages/config
@@ -62,6 +65,9 @@ importers:
       '@lhx-agent-engine/preset-default':
         specifier: workspace:*
         version: link:../packages/plugins/preset-default
+      antd:
+        specifier: ^6.6.1
+        version: 6.6.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
@@ -77,6 +83,12 @@ importers:
       react-dom:
         specifier: ^19.2.8
         version: 19.2.8(react@19.2.8)
+      react-markdown:
+        specifier: ^10.1.0
+        version: 10.1.0(@types/react@19.2.18)(react@19.2.8)
+      remark-gfm:
+        specifier: ^4.0.1
+        version: 4.0.1
       yaml:
         specifier: ^2.9.0
         version: 2.9.0

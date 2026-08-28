@@ -1,7 +1,13 @@
 import { readFile, readdir, stat } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 import { AgentConfigSchema } from '@lhx-agent-engine/config';
-import type { AgentConfig, McpServer, Rule, SkillRef } from '@lhx-agent-engine/config';
+import type {
+  AgentConfig,
+  DocumentsConfig,
+  McpServer,
+  Rule,
+  SkillRef,
+} from '@lhx-agent-engine/config';
 import type { Hook } from '@lhx-agent-engine/core';
 import type { Plugin } from '@lhx-agent-engine/core/plugins';
 import { createJiti } from 'jiti';
@@ -25,10 +31,27 @@ interface MarkdownFile {
   content: string;
 }
 
+/** 递归把字符串里的 `${VAR}` 替换为环境变量值（未设置则保留原样）。 */
+function interpolateEnv(value: unknown): unknown {
+  if (typeof value === 'string') {
+    return value.replace(
+      /\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g,
+      (match, name: string) => process.env[name] ?? match,
+    );
+  }
+  if (Array.isArray(value)) return value.map(interpolateEnv);
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [key, entry] of Object.entries(value)) out[key] = interpolateEnv(entry);
+    return out;
+  }
+  return value;
+}
+
 async function readMarkdown(p: string): Promise<MarkdownFile> {
   const raw = await readFile(p, 'utf-8');
   const { data, content } = matter(raw);
-  return { data: data as Record<string, unknown>, content };
+  return { data: interpolateEnv(data) as Record<string, unknown>, content };
 }
 
 function toTags(value: unknown): string[] {
@@ -81,7 +104,7 @@ async function scanMcps(dir: string): Promise<McpServer[]> {
   for (const entry of entries.sort()) {
     if (!/\.(ya?ml|json)$/.test(entry)) continue;
     const raw = await readFile(join(mcpsDir, entry), 'utf-8');
-    servers.push(parseYaml(raw) as McpServer);
+    servers.push(interpolateEnv(parseYaml(raw)) as McpServer);
   }
   return servers;
 }
@@ -180,8 +203,35 @@ export async function scanAgentDir(
 
   const knowledge = await scanKnowledge(dir);
   if (knowledge.length > 0) {
-    config.documents = { sources: knowledge };
+    const documentsConfig = (data.documents as Partial<DocumentsConfig> | undefined) ?? {};
+    config.documents = { ...documentsConfig, sources: knowledge };
   }
 
   return { config: AgentConfigSchema.parse(config), hooks };
+}
+
+export interface ListedAgent {
+  name: string;
+  description?: string;
+}
+
+/** 列出 `.lhx-agent` 下所有 agent（子目录名 + `system.md` 的 description）。 */
+export async function listAgents(options: ScanAgentDirOptions = {}): Promise<ListedAgent[]> {
+  const harnessRoot = options.harnessRoot ?? DEFAULT_HARNESS_ROOT;
+  if (!(await pathExists(harnessRoot))) return [];
+  const entries = await readdir(harnessRoot);
+  const agents: ListedAgent[] = [];
+  for (const entry of entries.sort()) {
+    const dir = join(harnessRoot, entry);
+    const info = await stat(dir).catch(() => null);
+    if (!info?.isDirectory()) continue;
+    const systemPath = join(dir, 'context', 'system.md');
+    if (!(await pathExists(systemPath))) continue;
+    const { data } = await readMarkdown(systemPath);
+    agents.push({
+      name: entry,
+      description: typeof data.description === 'string' ? data.description : undefined,
+    });
+  }
+  return agents;
 }
