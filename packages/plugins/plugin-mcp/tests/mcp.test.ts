@@ -76,8 +76,9 @@ describe('resolveMcpServer（来源归一化）', () => {
   it('command 原样透传 / registry 归一化为 npx', () => {
     expect(
       resolveMcpServer({ source: 'command', name: 'a', command: 'node', args: ['s'] }),
-    ).toEqual({ name: 'a', command: 'node', args: ['s'] });
+    ).toEqual({ kind: 'stdio', name: 'a', command: 'node', args: ['s'] });
     expect(resolveMcpServer({ source: 'registry', name: 'b', package: 'pkg', args: [] })).toEqual({
+      kind: 'stdio',
       name: 'b',
       command: 'npx',
       args: ['-y', 'pkg'],

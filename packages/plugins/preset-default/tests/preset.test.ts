@@ -27,6 +27,8 @@ describe('createPresetPluginFactories', () => {
       '@lhx-agent-engine/plugin-guardrails',
       '@lhx-agent-engine/plugin-mcp',
       '@lhx-agent-engine/plugin-otel',
+      '@lhx-agent-engine/plugin-pgvector',
+      '@lhx-agent-engine/plugin-redis',
       '@lhx-agent-engine/plugin-rules',
       '@lhx-agent-engine/plugin-skills',
       '@lhx-agent-engine/plugin-web',
