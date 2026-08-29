@@ -46,26 +46,28 @@ export function createWebFetchTool(
 
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), policy.timeoutMs);
-      try {
-        // Jina Reader：把网页转成干净 markdown（解决 JS 渲染 / 反爬 / 噪音内容）。
-        if (policy.renderer === 'jina') {
-          const jinaUrl = `https://r.jina.ai/${url}`;
-          const jinaResponse = await fetchImpl(jinaUrl, { signal: controller.signal });
-          if (!jinaResponse.ok) {
-            throw new Error(`web_fetch jina failed: HTTP ${jinaResponse.status}`);
-          }
-          const jinaContent = (await jinaResponse.text()).trim();
-          const jinaMax = policy.maxOutputBytes;
-          if (jinaContent.length > jinaMax) {
-            return {
-              url,
-              title: url,
-              content: `${jinaContent.slice(0, jinaMax)}\n... (truncated)`,
-              truncated: true,
-            };
-          }
-          return { url, title: url, content: jinaContent, truncated: false };
+      // Jina Reader：把网页 / PDF 转成干净 markdown（解决 JS 渲染 / 反爬 / 噪音内容）。
+      const fetchViaJina = async (targetUrl: string): Promise<WebFetchResult> => {
+        const jinaUrl = `https://r.jina.ai/${targetUrl}`;
+        const jinaResponse = await fetchImpl(jinaUrl, { signal: controller.signal });
+        if (!jinaResponse.ok) {
+          throw new Error(`web_fetch jina failed: HTTP ${jinaResponse.status}`);
         }
+        const jinaContent = (await jinaResponse.text()).trim();
+        const jinaMax = policy.maxOutputBytes;
+        if (jinaContent.length > jinaMax) {
+          return {
+            url: targetUrl,
+            title: targetUrl,
+            content: `${jinaContent.slice(0, jinaMax)}\n... (truncated)`,
+            truncated: true,
+          };
+        }
+        return { url: targetUrl, title: targetUrl, content: jinaContent, truncated: false };
+      };
+
+      try {
+        if (policy.renderer === 'jina') return fetchViaJina(url);
 
         const response = await fetchImpl(url, { signal: controller.signal });
         if (!response.ok) {
@@ -95,6 +97,9 @@ export function createWebFetchTool(
           // 纯文本源（GitHub raw / README / 日志）：直接返回正文文本。
           content = (await response.text()).trim();
           title = url;
+        } else if (contentType.includes('application/pdf')) {
+          // PDF：走 Jina Reader 提取文本。
+          return fetchViaJina(url);
         } else {
           throw new Error(`web_fetch unsupported content-type: ${contentType}`);
         }

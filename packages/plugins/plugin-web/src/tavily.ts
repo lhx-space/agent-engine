@@ -2,6 +2,8 @@ import { defaultFetch } from '@lhx-agent-engine/core';
 import type { FetchLike } from '@lhx-agent-engine/core';
 import type { SearchProvider, SearchResult } from './search';
 
+// ============ 类型 ============
+
 interface TavilyResult {
   title?: string;
   url?: string;
@@ -13,6 +15,8 @@ interface TavilyResponse {
 }
 
 /** Tavily 搜索（POST，需 API key，`Authorization: Bearer`）。 */
+// ============ 工厂 ============
+
 export function createTavilySearchProvider(
   apiKey: string,
   fetchImpl: FetchLike = defaultFetch,

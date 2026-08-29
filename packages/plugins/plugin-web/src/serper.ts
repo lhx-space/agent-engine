@@ -2,6 +2,8 @@ import { defaultFetch } from '@lhx-agent-engine/core';
 import type { FetchLike } from '@lhx-agent-engine/core';
 import type { SearchProvider, SearchResult } from './search';
 
+// ============ 类型 ============
+
 interface SerperOrganic {
   title?: string;
   link?: string;
@@ -13,6 +15,8 @@ interface SerperResponse {
 }
 
 /** Serper（Google Search，POST，需 API key，`X-API-KEY` header）。 */
+// ============ 工厂 ============
+
 export function createSerperSearchProvider(
   apiKey: string,
   fetchImpl: FetchLike = defaultFetch,

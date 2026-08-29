@@ -10,7 +10,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/lhx-space/agent-engine.git",
-    "directory": "packages/server"
+    "directory": "apps/server"
   },
   "homepage": "https://github.com/lhx-space/agent-engine/tree/main/packages/server#readme",
   "bugs": {
@@ -44,7 +44,8 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "start": "tsx src/bin.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "rstest --include 'tests/**/*.{test,spec}.ts'"
   },
   "devDependencies": {
     "tsx": "^4.23.12"

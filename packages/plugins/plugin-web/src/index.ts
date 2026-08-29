@@ -2,8 +2,8 @@ import type { SecurityConfig, WebSearchProvider } from '@lhx-agent-engine/config
 import type { FetchLike } from '@lhx-agent-engine/core';
 import type { Plugin } from '@lhx-agent-engine/core/plugins';
 import { createDuckDuckGoSearchProvider } from './duckduckgo';
+import { createFallbackSearchProvider, createParallelSearchProvider } from './search';
 import type { SearchProvider } from './search';
-import { createFallbackSearchProvider } from './search';
 import { createSearXNGSearchProvider } from './searxng';
 import { createSerperSearchProvider } from './serper';
 import { createTavilySearchProvider } from './tavily';
@@ -80,7 +80,10 @@ function resolveSearchProvider(security: SecurityConfig, deps: WebPluginDeps): S
         `"${security.webSearch.fallback}" is also unavailable`,
     );
   }
-  return candidates.length === 1 ? candidates[0]! : createFallbackSearchProvider(candidates);
+  if (candidates.length === 1) return candidates[0]!;
+  return security.webSearch.strategy === 'parallel'
+    ? createParallelSearchProvider(candidates)
+    : createFallbackSearchProvider(candidates);
 }
 
 /**

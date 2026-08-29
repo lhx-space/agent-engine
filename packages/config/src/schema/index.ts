@@ -330,6 +330,8 @@ export const WebSearchPolicySchema = z.object({
   fallback: WebSearchProviderSchema.default('duckduckgo'),
   maxResults: z.number().int().positive().default(8),
   timeoutMs: z.number().int().positive().default(10_000),
+  /** 多 provider 组合策略：`fallback`（串行降级，默认）/ `parallel`（并行合并去重）。 */
+  strategy: z.enum(['fallback', 'parallel']).default('fallback'),
 });
 export type WebSearchPolicy = z.infer<typeof WebSearchPolicySchema>;
 

@@ -50,6 +50,7 @@
     "@lhx-agent-engine/core": "workspace:*",
     "@mozilla/readability": "^0.6.0",
     "linkedom": "^0.18.13",
+    "user-agents": "^2.1.167",
     "zod": "^4.4.3"
   },
   "engines": {

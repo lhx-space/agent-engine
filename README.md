@@ -286,9 +286,9 @@ Every node on the loop (`beforeLLM`, `afterLLM`, `beforeToolCall`, `afterToolCal
 ## Architecture & packages
 
 ```text
-                ┌── cli
-config ← core ←┼── server ──(HTTP API)──▶ apps/web (React 19 + Rsbuild)
-                └── plugins
+                     ┌── cli
+config ← core ←┼── plugins
+                     └── apps ── server ──(HTTP API)──▶ web
 
 docs/ (Rspress) is a standalone site
 ```

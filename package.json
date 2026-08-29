@@ -29,7 +29,8 @@
     "test": "rstest",
     "test:watch": "rstest --watch",
     "openspec:check": "node scripts/check-openspec.mjs",
-    "prepare": "husky"
+    "prepare": "husky",
+    "server:test": "pnpm --filter @lhx-agent-engine/server test"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",

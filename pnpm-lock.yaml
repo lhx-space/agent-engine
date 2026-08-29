@@ -106,6 +106,28 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
+  apps/server:
+    dependencies:
+      '@hono/node-server':
+        specifier: ^2.1.1
+        version: 2.1.1(hono@4.13.3)
+      '@lhx-agent-engine/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@lhx-agent-engine/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@lhx-agent-engine/preset-default':
+        specifier: workspace:*
+        version: link:../../packages/plugins/preset-default
+      hono:
+        specifier: ^4.13.3
+        version: 4.13.3
+    devDependencies:
+      tsx:
+        specifier: ^4.23.12
+        version: 4.23.12
+
   apps/web:
     dependencies:
       '@ant-design/icons':
@@ -367,6 +389,9 @@ importers:
       linkedom:
         specifier: ^0.18.13
         version: 0.18.13
+      user-agents:
+        specifier: ^2.1.167
+        version: 2.1.167
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -418,28 +443,6 @@ importers:
       '@lhx-agent-engine/plugin-web':
         specifier: workspace:*
         version: link:../plugin-web
-
-  packages/server:
-    dependencies:
-      '@hono/node-server':
-        specifier: ^2.1.1
-        version: 2.1.1(hono@4.13.3)
-      '@lhx-agent-engine/config':
-        specifier: workspace:*
-        version: link:../config
-      '@lhx-agent-engine/core':
-        specifier: workspace:*
-        version: link:../core
-      '@lhx-agent-engine/preset-default':
-        specifier: workspace:*
-        version: link:../plugins/preset-default
-      hono:
-        specifier: ^4.13.3
-        version: 4.13.3
-    devDependencies:
-      tsx:
-        specifier: ^4.23.12
-        version: 4.23.12
 
 packages:
 
@@ -5560,6 +5563,10 @@ packages:
     hasBin: true
     peerDependencies:
       browserslist: '>= 4.21.0'
+
+  user-agents@2.1.167:
+    resolution: {integrity: sha512-tBMqE12c/Ym72Y4T0GweTNZQjqlIpERVkXCEMPJWVrn2CaWbB0ex2zIycTrgPuPxMG6IhaE3yBOXNb7YLOL7NQ==}
+    engines: {node: '>=18'}
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
@@ -11413,6 +11420,8 @@ snapshots:
       browserslist: 4.28.8
       escalade: 3.2.0
       picocolors: 1.1.1
+
+  user-agents@2.1.167: {}
 
   util-deprecate@1.0.2: {}
 

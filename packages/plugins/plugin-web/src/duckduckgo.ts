@@ -1,10 +1,9 @@
 import { defaultFetch } from '@lhx-agent-engine/core';
 import type { FetchLike } from '@lhx-agent-engine/core';
+import UserAgent from 'user-agents';
 import type { SearchProvider, SearchResult } from './search';
 
-// 浏览器 UA 伪装：DDG 对非浏览器 UA 会风控（403 / 202 空结果）。
-const BROWSER_UA =
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Safari/537.36';
+// ============ 类型 ============
 
 interface DuckDuckGoTopic {
   Text?: string;
@@ -18,6 +17,20 @@ interface DuckDuckGoResponse {
   Heading?: string;
   RelatedTopics?: DuckDuckGoTopic[];
 }
+
+interface CacheEntry {
+  results: SearchResult[];
+  expiresAt: number;
+}
+
+export interface DuckDuckGoOptions {
+  /** 失败重试次数（指数退避），默认 2。 */
+  maxRetries?: number;
+  /** 相同 query 的缓存 TTL（毫秒），默认 60s。 */
+  cacheTtlMs?: number;
+}
+
+// ============ 支撑 ============
 
 function flattenRelatedTopics(topics: DuckDuckGoTopic[] | undefined, out: SearchResult[]): void {
   if (!topics) return;
@@ -36,19 +49,9 @@ function sleep(ms: number): Promise<void> {
   });
 }
 
-interface CacheEntry {
-  results: SearchResult[];
-  expiresAt: number;
-}
+// ============ 工厂 ============
 
-export interface DuckDuckGoOptions {
-  /** 失败重试次数（指数退避），默认 2。 */
-  maxRetries?: number;
-  /** 相同 query 的缓存 TTL（毫秒），默认 60s。 */
-  cacheTtlMs?: number;
-}
-
-/** DuckDuckGo Instant Answer（keyless JSON）搜索后端：UA 伪装 + 指数退避重试 + query 缓存。 */
+/** DuckDuckGo Instant Answer（keyless JSON）搜索后端：随机 UA + 指数退避重试 + query 缓存。 */
 export function createDuckDuckGoSearchProvider(
   fetchImpl: FetchLike = defaultFetch,
   options: DuckDuckGoOptions = {},
@@ -64,9 +67,10 @@ export function createDuckDuckGoSearchProvider(
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
+      // 每次请求随机 UA（user-agents 库生成，更难被风控识别）。
       const response = await fetchImpl(url, {
         signal: controller.signal,
-        headers: { 'user-agent': BROWSER_UA },
+        headers: { 'user-agent': new UserAgent().toString() },
       });
       if (!response.ok) {
         throw new Error(`DuckDuckGo search failed: HTTP ${response.status}`);

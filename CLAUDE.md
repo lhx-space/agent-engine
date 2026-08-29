@@ -18,7 +18,7 @@
 3. **内核自研、框架不引入**：执行内核（Agent Loop / 编排 / 插件 / hooks / rules）自研；**不引入 LangChain / LangGraph 等重型编排框架**。能力层一律复用官方 SDK（`openai` / `@anthropic-ai/sdk` / `@modelcontextprotocol/sdk`）。库照用、框架不引入。
 4. **单一事实来源**：所有配置 Schema 用 Zod 定义，类型通过 `z.infer` 衍生；apps/web 的表单与编辑器**复用同一份 Schema**，不重复手写。
 5. **可插拔优先**：LLM Provider（默认 DeepSeek）、记忆后端、向量库、MCP server 一律面向抽象接口实现。本地已有基础设施镜像优先复用：`pgvector/pgvector:pg16`、`redis:7-alpine`、`minio`、`meilisearch`、`prometheus`+`grafana`、`nginx/caddy`。
-6. **依赖方向单向**：`config ← core ← cli / server ←(HTTP API) apps/web`，禁止反向/循环依赖。
+6. **依赖方向单向**：`config ← core ← cli / plugins ← apps`，禁止反向/循环依赖。
 7. **类型严格**：开启 `strict`、禁止 `any`，对外 API 显式导出类型。
 8. **遵循 OpenSpec（规格驱动开发）**：功能开发先写 proposal + spec delta，再写代码（`/opsx:propose` → `/opsx:apply` → `/opsx:archive`）；禁止跳过规格直接改代码。详见 `openspec/`。
 

@@ -192,16 +192,18 @@ agent-engine/
 ### 依赖方向（保持单向，避免循环依赖）
 
 ```text
-                ┌── cli
-config ← core ←┼── server ──(HTTP API)──▶ apps/web（React 19 + Rsbuild）
-                └── plugins
+                     ┌── cli
+config ← core ←┼── plugins
+                     └── apps ── server ──(HTTP API)──▶ web
 
 docs/（Rspress）为独立站点，无运行时依赖
 ```
 
 - `config`：只依赖 `zod` / `yaml` / `json5` / `jiti`，无业务逻辑。
 - `core`：依赖 `config` 的类型，实现引擎。
-- `cli` / `server`：依赖 `core` 与 `config`。
+- `cli`：依赖 `core` 与 `config`。
+- `plugins`：依赖 `core` 的协议（能力外置）。
+- `apps/server`：HTTP 服务，依赖 `core` + `config` + `preset-default`。
 - `apps/web`：通过 HTTP API 调用 `server`，并复用 `config` 的 Zod Schema（表单校验、编辑器补全）。
 
 ---
@@ -212,7 +214,7 @@ docs/（Rspress）为独立站点，无运行时依赖
 
 ### 5.0 目录 → 层 映射
 
-依赖方向：**上层依赖下层，反向禁止**（包级已锁 `config ← core ← cli/server`）。
+依赖方向：**上层依赖下层，反向禁止**（包级已锁 `config ← core ← cli/plugins ← apps`）。
 
 | 层                         | 模块（`core/src/`）                                                                    | 职责                               |
 | -------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------- |

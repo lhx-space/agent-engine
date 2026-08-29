@@ -2,6 +2,8 @@ import { defaultFetch } from '@lhx-agent-engine/core';
 import type { FetchLike } from '@lhx-agent-engine/core';
 import type { SearchProvider, SearchResult } from './search';
 
+// ============ 类型 ============
+
 interface SearXNGResult {
   title?: string;
   url?: string;
@@ -13,6 +15,8 @@ interface SearXNGResponse {
 }
 
 /** SearXNG metasearch（自建，keyless）JSON API：`GET {endpoint}/search?q=..&format=json`。 */
+// ============ 工厂 ============
+
 export function createSearXNGSearchProvider(
   endpoint: string,
   fetchImpl: FetchLike = defaultFetch,
