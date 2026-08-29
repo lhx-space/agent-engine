@@ -312,6 +312,8 @@ export const WebPolicySchema = z.object({
   denyDomains: z.array(z.string()).default([]),
   timeoutMs: z.number().int().positive().default(15_000),
   maxOutputBytes: z.number().int().positive().default(32_768),
+  /** 网页正文渲染器：`html`（本地 readability 提取，默认）/ `jina`（r.jina.ai 干净 markdown）。 */
+  renderer: z.enum(['html', 'jina']).default('html'),
 });
 export type WebPolicy = z.infer<typeof WebPolicySchema>;
 
@@ -319,7 +321,7 @@ export const WebSearchProviderSchema = z.enum(['searxng', 'duckduckgo', 'tavily'
 export type WebSearchProvider = z.infer<typeof WebSearchProviderSchema>;
 
 export const WebSearchPolicySchema = z.object({
-  provider: WebSearchProviderSchema.default('searxng'),
+  provider: WebSearchProviderSchema.default('tavily'),
   /** SearXNG 实例 baseURL（如 `http://localhost:8080`）；provider 为 searxng 时用于构造 `/search`。 */
   endpoint: z.string().url().optional(),
   /** tavily / serper 的 API key；provider 为二者时必需（可经 `${VAR}` 插值注入）。 */

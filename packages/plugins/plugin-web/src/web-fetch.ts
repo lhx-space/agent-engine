@@ -47,6 +47,26 @@ export function createWebFetchTool(
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), policy.timeoutMs);
       try {
+        // Jina Reader：把网页转成干净 markdown（解决 JS 渲染 / 反爬 / 噪音内容）。
+        if (policy.renderer === 'jina') {
+          const jinaUrl = `https://r.jina.ai/${url}`;
+          const jinaResponse = await fetchImpl(jinaUrl, { signal: controller.signal });
+          if (!jinaResponse.ok) {
+            throw new Error(`web_fetch jina failed: HTTP ${jinaResponse.status}`);
+          }
+          const jinaContent = (await jinaResponse.text()).trim();
+          const jinaMax = policy.maxOutputBytes;
+          if (jinaContent.length > jinaMax) {
+            return {
+              url,
+              title: url,
+              content: `${jinaContent.slice(0, jinaMax)}\n... (truncated)`,
+              truncated: true,
+            };
+          }
+          return { url, title: url, content: jinaContent, truncated: false };
+        }
+
         const response = await fetchImpl(url, { signal: controller.signal });
         if (!response.ok) {
           throw new Error(`web_fetch failed: HTTP ${response.status}`);
