@@ -1,4 +1,4 @@
-import { readFile, readdir, stat } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 import { AgentConfigSchema } from '@lhx-agent-engine/config';
 import type {
@@ -156,10 +156,22 @@ export function createLocalHooksPlugin(hooks: Hook[]): Plugin {
 export interface ScannedAgent {
   config: AgentConfig;
   hooks: Hook[];
+  /** per-agent 工作目录（`write_file` 相对路径的写入根）。 */
+  workDir: string;
 }
 
 export interface ScanAgentDirOptions {
   harnessRoot?: string;
+}
+
+/** `.work` 目录的独立 pnpm workspace 边界，避免其内工程受主 monorepo workspace 干扰（可独立 `pnpm i`）。 */
+const WORK_DIR_WORKSPACE_YAML = "packages:\n  - '**'\n";
+
+/** 清空并重建 per-agent 工作目录，并写入独立 pnpm workspace 边界。 */
+export async function prepareWorkDir(workDir: string): Promise<void> {
+  await rm(workDir, { recursive: true, force: true });
+  await mkdir(workDir, { recursive: true });
+  await writeFile(join(workDir, 'pnpm-workspace.yaml'), WORK_DIR_WORKSPACE_YAML, 'utf8');
 }
 
 /**
@@ -207,7 +219,11 @@ export async function scanAgentDir(
     config.documents = { ...documentsConfig, sources: knowledge };
   }
 
-  return { config: AgentConfigSchema.parse(config), hooks };
+  // per-agent 工作目录：write_file 相对路径的写入根（每次 run 由 route 层清空重建）。
+  const workDir = join(dir, '.work');
+  const parsed = AgentConfigSchema.parse(config);
+  parsed.security.files.workDir = workDir;
+  return { config: parsed, hooks, workDir };
 }
 
 export interface ListedAgent {

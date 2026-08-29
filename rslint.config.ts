@@ -11,6 +11,7 @@ export default defineConfig([
     '**/*.d.ts',
     '**/*.d.mts',
     '**/*.d.cts',
+    '**/.work/**',
   ]),
 
   {

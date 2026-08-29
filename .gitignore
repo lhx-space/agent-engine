@@ -36,3 +36,8 @@ Thumbs.db
 
 # docker 数据目录
 .data/
+
+# agent 工作目录（临时产物）
+# **/.work/
+**.*.node
+**/*/target/

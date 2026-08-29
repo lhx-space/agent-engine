@@ -104,6 +104,7 @@
     "pnpm-lock.yaml",
     "**/.rspress/**",
     "**/doc_build/**",
-    ".codebuddy"
+    ".codebuddy",
+    "**/.work/**"
   ]
 }

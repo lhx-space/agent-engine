@@ -1,0 +1,49 @@
+{
+  "name": "@lhx-agent-engine/native",
+  "version": "0.1.0",
+  "description": "NAPI Rust core for lhx-agent-engine",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "napi": {
+    "name": "lhx-agent-engine-native",
+    "triples": {
+      "defaults": true,
+      "additional": [
+        "x86_64-unknown-linux-musl",
+        "aarch64-unknown-linux-gnu",
+        "aarch64-unknown-linux-musl",
+        "aarch64-pc-windows-msvc"
+      ]
+    }
+  },
+  "engines": {
+    "node": ">= 18"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ],
+  "scripts": {
+    "build": "napi build --platform --release",
+    "build:debug": "napi build --platform",
+    "start": "node start.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^2.18.4",
+    "@types/node": "^20.11.0"
+  },
+  "optionalDependencies": {
+    "@lhx-agent-engine/native-linux-x64-gnu": "0.1.0",
+    "@lhx-agent-engine/native-linux-x64-musl": "0.1.0",
+    "@lhx-agent-engine/native-linux-arm64-gnu": "0.1.0",
+    "@lhx-agent-engine/native-linux-arm64-musl": "0.1.0",
+    "@lhx-agent-engine/native-win32-x64-msvc": "0.1.0",
+    "@lhx-agent-engine/native-win32-arm64-msvc": "0.1.0",
+    "@lhx-agent-engine/native-darwin-x64": "0.1.0",
+    "@lhx-agent-engine/native-darwin-arm64": "0.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

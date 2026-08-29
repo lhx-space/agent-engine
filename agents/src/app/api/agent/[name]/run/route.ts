@@ -6,7 +6,7 @@ import {
   createPresetPluginFactories,
   defaultCapabilityPlugins,
 } from '@lhx-agent-engine/preset-default';
-import { createLocalHooksPlugin, scanAgentDir } from '@/lib/agent-dir';
+import { createLocalHooksPlugin, prepareWorkDir, scanAgentDir } from '@/lib/agent-dir';
 import { providerFactory } from '@/lib/provider';
 
 export const runtime = 'nodejs';
@@ -33,10 +33,12 @@ export async function POST(request: NextRequest, context: RouteContext): Promise
   const apiKey = typeof body.apiKey === 'string' ? body.apiKey : '';
 
   try {
-    const { config, hooks } = await scanAgentDir(name);
+    const { config, hooks, workDir } = await scanAgentDir(name);
     if (apiKey) {
       config.model = { ...config.model, apiKey };
     }
+    // 每次 run 干净起步：清空并重建 per-agent 工作目录（write_file 相对路径写入根 + 独立 pnpm workspace 边界）。
+    await prepareWorkDir(workDir);
 
     const pluginFactories = createPresetPluginFactories(config);
     if (hooks.length > 0) {

@@ -171,14 +171,18 @@ export function createWriteFileTool(policy: FilePolicy): Tool<WriteFileInput, Wr
   return {
     name: 'builtin.write_file',
     description:
-      'Write a text file within the workspace. Only paths within allowed roots are writable.',
+      'Write a text file. Relative paths are resolved under the agent work directory; absolute paths must be within allowed roots.',
     inputSchema: WriteFileInputSchema,
     execute: async ({ path: filePath, content }) => {
       const bytes = Buffer.byteLength(content, 'utf8');
       if (bytes > policy.maxFileBytes) {
         throw new Error(`Content exceeds maxFileBytes (${policy.maxFileBytes})`);
       }
-      const real = await resolveWithinRoot(policy.roots, filePath);
+      // 相对路径写进 workDir（per-agent 工作目录）；绝对路径写进 roots（workspace）。
+      const writeRoot = policy.workDir ?? policy.roots[0];
+      if (!writeRoot) throw new Error('No allowed file roots configured');
+      const roots = path.isAbsolute(filePath) ? policy.roots : [writeRoot];
+      const real = await resolveWithinRoot(roots, filePath);
       await fs.mkdir(path.dirname(real), { recursive: true });
       await fs.writeFile(real, content, 'utf8');
       return { path: real, bytes };

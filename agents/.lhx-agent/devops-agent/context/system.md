@@ -20,9 +20,8 @@ memory:
     backend: pg # 选中 PgMemoryBackend；语义召回需配合 embedding（DeepSeek 无 embeddings）
 embedding:
   provider: openai-compatible
-  baseURL: https://api.openai.com/v1 # 或本地 ollama http://localhost:11434/v1
-  model: text-embedding-3-small # 或 ollama 的 nomic-embed-text
-  # apiKey: sk-... # OpenAI 需配；本地 ollama 无需
+  baseURL: http://localhost:11434/v1 # 本地 ollama
+  model: bge-m3
 cache:
   backend: redis # 选中 RedisCacheBackend
 guardrails:
@@ -55,3 +54,4 @@ security:
 
 你是云原生运维专家，专注于云原生与 CI/CD 领域。
 排查问题先看现象，再逐步定位，最后给出可执行的操作步骤。
+涉及具体命令、参数、协议名时确保准确；不确定的标注为「需验证」，不要臆造。

@@ -160,6 +160,48 @@ describe('文件路径约束', () => {
       });
     });
   });
+
+  it('write_file 相对路径写进 workDir（非 cwd）', async () => {
+    await withTempDir(async (dir) => {
+      await withTempDir(async (workDir) => {
+        const tool = createWriteFileTool({ roots: [dir], workDir, maxFileBytes: 1024 });
+        const res = (await tool.execute({
+          path: 'sub/out.txt',
+          content: 'x',
+        })) as { path: string; bytes: number };
+        expect(res.path).toBe(await fs.realpath(path.join(workDir, 'sub', 'out.txt')));
+        expect(await fs.readFile(path.join(workDir, 'sub', 'out.txt'), 'utf8')).toBe('x');
+      });
+    });
+  });
+
+  it('write_file 相对路径缺省锚定 roots[0]', async () => {
+    await withTempDir(async (dir) => {
+      const tool = createWriteFileTool({ roots: [dir], maxFileBytes: 1024 });
+      const res = (await tool.execute({ path: 'rel.txt', content: 'y' })) as { path: string };
+      expect(res.path).toBe(await fs.realpath(path.join(dir, 'rel.txt')));
+      expect(await fs.readFile(path.join(dir, 'rel.txt'), 'utf8')).toBe('y');
+    });
+  });
+
+  it('write_file 绝对路径写进 roots（忽略 workDir）', async () => {
+    await withTempDir(async (dir) => {
+      await withTempDir(async (workDir) => {
+        const tool = createWriteFileTool({ roots: [dir], workDir, maxFileBytes: 1024 });
+        await tool.execute({ path: path.join(dir, 'abs.txt'), content: 'z' });
+        expect(await fs.readFile(path.join(dir, 'abs.txt'), 'utf8')).toBe('z');
+      });
+    });
+  });
+
+  it('read_file 相对路径锚定 roots[0]（非 cwd）', async () => {
+    await withTempDir(async (dir) => {
+      await fs.writeFile(path.join(dir, 'a.txt'), 'hello');
+      const tool = createReadFileTool({ roots: [dir], maxFileBytes: 1024 });
+      const res = (await tool.execute({ path: 'a.txt' })) as { content: string };
+      expect(res.content).toBe('hello');
+    });
+  });
 });
 
 describe('read_file UTF-8 截断', () => {

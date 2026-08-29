@@ -303,6 +303,8 @@ export type BashPolicy = z.infer<typeof BashPolicySchema>;
 
 export const FilePolicySchema = z.object({
   roots: z.array(z.string()).default([]),
+  /** 写入根（per-agent 工作目录）：`write_file` 的相对路径写到这里；缺省 = `roots[0]`。 */
+  workDir: z.string().optional(),
   maxFileBytes: z.number().int().positive().default(1_048_576),
 });
 export type FilePolicy = z.infer<typeof FilePolicySchema>;
