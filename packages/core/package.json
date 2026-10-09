@@ -223,7 +223,7 @@
     "@lhx-agent-engine/config": "workspace:*",
     "@anthropic-ai/sdk": "^0.120.0",
     "openai": "^7.5.0",
-    "picomatch": "^4.0.5",
+    "picomatch": "^4.0.7",
     "zod": "^4.4.3"
   },
   "engines": {
