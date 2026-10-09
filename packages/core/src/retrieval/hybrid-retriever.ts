@@ -1,7 +1,7 @@
 import type { EmbeddingProvider } from '../embedding/embedding';
 import { reciprocalRankFusion } from './rrf';
 import type { RankedCandidate } from './rrf';
-import type { VectorStore } from './vector-store';
+import type { VectorQueryFilter, VectorStore } from './vector-store';
 
 export interface HybridRetrieveOptions {
   /** 语义召回的向量化 provider。 */
@@ -12,6 +12,8 @@ export interface HybridRetrieveOptions {
   lexical: (query: string, topK: number) => RankedCandidate[];
   /** 可选：确保索引已向量化（幂等）。缺省表示调用方已在上游（如 addChunks）完成向量化。 */
   ensureVectors?: () => Promise<void>;
+  /** 可选：向量检索的过滤条件（按命名空间 / 资产类型隔离）。 */
+  filter?: VectorQueryFilter;
 }
 
 /**
@@ -29,7 +31,7 @@ export async function hybridRetrieve(
     await options.ensureVectors?.();
     const [vector] = await options.embedding.embed([query]);
     if (!vector) return lexical.slice(0, topK);
-    const matches = await options.vectorStore.query(vector, topK * 2);
+    const matches = await options.vectorStore.query(vector, topK * 2, options.filter);
     const semantic: RankedCandidate[] = matches.map((match) => ({
       id: match.id,
       score: match.score,

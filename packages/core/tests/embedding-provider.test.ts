@@ -66,7 +66,7 @@ describe('resolveAgentConfig embedding 解析', () => {
       name: 't',
       model: { provider: 'custom', baseURL: 'http://localhost', model: 'mock' },
       systemPrompt: { template: 'hi' },
-      embedding: { baseURL: 'http://localhost/v1', model: 'emb' },
+      embedding: { baseURL: 'http://localhost/v1', model: 'emb', dimension: 8 },
     });
     const resolved = await resolveAgentConfig(config, { providerFactory: () => makeProvider() });
     expect(resolved.embeddingProvider?.name).toBe('openai-compatible:emb');

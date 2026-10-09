@@ -19,6 +19,7 @@ export class PluginManager {
     rerankers: [],
     summarizers: [],
     contextContributors: [],
+    conversationStores: [],
   };
 
   /** 安装单个 plugin，能力收集进 assembly。 */
@@ -56,6 +57,10 @@ export class PluginManager {
       registerSummarizer: (summarizer) => this.assembly.summarizers.push(summarizer),
       registerContextContributor: (contributor) =>
         this.assembly.contextContributors.push(contributor),
+      registerConversationStore: (store) => {
+        this.assembly.conversationStores ??= [];
+        this.assembly.conversationStores.push(store);
+      },
     };
   }
 }

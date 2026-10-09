@@ -3,6 +3,7 @@ import type { LongTermMemoryFactoryDeps } from '../agent/assemble';
 import type { CacheBackend } from '../cache/cache-backend';
 import type { ContextCompactor } from '../context/compactor';
 import type { TokenCounter } from '../context/token-counter';
+import type { ConversationStore } from '../conversation/types';
 import type { EmbeddingProvider } from '../embedding/embedding';
 import type { EventBus } from '../events/event-bus';
 import type { ProviderFactory } from '../llm/provider';
@@ -44,6 +45,8 @@ export interface ResolvedAgent {
   embeddingProvider?: EmbeddingProvider;
   /** 语义长期记忆（embedding 向量化 + 向量召回 + 持久化；无 embedding 时优雅 no-op）。 */
   longTermMemory: LongTermMemory;
+  /** 按 `session.store` 解析出的对话历史后端（默认 in-memory）。 */
+  conversationStore: ConversationStore;
   /** 事件总线（模块业务事件发布/订阅，含 `custom` 逃生舱）。 */
   eventBus: EventBus;
   /** token 计数器（默认粗估；插件可注入精确 tokenizer）。 */

@@ -209,6 +209,18 @@ export const CacheConfigSchema = z.object({
 });
 export type CacheConfig = z.infer<typeof CacheConfigSchema>;
 
+// ============ session（对话历史持久化） ============
+
+export const SessionStoreSchema = z.object({
+  /** 对话历史后端名（默认 in-memory；pg / redis 等经插件 registerConversationStore 注册后按名选中）。 */
+  store: z.string().default('in-memory'),
+  /** 每次 run 从存储恢复的历史条数上限（默认 20，整段回放会撑爆上下文）。 */
+  historyLimit: z.number().int().positive().optional(),
+  /** 会话保留时长（秒）；未配置表示不自动清理（实现方可忽略）。 */
+  ttl: z.number().int().positive().optional(),
+});
+export type SessionStore = z.infer<typeof SessionStoreSchema>;
+
 // ============ embedding ============
 
 export const EmbeddingConfigSchema = z.object({
@@ -216,8 +228,11 @@ export const EmbeddingConfigSchema = z.object({
   baseURL: z.string().url().optional(),
   apiKey: z.string().optional(),
   model: z.string(),
-  /** 向量维度；缺省时取首次响应向量长度。 */
-  dimension: z.number().int().positive().optional(),
+  /**
+   * 向量维度（必填）：存储层据此建固定长度 `vector(N)` 列并在写入时校验，
+   * 换模型时宁可显式失败也不静默混检（详见 plugin-pgvector 迁移 v2）。
+   */
+  dimension: z.number().int().positive(),
 });
 export type EmbeddingConfig = z.infer<typeof EmbeddingConfigSchema>;
 
@@ -391,6 +406,7 @@ export const AgentConfigSchema = z.object({
   skills: z.array(SkillRefSchema).default([]),
   memory: MemoryConfigSchema.optional(),
   cache: CacheConfigSchema.optional(),
+  session: SessionStoreSchema.optional(),
   embedding: EmbeddingConfigSchema.optional(),
   documents: DocumentsConfigSchema.optional(),
   hooks: z.array(HookConfigSchema).default([]),

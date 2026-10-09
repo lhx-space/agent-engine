@@ -35,6 +35,7 @@
     "@lhx-agent-engine/config": "workspace:*",
     "@lhx-agent-engine/core": "workspace:*",
     "@lhx-agent-engine/preset-default": "workspace:*",
+    "@lhx-agent-engine/plugin-pgvector": "workspace:*",
     "antd": "^6.6.1",
     "gray-matter": "^4.0.3",
     "jiti": "^2.7.0",

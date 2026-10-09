@@ -51,13 +51,25 @@ export type { Hook } from './hooks/types';
 // guardrails（协议：GuardrailRule 接口）
 export type { GuardrailContext, GuardrailResult, GuardrailRule } from './guardrails';
 // retrieval
-export type { VectorStore, VectorRecord, VectorMatch } from './retrieval/vector-store';
+export type {
+  VectorStore,
+  VectorRecord,
+  VectorMatch,
+  VectorQueryFilter,
+  VectorKind,
+} from './retrieval/vector-store';
 export type { Retriever, RetrievalCandidate } from './retrieval/retriever';
 export type { Reranker } from './retrieval/reranker';
 export type { RankedCandidate } from './retrieval/rrf';
 export type { HybridRetrieveOptions } from './retrieval/hybrid-retriever';
 // embedding
 export type { EmbeddingProvider } from './embedding/embedding';
+export type {
+  ConversationStore,
+  ConversationSession,
+  ConversationMessage,
+  ConversationRole,
+} from './conversation/types';
 // events
 export type { AgentEngineEvent, EventListener } from './events/types';
 // capability

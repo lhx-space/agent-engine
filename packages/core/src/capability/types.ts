@@ -3,6 +3,7 @@ import type { CacheBackend } from '../cache/cache-backend';
 import type { ContextCompactor } from '../context/compactor';
 import type { ContextContributor } from '../context/context-contributor';
 import type { TokenCounter } from '../context/token-counter';
+import type { ConversationStore } from '../conversation/types';
 import type { EmbeddingProvider } from '../embedding/embedding';
 import type { Hook } from '../hooks/types';
 import type { MemoryBackend } from '../memory/memory-backend';
@@ -35,6 +36,8 @@ export interface CapabilityBundle {
   rerankers: Reranker[];
   summarizers: Summarizer[];
   contextContributors: ContextContributor[];
+  /** 对话历史后端（新增能力出口，与其余后端同构）；可选以兼容既有 bundle 构造。 */
+  conversationStores?: ConversationStore[];
   /** 释放来源持有的资源（幂等）。 */
   dispose?: () => Promise<void>;
 }

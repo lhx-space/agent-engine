@@ -1,10 +1,21 @@
 // ============ 类型 ============
 
+/** 资产类型：记忆 / 文档 / 技能，用于同库共存时的检索隔离。 */
+export type VectorKind = 'memory' | 'document' | 'skill' | (string & {});
+
 /** 待入库的向量记录。 */
 export interface VectorRecord {
   id: string;
   vector: number[];
   metadata?: Record<string, unknown>;
+  /** 隔离域（由装配层按 agent 注入）；缺省继承 store 自身的命名空间。 */
+  namespace?: string;
+  /** 资产类型（memory / document / skill）。 */
+  kind?: VectorKind;
+  /** 指回来源记录（如消息 id、文档 chunk id），支持从命中反查原始上下文。 */
+  refId?: string;
+  /** 原文：召回后可直接取用，省去一次回源查询。 */
+  content?: string;
 }
 
 /** 向量召回命中项。 */
@@ -12,6 +23,14 @@ export interface VectorMatch {
   id: string;
   score: number;
   metadata?: Record<string, unknown>;
+  /** 原文（写入时提供则有）。 */
+  content?: string;
+}
+
+/** 向量检索过滤条件；不传表示不过滤（向后兼容）。 */
+export interface VectorQueryFilter {
+  namespace?: string;
+  kind?: VectorKind;
 }
 
 /**
@@ -21,7 +40,7 @@ export interface VectorMatch {
 export interface VectorStore {
   readonly name: string;
   add(records: VectorRecord[]): Promise<void>;
-  query(vector: number[], topK: number): Promise<VectorMatch[]>;
+  query(vector: number[], topK: number, filter?: VectorQueryFilter): Promise<VectorMatch[]>;
   delete(ids: string[]): Promise<number>;
   clear(): Promise<void>;
 }
@@ -53,12 +72,18 @@ export class InMemoryVectorStore implements VectorStore {
     this.records.push(...records);
   }
 
-  async query(vector: number[], topK: number): Promise<VectorMatch[]> {
+  async query(vector: number[], topK: number, filter?: VectorQueryFilter): Promise<VectorMatch[]> {
     return this.records
+      .filter(
+        (record) =>
+          (filter?.namespace === undefined || record.namespace === filter.namespace) &&
+          (filter?.kind === undefined || record.kind === filter.kind),
+      )
       .map((record) => ({
         id: record.id,
         score: cosine(vector, record.vector),
         metadata: record.metadata,
+        content: record.content,
       }))
       .sort((a, b) => b.score - a.score)
       .slice(0, topK);

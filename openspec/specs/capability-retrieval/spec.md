@@ -8,22 +8,29 @@ TBD - created by archiving change add-capability-retrieval. Update Purpose after
 
 ### Requirement: 语义检索后端（VectorStore + EmbeddingProvider）
 
-系统 SHALL 定义 `VectorStore` 接口（`name`、`add(records)`、`query(vector, topK)`、`delete(ids)`、`clear()`）与 `EmbeddingProvider` 接口（`name`、`dimension`、`embed(texts)`），并提供 `InMemoryVectorStore`（暴力余弦相似度，`name` 为 `in-memory`）作为开发默认；`EmbeddingProvider` 无内置默认（需真实向量模型）。二者经 `PluginContext.registerVectorStore` / `registerEmbeddingProvider` 注入，装配层取首个注册的 `VectorStore`（缺省回退 `InMemoryVectorStore`）与首个注册的 `EmbeddingProvider`（可缺省为 `undefined`），随 `ResolvedAgent.vectorStore` / `ResolvedAgent.embeddingProvider` 暴露。
+`VectorStore` 的写入记录 SHALL 支持携带 `namespace`（隔离域）、`kind`（资产类型：memory / document / skill）、`refId`（指向来源记录）与 `content`（原文）；`query` SHALL 接受可选 `filter`（`namespace` / `kind`）用于按隔离域与类型过滤。所有新增字段 SHALL 为可选，不传时行为与现状一致。
 
-#### Scenario: in-memory 向量召回
+`EmbeddingProvider` SHALL 暴露其产出的向量维度（`dimension`）与模型标识（`name`），供存储层在建表与写入校验时使用。
 
-- **WHEN** 以 `InMemoryVectorStore` 添加若干向量记录后 `query` 某向量
-- **THEN** 返回按余弦相似度降序的 top-k 匹配（含 `score`）
+#### Scenario: 按命名空间隔离检索
 
-#### Scenario: 删除与清空
+- **WHEN** 以 `namespace='devops-agent:memory'` 写入向量，再以同 namespace 查询
+- **THEN** 仅返回该 namespace 下的向量，其他 agent 的向量不出现在结果中
 
-- **WHEN** `delete` 若干 id 或 `clear`
-- **THEN** 对应记录不再被召回，`clear` 后全部清空
+#### Scenario: 不传 filter 时向后兼容
 
-#### Scenario: embedding 经插件注入
+- **WHEN** 调用 `query(vector, topK)` 不传第三参数
+- **THEN** 行为与变更前一致（全量检索），不报错
 
-- **WHEN** 一个 plugin 经 `registerEmbeddingProvider` 注册 embedding
-- **THEN** `ResolvedAgent.embeddingProvider` 为注册实例；未注册时为 `undefined`
+#### Scenario: 维度不符显式报错
+
+- **WHEN** 向声明为 `vector(1024)` 的表写入长度为 1536 的向量
+- **THEN** 抛出明确错误（含期望维度与实际维度），不得静默写入
+
+#### Scenario: 召回直接得到原文
+
+- **WHEN** 写入时带 `content`，随后查询
+- **THEN** 返回的匹配项直接包含原文，无需二次查询其他存储
 
 ### Requirement: 检索策略接口（Retriever / Reranker）
 

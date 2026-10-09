@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { resolveAgentConfig } from '@lhx-agent-engine/core';
+import { createSessionId, resolveAgentConfig } from '@lhx-agent-engine/core';
 import {
   createPresetLongTermMemoryFactory,
   createPresetPluginFactories,
@@ -23,12 +23,21 @@ interface RouteContext {
  */
 export async function POST(request: NextRequest, context: RouteContext): Promise<Response> {
   const { name } = await context.params;
-  const body = (await request.json().catch(() => ({}))) as { input?: unknown; apiKey?: unknown };
+  const body = (await request.json().catch(() => ({}))) as {
+    input?: unknown;
+    apiKey?: unknown;
+    sessionId?: unknown;
+  };
   const input = typeof body.input === 'string' ? body.input : '';
   if (!input) {
     return Response.json({ error: 'input is required' }, { status: 400 });
   }
   const apiKey = typeof body.apiKey === 'string' ? body.apiKey : '';
+  // 会话 id：请求头 `x-session-id` 优先（与 apps/web / apps/server 一致），其次 body，缺省新建。
+  // 流式响应头必须提前确定，故在这里生成而不是等 run 返回。
+  const sessionId =
+    request.headers.get('x-session-id') ??
+    (typeof body.sessionId === 'string' && body.sessionId ? body.sessionId : createSessionId());
 
   const { config, hooks, workDir } = await scanAgentDir(name);
   if (apiKey) {
@@ -54,7 +63,7 @@ export async function POST(request: NextRequest, context: RouteContext): Promise
         controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
       };
       try {
-        await resolved.agent.run(input, { onEvent: write });
+        await resolved.agent.run(input, { onEvent: write, sessionId });
       } finally {
         await resolved.dispose();
         controller.close();
@@ -66,6 +75,7 @@ export async function POST(request: NextRequest, context: RouteContext): Promise
     headers: {
       'content-type': 'application/x-ndjson',
       'cache-control': 'no-cache',
+      'x-session-id': sessionId,
     },
   });
 }

@@ -1,5 +1,7 @@
 import type { ContextContribution, ContextContributor } from '../context/context-contributor';
 import { ContextComposer } from '../context/context-composer';
+import { createSessionId, toChatMessage, toConversationMessage } from '../conversation';
+import type { ConversationStore } from '../conversation/types';
 import type { EventBus } from '../events/event-bus';
 import type { HookPipeline } from '../hooks/pipeline';
 import {
@@ -33,6 +35,9 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/** 每次 run 从持久化存储恢复的历史条数上限（整段回放会撑爆上下文，故限量）。 */
+const DEFAULT_HISTORY_LIMIT = 20;
+
 /** 单 Agent ReAct 执行循环。 */
 export class AgentLoop {
   private readonly provider: LLMProvider;
@@ -49,6 +54,12 @@ export class AgentLoop {
   private readonly longTermMemory: LongTermMemory | undefined;
   private readonly contextContributors: ContextContributor[];
   private readonly eventBus: EventBus | undefined;
+  private readonly conversationStore: ConversationStore | undefined;
+  private readonly defaultSessionId: string;
+  private readonly agentName: string | undefined;
+  private readonly userId: string | undefined;
+  private readonly historyLimit: number;
+  private readonly restoredSessions = new Set<string>();
   private sessionStarted = false;
   private sessionEnded = false;
 
@@ -69,6 +80,11 @@ export class AgentLoop {
     this.longTermMemory = options.longTermMemory;
     this.contextContributors = options.contextContributors ?? [];
     this.eventBus = options.eventBus;
+    this.conversationStore = options.conversationStore;
+    this.defaultSessionId = options.sessionId ?? createSessionId();
+    this.agentName = options.agentName;
+    this.userId = options.userId;
+    this.historyLimit = options.historyLimit ?? DEFAULT_HISTORY_LIMIT;
     this.contextComposer = new ContextComposer({
       systemPrompt: options.systemPrompt,
       memory: this.memory,
@@ -135,6 +151,10 @@ export class AgentLoop {
     ]
       .filter((t) => t.length > 0)
       .join('\n\n');
+    // 会话 id：run 级覆盖优先于 AgentLoop 默认；随后建会话记录 + 恢复历史（均 best-effort）。
+    const sessionId = options?.sessionId ?? this.defaultSessionId;
+    await this.ensureSession(sessionId);
+    await this.restoreHistory(sessionId);
     const composed = await this.contextComposer.compose(userInput, injected);
     // 记录本轮注册的 contributor 工具（含覆盖前的同名工具），run 结束（含异常）时还原/移除，避免跨 run 残留。
     const registeredRunTools: { name: string; prior: Tool | undefined }[] = [];
@@ -259,10 +279,13 @@ export class AgentLoop {
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       // 取消（AbortError）与业务错误分离：不回写 memory、不触发 onError hook。
+      // 但中断/异常路径同样落盘已产生的消息——否则「聊到一半被中断」的历史会凭空消失。
       if (err instanceof AbortError) {
+        await this.persistTurn(sessionId, messages, sessionStart);
         emit?.({ type: 'error', error: 'aborted' });
         throw err;
       }
+      await this.persistTurn(sessionId, messages, sessionStart);
       emit?.({ type: 'error', error: err.message });
       try {
         await this.hooks?.onError(err, 'agent-loop');
@@ -284,8 +307,9 @@ export class AgentLoop {
     }
 
     // 正常结束（自然终止 / maxSteps 兜底 / 超时）时，把本轮消息（system 之外）写回会话记忆。
-    // 异常路径（catch 内 throw）不会执行到这里，故不回写，保持历史不变。
     this.memory?.append(messages.slice(sessionStart));
+    // 对话历史落盘（覆盖异常/中断路径见 catch）：best-effort，失败不阻断本轮结果。
+    const persisted = await this.persistTurn(sessionId, messages, sessionStart);
 
     // 长期记忆写回（三层记忆③）：本轮「用户输入 + 最终答案」作为一条长期记忆（best-effort，失败不阻断）。
     const finalContent = finalMessage.content ?? '';
@@ -298,15 +322,81 @@ export class AgentLoop {
     }
 
     emit?.({ type: 'done', finalMessage, steps });
-    return { finalMessage, messages, steps, finishReason, outcome };
+    return { finalMessage, messages, steps, finishReason, outcome, sessionId, persisted };
   }
 
-  /** 结束会话：触发 `onSessionEnd`（幂等）并清空会话记忆。 */
+  /** 确保会话记录存在（upsert），携带 agent / user 归属；失败不影响 run。 */
+  private async ensureSession(sessionId: string): Promise<void> {
+    if (!this.conversationStore) return;
+    try {
+      await this.conversationStore.createSession({
+        id: sessionId,
+        ...(this.agentName ? { agentName: this.agentName } : {}),
+        ...(this.userId ? { userId: this.userId } : {}),
+      });
+    } catch {
+      // 建会话失败忽略：appendMessage 会兜底创建，且历史持久化本身是 best-effort。
+    }
+  }
+
+  /** 恢复历史：每个会话只恢复一次，注入内存窗口后由窗口裁剪规则约束。 */
+  private async restoreHistory(sessionId: string): Promise<void> {
+    if (!this.conversationStore || !this.memory) return;
+    if (this.restoredSessions.has(sessionId)) return;
+    this.restoredSessions.add(sessionId);
+    try {
+      const history = await this.conversationStore.listMessages(sessionId, {
+        limit: this.historyLimit,
+      });
+      if (history.length > 0) {
+        this.memory.append(history.map((message) => toChatMessage(message)));
+      }
+    } catch {
+      // 读取历史失败忽略：退化为无历史的新会话，不阻断 run。
+    }
+  }
+
+  /**
+   * 把本轮产生的消息写入对话历史存储（best-effort）。
+   * 未配置存储时返回 true（视为无需持久化）；失败时发一条 `custom` 事件供宿主观测。
+   */
+  private async persistTurn(
+    sessionId: string,
+    messages: ChatMessage[],
+    from: number,
+  ): Promise<boolean> {
+    if (!this.conversationStore) return true;
+    try {
+      for (const message of messages.slice(from)) {
+        await this.conversationStore.appendMessage(sessionId, toConversationMessage(message));
+      }
+      return true;
+    } catch (error) {
+      this.eventBus?.emit({
+        type: 'custom',
+        name: 'conversation.persist_failed',
+        data: {
+          sessionId,
+          reason: error instanceof Error ? error.message : String(error),
+        },
+      });
+      return false;
+    }
+  }
+
+  /** 结束会话：触发 `onSessionEnd`（幂等）、标记会话结束，只清空内存窗口（不动持久层）。 */
   async endSession(): Promise<void> {
     if (this.sessionEnded) return;
     this.sessionEnded = true;
     await this.hooks?.onSessionEnd();
     this.memory?.clear();
+    if (this.conversationStore?.endSession) {
+      try {
+        await this.conversationStore.endSession(this.defaultSessionId);
+      } catch {
+        // 标记结束失败忽略：历史已落盘，不影响数据完整性。
+      }
+    }
   }
 
   /**

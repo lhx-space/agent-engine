@@ -69,6 +69,9 @@ export async function resolveAgentConfig(
     sandbox: deps.sandbox,
     longTermBackend: config.memory?.longTerm?.backend,
     cacheBackend: config.cache?.backend,
+    conversationBackend: config.session?.store,
+    historyLimit: config.session?.historyLimit,
+    agentName: config.name,
     embeddingProvider,
     longTermMemoryFactory: deps.longTermMemoryFactory,
   });
@@ -90,6 +93,7 @@ export async function resolveAgentConfig(
     vectorStore: resolved.vectorStore,
     embeddingProvider: resolved.embeddingProvider,
     longTermMemory: resolved.longTermMemory,
+    conversationStore: resolved.conversationStore,
     eventBus: resolved.eventBus,
     tokenCounter: resolved.tokenCounter,
     contextCompactor: resolved.contextCompactor,

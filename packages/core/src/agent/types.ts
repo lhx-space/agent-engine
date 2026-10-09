@@ -1,5 +1,6 @@
 import type { ContextContributor } from '../context/context-contributor';
 import type { SystemPromptInput } from '../context/types';
+import type { ConversationStore } from '../conversation/types';
 import type { EmbeddingProvider } from '../embedding/embedding';
 import type { EventBus } from '../events/event-bus';
 import type { HookPipeline } from '../hooks/pipeline';
@@ -46,6 +47,16 @@ export interface AgentLoopOptions {
   contextContributors?: ContextContributor[];
   /** 事件总线（可选）：run 期间把总线 `custom` 事件转发到 `onEvent`。 */
   eventBus?: EventBus;
+  /** 对话历史后端（可选）：注入后每轮消息落盘，支持跨进程/跨请求回放。 */
+  conversationStore?: ConversationStore;
+  /** 默认会话 id：未注入时自动生成 uuid；`run` 可逐次覆盖。 */
+  sessionId?: string;
+  /** 会话归属的 agent 名（写入 `agent_sessions.agent_name`，供按 agent 列举）。 */
+  agentName?: string;
+  /** 会话归属的用户（单租户场景留空，存储侧填默认值）。 */
+  userId?: string;
+  /** 每次 run 从存储恢复的历史条数上限（默认 20）。 */
+  historyLimit?: number;
 }
 
 /** run 的结束方式（结果归一化）：自然结束 / 达到 maxSteps / 超时。 */
@@ -54,6 +65,10 @@ export type AgentRunOutcome = { kind: 'completed' } | { kind: 'max_steps' } | { 
 export interface AgentLoopResult {
   /** 最终 assistant 消息。 */
   finalMessage: ChatMessage;
+  /** 本次 run 使用的会话 id（宿主可回传客户端，用于续接与读取历史）。 */
+  sessionId: string;
+  /** 本轮消息是否已成功持久化（未配置 `conversationStore` 时为 true）。 */
+  persisted: boolean;
   /** 完整消息序列（system + user + assistant/tool 交替）。 */
   messages: ChatMessage[];
   /** 实际执行的 LLM 调用步数。 */
@@ -91,4 +106,10 @@ export interface AgentRunOptions {
   signal?: AbortSignal;
   /** Human-in-the-loop：工具执行前 await 审批；`false` 阻断（结果回填「Rejected by human」）。 */
   approveToolCall?: (name: string, args: string) => Promise<ToolApproval>;
+  /** 会话 id：续接既有会话（缺省用 AgentLoop 的默认 id）。 */
+  sessionId?: string;
+  /** 会话归属的 agent 名（覆盖 AgentLoop 上的同名配置）。 */
+  agentName?: string;
+  /** 会话归属的用户（覆盖 AgentLoop 上的同名配置）。 */
+  userId?: string;
 }

@@ -19,7 +19,7 @@ pnpm lint           # rslint
 pnpm typecheck      # tsc --noEmit 全仓
 pnpm spell          # cspell
 pnpm test           # rstest
-pnpm web:dev        # apps/web 开发
+pnpm --filter @lhx-agent-engine/platform dev   # apps/platform 开发
 pnpm docs:dev       # Rspress 文档站
 ```text
 

@@ -10,10 +10,15 @@ model:
   maxTokens: 4096
 documents:
   topK: 10 # 检索召回更多 chunk，减少漏召回
+plugins:
+  - '@lhx-agent-engine/plugin-pgvector' # 需 DATABASE_URL
+session:
+  store: pg # 对话历史落 pg（agent_sessions / agent_messages），刷新页面可续接
 embedding:
   provider: openai-compatible # 提供后 documents 检索升级为 BM25 + 向量 RRF（语义召回）
   baseURL: http://localhost:11434/v1 # 本地 ollama
   model: bge-m3
+  dimension: 1024 # bge-m3 维度；存储层据此建 vector(1024) 并做写入校验
 ---
 
 你是团队知识库助手。优先依据检索到的知识文档回答；文档没有覆盖时，说明「知识库中未找到相关内容」，不要编造。

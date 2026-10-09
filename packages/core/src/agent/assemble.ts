@@ -33,6 +33,8 @@ import type { Retriever } from '../retrieval/retriever';
 import { noopRetriever } from '../retrieval/retriever';
 import { InMemoryVectorStore } from '../retrieval/vector-store';
 import type { VectorStore } from '../retrieval/vector-store';
+import { InMemoryConversationStore } from '../conversation/in-memory';
+import type { ConversationStore } from '../conversation/types';
 import type { GuardrailRule } from '../guardrails';
 import type { SandboxBackend } from '../sandbox/types';
 import { registerBuiltinTools } from '../tools/builtin';
@@ -73,6 +75,12 @@ export interface AssembleAgentLoopOptions {
   longTermBackend?: string;
   /** 缓存后端名（缺省 in-memory）；按名解析内置/插件注册的后端。 */
   cacheBackend?: string;
+  /** 对话历史后端名（缺省 in-memory）；未注册时回退 in-memory 并发告警事件。 */
+  conversationBackend?: string;
+  /** 会话归属的 agent 名（写入会话记录，供按 agent 列举历史）。 */
+  agentName?: string;
+  /** 每次 run 从存储恢复的历史条数上限（缺省 20）。 */
+  historyLimit?: number;
   /** 预置 embedding provider（按 `embedding` 配置解析；插件注册的优先）。 */
   embeddingProvider?: EmbeddingProvider;
   /** 预置事件总线（缺省新建；测试可注入以断言事件）。 */
@@ -205,6 +213,22 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
   const vectorStore: VectorStore = merged.vectorStores[0] ?? new InMemoryVectorStore();
   const embeddingProvider: EmbeddingProvider | undefined =
     merged.embeddingProviders[0] ?? options.embeddingProvider;
+  // 对话历史后端：按名解析；未注册的名字安全回退 in-memory（历史持久化不该拖垮装配）。
+  const conversationStore: ConversationStore =
+    merged.conversationStores.find(
+      (store) => store.name === (options.conversationBackend ?? 'in-memory'),
+    ) ??
+    (() => {
+      const requested = options.conversationBackend;
+      if (requested && requested !== 'in-memory') {
+        eventBus.emit({
+          type: 'custom',
+          name: 'conversation.store_fallback',
+          data: { requested, available: merged.conversationStores.map((store) => store.name) },
+        });
+      }
+      return new InMemoryConversationStore();
+    })();
 
   // 5.7 长期记忆：实现已外放为 `@lhx-agent-engine/plugin-memory`（SemanticMemory）；core 默认 no-op。
   const longTermMemory: LongTermMemory =
@@ -244,6 +268,9 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     maxSteps: options.maxSteps,
     execution: options.execution,
     eventBus,
+    conversationStore,
+    agentName: options.agentName,
+    historyLimit: options.historyLimit,
   });
 
   let disposed = false;
@@ -261,6 +288,7 @@ export async function assembleAgentLoop(options: AssembleAgentLoopOptions): Prom
     vectorStore,
     embeddingProvider,
     longTermMemory,
+    conversationStore,
     eventBus,
     tokenCounter,
     contextCompactor,

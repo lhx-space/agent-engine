@@ -8,26 +8,21 @@ TBD - created by archiving change add-plugins. Update Purpose after archive.
 
 ### Requirement: Plugin 与 PluginContext
 
-系统 SHALL 定义 `Plugin` 接口（`name` / `description` / `version` / `tags` / `install(ctx)`）与 `PluginContext` 接口（`registerTool` / `registerToolSource` / `registerHook` / `provideSystemPrompt` / `registerGuardrail` / `registerMemoryBackend` / `registerCacheBackend` / `registerVectorStore` / `registerEmbeddingProvider` / `registerTokenCounter` / `registerContextCompactor` / `registerRetriever` / `registerReranker` / `registerSummarizer` / `registerContextContributor`）；plugin 通过 `install(ctx)` 注入能力。
+`PluginContext` SHALL 额外提供 `registerConversationStore(store)` 注册出口，用于插件注入对话历史后端；注册契约与 `registerMemoryBackend` / `registerCacheBackend` / `registerVectorStore` 一致（按 `name` 索引，后注册覆盖同名）。
 
-#### Scenario: plugin 注入多种能力
+#### Scenario: 插件注入对话后端
 
-- **WHEN** 一个 plugin 的 `install` 依次调用 `registerTool` / `registerContextContributor` / `provideSystemPrompt`
-- **THEN** 对应能力被注入 `PluginContext`，无副作用报错
-
-#### Scenario: plugin 注入存储/检索/上下文后端
-
-- **WHEN** 一个 plugin 的 `install` 调用 `registerMemoryBackend` / `registerVectorStore` / `registerRetriever` 等
-- **THEN** 对应后端被收集进能力束，供装配层解析
+- **WHEN** 插件在 `install` 中调用 `ctx.registerConversationStore({ name: 'pg', ... })`
+- **THEN** 该实现进入能力束，可被 `session.store: pg` 选中
 
 ### Requirement: PluginManager 收集
 
-系统 SHALL 提供 `PluginManager`，`install` / `installAll` 执行 plugin 的 `install`，把注入的能力收集进 `CapabilityBundle`（tools / toolSources / hooks / guardrails / promptFragments / memoryBackends / cacheBackends / vectorStores / embeddingProviders / tokenCounters / contextCompactors / retrievers / rerankers / summarizers / contextContributors，可含 dispose）。
+`CapabilityBundle` SHALL 增加 `conversationStores` 字段，`mergeBundles` SHALL 以与其余后端相同的规则汇聚（按注册顺序，同名后者覆盖）。
 
-#### Scenario: 安装多个 plugin
+#### Scenario: 多插件注册同名后端
 
-- **WHEN** `installAll` 传入多个 plugin
-- **THEN** 各 plugin 的能力被收集进同一 `CapabilityBundle`
+- **WHEN** 两个插件注册同名 `conversationStore`
+- **THEN** 后注册者生效，行为与其余后端一致
 
 ### Requirement: assembleAgentLoop 装配
 

@@ -12,6 +12,11 @@ interface Message {
   content: string;
 }
 
+/** 每个 agent 一个会话 id，落 localStorage 以便刷新后续接。 */
+function sessionKeyOf(name: string): string {
+  return `lhx-agent-engine:session:${name}`;
+}
+
 export default function ChatPage({ params }: { params: Promise<{ name: string }> }) {
   const { name } = use(params);
   const [input, setInput] = useState('');
@@ -19,7 +24,45 @@ export default function ChatPage({ params }: { params: Promise<{ name: string }>
   const [assistantText, setAssistantText] = useState('');
   const [thinking, setThinking] = useState('');
   const [running, setRunning] = useState(false);
+  const [sessionId, setSessionId] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // 挂载时按 localStorage 里的 sessionId 拉取历史（后端为 in-memory 时重启即空，属预期）。
+  useEffect(() => {
+    setMessages([]);
+    setAssistantText('');
+    setThinking('');
+    const stored = window.localStorage.getItem(sessionKeyOf(name)) ?? '';
+    setSessionId(stored);
+    if (!stored) return;
+
+    void (async () => {
+      try {
+        const response = await fetch(`/api/agent/${name}/sessions/${stored}/messages?limit=50`);
+        if (!response.ok) return;
+        const data = (await response.json()) as {
+          messages: { role: string; content?: string | null }[];
+        };
+        setMessages(
+          data.messages
+            .filter((message) => message.role !== 'system' && message.content)
+            .map((message) => ({
+              role: message.role as Message['role'],
+              content: message.content ?? '',
+            })),
+        );
+      } catch {
+        // 拉历史失败不阻断聊天：退化为空白会话。
+      }
+    })();
+  }, [name]);
+
+  /** 开新会话：清掉本地 sessionId 与视图（服务端的旧历史保留）。 */
+  function startNewSession() {
+    window.localStorage.removeItem(sessionKeyOf(name));
+    setSessionId('');
+    setMessages([]);
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -37,10 +80,19 @@ export default function ChatPage({ params }: { params: Promise<{ name: string }>
     try {
       const response = await fetch(`/api/agent/${name}/run/stream`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          ...(sessionId ? { 'x-session-id': sessionId } : {}),
+        },
         body: JSON.stringify({ input: question, apiKey: getApiKey() }),
       });
       if (!response.ok || !response.body) throw new Error(`HTTP ${response.status}`);
+      // 服务端回传会话 id：首轮生成，后续沿用，刷新页面后据此续接。
+      const returnedSessionId = response.headers.get('x-session-id');
+      if (returnedSessionId) {
+        window.localStorage.setItem(sessionKeyOf(name), returnedSessionId);
+        setSessionId(returnedSessionId);
+      }
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -117,6 +169,9 @@ export default function ChatPage({ params }: { params: Promise<{ name: string }>
         <Typography.Title level={4} style={{ margin: 0 }}>
           {name}
         </Typography.Title>
+        <Button size="small" onClick={startNewSession} disabled={running}>
+          新会话
+        </Button>
       </Space>
 
       <div style={{ flex: 1, overflow: 'auto', paddingRight: 8, marginBottom: 12 }}>

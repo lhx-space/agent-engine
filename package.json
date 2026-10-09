@@ -12,9 +12,6 @@
   "scripts": {
     "build": "turbo run build --filter './packages/**'",
     "dev": "pnpm -r --parallel --filter './packages/**' run dev",
-    "web:dev": "pnpm --filter @lhx-agent-engine/web dev",
-    "web:build": "pnpm --filter @lhx-agent-engine/web build",
-    "server:start": "pnpm --filter @lhx-agent-engine/server start",
     "docs:dev": "pnpm --filter @lhx-agent-engine/docs dev",
     "docs:build": "pnpm --filter @lhx-agent-engine/docs build",
     "lint": "rslint .",
@@ -29,8 +26,7 @@
     "test": "rstest",
     "test:watch": "rstest --watch",
     "openspec:check": "node scripts/check-openspec.mjs",
-    "prepare": "husky",
-    "server:test": "pnpm --filter @lhx-agent-engine/server test"
+    "prepare": "husky"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",

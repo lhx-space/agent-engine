@@ -57,7 +57,18 @@ export class DocumentIndex {
       this.index.add({ id, text: chunk.text });
       if (this.embedding && this.vectorStore) {
         const [vector] = await this.embedding.embed([chunk.text]);
-        if (vector) await this.vectorStore.add([{ id, vector, metadata: { text: chunk.text } }]);
+        if (vector) {
+          await this.vectorStore.add([
+            {
+              id,
+              vector,
+              kind: 'document',
+              refId: id,
+              content: chunk.text,
+              metadata: { text: chunk.text },
+            },
+          ]);
+        }
       }
     }
   }
@@ -71,6 +82,7 @@ export class DocumentIndex {
       embedding: this.embedding,
       vectorStore: this.vectorStore,
       lexical: (q, k) => this.lexicalCandidates(q, k),
+      filter: { kind: 'document' },
     });
     return this.toChunks(fused.map((candidate) => candidate.id));
   }

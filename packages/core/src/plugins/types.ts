@@ -1,5 +1,6 @@
 import type { ToolSource } from '../capability-source/types';
 import type { CacheBackend } from '../cache/cache-backend';
+import type { ConversationStore } from '../conversation/types';
 import type { ContextCompactor } from '../context/compactor';
 import type { ContextContributor } from '../context/context-contributor';
 import type { TokenCounter } from '../context/token-counter';
@@ -58,4 +59,6 @@ export interface PluginContext {
   registerSummarizer(summarizer: Summarizer): void;
   /** 注册上下文贡献者（能力向 context 注入文本 + 临时工具的统一缝）。 */
   registerContextContributor(contributor: ContextContributor): void;
+  /** 注册对话历史后端（按 `name` 索引，供 `config.session.store` 按名选中）。 */
+  registerConversationStore(store: ConversationStore): void;
 }

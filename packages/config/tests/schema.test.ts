@@ -159,13 +159,28 @@ describe('AgentConfigSchema', () => {
       name: 'test-agent',
       model: { model: 'deepseek-chat' },
       systemPrompt: { template: 'hello' },
-      embedding: { baseURL: 'http://localhost/v1', model: 'text-embedding-3-small' },
+      embedding: {
+        baseURL: 'http://localhost/v1',
+        model: 'text-embedding-3-small',
+        dimension: 1536,
+      },
     });
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.embedding?.model).toBe('text-embedding-3-small');
       expect(result.data.embedding?.provider).toBe('openai-compatible');
+      expect(result.data.embedding?.dimension).toBe(1536);
     }
+  });
+
+  it('embedding 缺 dimension 则校验失败', () => {
+    const result = AgentConfigSchema.safeParse({
+      name: 'test-agent',
+      model: { model: 'deepseek-chat' },
+      systemPrompt: { template: 'hello' },
+      embedding: { baseURL: 'http://localhost/v1', model: 'text-embedding-3-small' },
+    });
+    expect(result.success).toBe(false);
   });
 
   it('缺省 guardrails 为空数组', () => {

@@ -31,17 +31,17 @@ TBD - created by archiving change resolve-layer. Update Purpose after archive.
 
 ### Requirement: 配置一键装配（resolveAgentConfig）
 
-系统 SHALL 提供 `resolveAgentConfig(config, deps?)`，读全量 `AgentConfig`，装配 provider / tools / skills / plugins / mcp / rules / systemPrompt / memory / security，返回 `ResolvedAgent`（`agent` + `dispose`）。
+`resolveAgentConfig` SHALL 按 `config.session.store` 解析并装配对话历史后端（解析规则与 `memory.longTerm.backend` / `cache.backend` 一致：未注册或缺省时回退 `InMemoryConversationStore`），并在返回的 `ResolvedAgent` 上暴露 `conversationStore`，使宿主无需接触插件即可读写历史。
 
-#### Scenario: 完整配置装配
+#### Scenario: 装配后宿主可直接读历史
 
-- **WHEN** 传入含 model / systemPrompt / rules / tools / skills / plugins / mcp / memory / security 的 `AgentConfig`
-- **THEN** 返回可 `run()` 的 `AgentLoop`，各轴按配置生效
+- **WHEN** `resolveAgentConfig` 完成且配置声明 `session.store: pg`
+- **THEN** `resolved.conversationStore` 为 pg 实现，可直接调用 `listMessages`
 
-#### Scenario: dispose 聚合关闭
+#### Scenario: 未注册实现时安全回退
 
-- **WHEN** 调用 `ResolvedAgent.dispose()`
-- **THEN** 所有 MCP 连接等 bundle 资源被关闭
+- **WHEN** 配置声明 `session.store: pg` 但无插件注册该名
+- **THEN** 回退到 `InMemoryConversationStore` 并发出告警事件，不抛错
 
 ### Requirement: plugin 工厂注册表
 

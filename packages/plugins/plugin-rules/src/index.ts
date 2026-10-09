@@ -73,6 +73,7 @@ class RuleIndex {
             vectorStore: this.vectorStore,
             lexical,
             ensureVectors: () => this.ensureVectors(),
+            filter: { kind: 'rule' },
           })
         : lexical(query, topK);
     return ids
@@ -86,7 +87,9 @@ class RuleIndex {
     this.vectorsBuilt = true;
     for (const rule of this.records.values()) {
       const [vector] = await this.embedding.embed([`${rule.description} ${rule.tags.join(' ')}`]);
-      if (vector) await this.vectorStore.add([{ id: rule.id, vector }]);
+      if (vector) {
+        await this.vectorStore.add([{ id: rule.id, vector, kind: 'rule', refId: rule.id }]);
+      }
     }
   }
 }

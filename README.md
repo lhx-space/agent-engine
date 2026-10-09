@@ -138,6 +138,7 @@ embedding: # vector model (separate capability slot)
   provider: openai-compatible
   baseURL: https://api.openai.com/v1
   model: text-embedding-3-small
+  dimension: 1536 # required: storage builds vector(N) and validates on write
 ```
 
 Rules of thumb:
@@ -222,6 +223,7 @@ embedding:
   provider: openai-compatible
   baseURL: https://api.openai.com/v1
   model: text-embedding-3-small
+  dimension: 1536
 
 # 文档摄入：归一化 → 分块 → 检索注入 [文档]
 documents:
@@ -297,7 +299,6 @@ docs/ (Rspress) is a standalone site
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | -------------- |
 | `@lhx-agent-engine/config`            | Config schema + three-format loader (`loadAgentConfig`)                                                            | ✅ implemented |
 | `@lhx-agent-engine/core`              | Kernel: engine (AgentLoop / assemble / hooks / backends) + protocols (retrieval / ToolSource / ContextContributor) | ✅ implemented |
-| `@lhx-agent-engine/server`            | HTTP server (REST + streaming) with env-key provider factory + preset-default                                      | ✅ implemented |
 | `@lhx-agent-engine/preset-default`    | Aggregates all capability plugins + config-slice activation + long-term memory factory                             | ✅ implemented |
 | `@lhx-agent-engine/plugin-rules`      | context rules: `always` inject + on-demand `hybridRetrieve`                                                        | ✅ implemented |
 | `@lhx-agent-engine/plugin-skills`     | skill packs (path/npm/git): load + retrieve + bundle tools                                                         | ✅ implemented |
@@ -313,7 +314,7 @@ docs/ (Rspress) is a standalone site
 | `@lhx-agent-engine/plugin-git`        | git tool suite (read-only default, sandboxed)                                                                      | ✅ implemented |
 | `@lhx-agent-engine/plugin-otel`       | OpenTelemetry observability                                                                                        | ✅ implemented |
 | `@lhx-agent-engine/cli`               | CLI entry                                                                                                          | 📦 scaffold    |
-| `@lhx-agent-engine/web`               | Integrated platform (`apps/web`)                                                                                   | 🚧 partial     |
+| `@lhx-agent-engine/platform`          | SaaS platform (`apps/platform`, Next.js 15 + marketplace)                                                          | 🚧 partial     |
 
 ## Development
 
@@ -334,7 +335,7 @@ pnpm lint:md            # markdownlint
 2. **M2 Configurable capabilities** ✅ — hooks / rules / skills / plugins + system-prompt assembly + memory + built-in tools + sandbox.
 3. **M3 Extensions** 🚧 — MCP ✅, resolve ✅, streaming ✅, session lifecycle ✅, loop hardening ✅, reasoning transparency ✅, three-tier memory ✅, FunctionSandbox (WASI) ✅, guardrails ✅, semantic recall (RRF) ✅. Remaining: multi-agent orchestration.
 4. **M4 Services** 🚧 — HTTP server ✅. Remaining: CLI.
-5. **M5 Platform & docs** 🚧 — `apps/web` ✅. Remaining: docs site, Docker, example agents.
+5. **M5 Platform & docs** 🚧 — `apps/platform` ✅ (marketplace + CRUD + streaming). Remaining: docs site, Docker, example agents.
 
 ## Docs
 

@@ -138,6 +138,7 @@ embedding: # 向量模型（独立能力槽）
   provider: openai-compatible
   baseURL: https://api.openai.com/v1
   model: text-embedding-3-small
+  dimension: 1536 # 必填：存储层据此建 vector(N) 并在写入时校验
 ```
 
 划分原则：
@@ -222,6 +223,7 @@ embedding:
   provider: openai-compatible
   baseURL: https://api.openai.com/v1
   model: text-embedding-3-small
+  dimension: 1536
 
 # 文档摄入：归一化 → 分块 → 检索注入 [文档]
 documents:
@@ -287,7 +289,8 @@ flowchart TD
 
 ```text
                 ┌── cli
-config ← core ←┼── server ──(HTTP API)──▶ apps/web（React 19 + Rsbuild）
+config ← core ←┼── apps/platform（Next.js 15 + 市场）
+                 └── agents（自托管宿主）
                 └── plugins
 
 docs/（Rspress）为独立站点
@@ -297,7 +300,6 @@ docs/（Rspress）为独立站点
 | ------------------------------------- | ------------------------------------------------------------------------------------------------- | ----------- |
 | `@lhx-agent-engine/config`            | 配置 Schema + 三格式加载（`loadAgentConfig`）                                                     | ✅ 已实现   |
 | `@lhx-agent-engine/core`              | 内核：引擎（AgentLoop / assemble / hooks / 后端）+ 协议（检索 / ToolSource / ContextContributor） | ✅ 已实现   |
-| `@lhx-agent-engine/server`            | HTTP 服务（REST + 流式），内置环境变量密钥工厂 + preset-default                                   | ✅ 已实现   |
 | `@lhx-agent-engine/preset-default`    | 聚合全部能力插件 + 按配置切片激活 + 长期记忆工厂                                                  | ✅ 已实现   |
 | `@lhx-agent-engine/plugin-rules`      | 上下文规则：`always` 注入 + on-demand `hybridRetrieve`                                            | ✅ 已实现   |
 | `@lhx-agent-engine/plugin-skills`     | 技能包（path/npm/git）：加载 + 检索 + 捆绑工具                                                    | ✅ 已实现   |
@@ -313,7 +315,7 @@ docs/（Rspress）为独立站点
 | `@lhx-agent-engine/plugin-git`        | git 工具套件（只读默认、经沙箱）                                                                  | ✅ 已实现   |
 | `@lhx-agent-engine/plugin-otel`       | OpenTelemetry 可观测插件                                                                          | ✅ 已实现   |
 | `@lhx-agent-engine/cli`               | 命令行入口                                                                                        | 📦 骨架     |
-| `@lhx-agent-engine/web`               | 一体化平台（`apps/web`）                                                                          | 🚧 部分实现 |
+| `@lhx-agent-engine/platform`          | 一体化平台（`apps/platform`，Next.js 15 + 市场）                                                  | 🚧 部分实现 |
 
 ## 开发
 
@@ -334,7 +336,7 @@ pnpm lint:md            # markdownlint
 2. **M2 配置化能力** ✅ —— hooks / rules / skills / plugins + system-prompt 组装 + 记忆 + 内置工具 + 沙箱。
 3. **M3 扩展接入** 🚧 —— MCP ✅、resolve ✅、流式 ✅、会话生命周期 ✅、循环强化 ✅、真思考透传 ✅、三层记忆 ✅、FunctionSandbox（WASI）✅、guardrails ✅、语义召回（RRF）✅。剩余：多 Agent 编排。
 4. **M4 服务化** 🚧 —— HTTP server ✅。剩余：CLI。
-5. **M5 平台与文档** 🚧 —— `apps/web` ✅。剩余：docs 站点、Docker、示例 Agent。
+5. **M5 平台与文档** 🚧 —— `apps/platform` ✅（市场 + CRUD + 流式）。剩余：docs 站点、Docker、示例 Agent。
 
 ## 文档
 

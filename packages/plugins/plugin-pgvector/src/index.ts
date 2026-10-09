@@ -1,6 +1,7 @@
 import type { Plugin } from '@lhx-agent-engine/core/plugins';
 import { createPgvectorPool } from './client';
 import type { PgvectorConfig } from './client';
+import { PgConversationStore } from './conversation-store';
 import { PgMemoryBackend } from './memory-backend';
 import { PgVectorStore } from './vector-store';
 
@@ -8,6 +9,7 @@ export { createPgvectorPool } from './client';
 export type { PgvectorConfig, PgvectorTables } from './client';
 export { PgVectorStore } from './vector-store';
 export { PgMemoryBackend } from './memory-backend';
+export { PgConversationStore } from './conversation-store';
 
 /**
  * pgvector 插件：注册 pgvector 向量存储 + 长期记忆 KV 持久化。
@@ -24,8 +26,22 @@ export function createPgvectorPlugin(config: PgvectorConfig = {}): Plugin {
     tags: ['pgvector', 'postgresql', 'vector', 'memory'],
     async install(ctx) {
       const { pool, tables } = await createPgvectorPool(config);
-      ctx.registerVectorStore(new PgVectorStore(pool, tables.vectorTable));
-      ctx.registerMemoryBackend(new PgMemoryBackend(pool, tables.memoryTable));
+      ctx.registerVectorStore(
+        new PgVectorStore(pool, tables.vectorTable, {
+          dimension: config.dimension,
+          namespace: config.namespace,
+          embeddingModel: config.embeddingModel,
+        }),
+      );
+      ctx.registerMemoryBackend(
+        new PgMemoryBackend(pool, tables.memoryTable, config.namespace ?? 'default'),
+      );
+      ctx.registerConversationStore(
+        new PgConversationStore(pool, {
+          sessionTable: tables.sessionTable,
+          messageTable: tables.messageTable,
+        }),
+      );
       // 注：pool 常驻进程生命周期；后端 dispose 钩子见 AGENTS.md 15.4 配套点 2（待补）。
     },
   };

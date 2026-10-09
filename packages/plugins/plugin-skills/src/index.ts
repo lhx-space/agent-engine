@@ -67,6 +67,7 @@ class SkillIndex {
             vectorStore: this.vectorStore,
             lexical,
             ensureVectors: () => this.ensureVectors(),
+            filter: { kind: 'skill' },
           })
         : lexical(query, topK);
     return ids
@@ -80,7 +81,9 @@ class SkillIndex {
     this.vectorsBuilt = true;
     for (const skill of this.records.values()) {
       const [vector] = await this.embedding.embed([`${skill.description} ${skill.tags.join(' ')}`]);
-      if (vector) await this.vectorStore.add([{ id: skill.id, vector }]);
+      if (vector) {
+        await this.vectorStore.add([{ id: skill.id, vector, kind: 'skill', refId: skill.id }]);
+      }
     }
   }
 }

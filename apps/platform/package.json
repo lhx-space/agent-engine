@@ -1,0 +1,61 @@
+{
+  "name": "@lhx-agent-engine/platform",
+  "version": "0.1.0",
+  "description": "Agent Engine 平台（市场 + agent 实例管理与运行）",
+  "keywords": [
+    "lhx-agent-engine"
+  ],
+  "license": "MIT",
+  "author": "luhanxin",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lhx-space/agent-engine.git",
+    "directory": "apps/platform"
+  },
+  "homepage": "https://github.com/lhx-space/agent-engine/tree/main/apps/platform#readme",
+  "bugs": {
+    "url": "https://github.com/lhx-space/agent-engine/issues"
+  },
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "rstest --include 'tests/**/*.{test,spec}.ts'",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "import:agents": "tsx scripts/import-agents.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/pg": "^8.11.10",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@rstest/core": "^0.11.9",
+    "drizzle-kit": "^0.31.0",
+    "tsx": "^4.23.12",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^6.3.2",
+    "@lhx-agent-engine/config": "workspace:*",
+    "@lhx-agent-engine/core": "workspace:*",
+    "@lhx-agent-engine/plugin-pgvector": "workspace:*",
+    "@lhx-agent-engine/preset-default": "workspace:*",
+    "antd": "^6.6.1",
+    "drizzle-orm": "^0.44.0",
+    "gray-matter": "^4.0.3",
+    "next": "^15.0.0",
+    "pg": "^8.13.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "yaml": "^2.9.0"
+  },
+  "engines": {
+    "node": ">=18.18.0"
+  }
+}

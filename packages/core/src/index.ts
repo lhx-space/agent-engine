@@ -68,10 +68,25 @@ export {
   noopLongTermMemory,
 } from './memory';
 export type { MemoryBackend, Summarizer, LongTermMemory } from './memory';
+export { InMemoryConversationStore, createSessionId } from './conversation';
+export type {
+  ConversationStore,
+  ConversationSession,
+  ConversationMessage,
+  ConversationRole,
+  ListMessagesOptions,
+  ListSessionsOptions,
+} from './conversation';
 export { InMemoryCacheBackend } from './cache';
 export type { CacheBackend } from './cache';
 export { InMemoryVectorStore } from './retrieval/vector-store';
-export type { VectorStore, VectorRecord, VectorMatch } from './retrieval/vector-store';
+export type {
+  VectorStore,
+  VectorRecord,
+  VectorMatch,
+  VectorQueryFilter,
+  VectorKind,
+} from './retrieval/vector-store';
 export type { EmbeddingProvider } from './embedding/embedding';
 export { createEmbeddingProvider } from './embedding/openai';
 export { EventBus } from './events';

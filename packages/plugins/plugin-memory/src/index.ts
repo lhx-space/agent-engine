@@ -21,7 +21,10 @@ export class SemanticMemory implements LongTermMemory {
     const [vector] = await this.embedding.embed([text]);
     if (!vector) return;
     const id = `mem-${Date.now()}-${this.counter++}`;
-    await this.vectorStore.add([{ id, vector, metadata: { text } }]);
+    // 原文随向量一起入库（content 列），召回时无需再回 KV 取一次。
+    await this.vectorStore.add([
+      { id, vector, kind: 'memory', refId: id, content: text, metadata: { text } },
+    ]);
     await this.backend.set(id, { text });
   }
 
@@ -29,9 +32,9 @@ export class SemanticMemory implements LongTermMemory {
     if (!this.embedding) return [];
     const [vector] = await this.embedding.embed([query]);
     if (!vector) return [];
-    const matches = await this.vectorStore.query(vector, topK);
+    const matches = await this.vectorStore.query(vector, topK, { kind: 'memory' });
     return matches
-      .map((match) => match.metadata?.text)
+      .map((match) => match.content ?? match.metadata?.text)
       .filter((text): text is string => typeof text === 'string' && text.length > 0);
   }
 }

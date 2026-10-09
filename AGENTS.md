@@ -41,10 +41,10 @@
 
 据此分三档：
 
-| 状态                                  | 能力                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 说明                                                                                                                                                               |
-| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| ✅ 已达标（有接口 + 有默认 + 可注入） | LLM（`LLMProvider` + openai/anthropic + `providerFactory`）、web 工具（`plugin-web`：web_search / web_fetch + 多搜索 provider）、沙箱（`SandboxBackend` + docker/nsjail/auto）、MCP 工具来源（`ToolSource` + `plugin-mcp`）、Skills（`plugin-skills`：path/npm/git）、**长期记忆 `MemoryBackend` + `InMemoryMemoryBackend`**（`memory.longTerm.backend` 按名解析）、**缓存 `CacheBackend` + `InMemoryCacheBackend`**（`cache.backend` 按名解析）、**向量库 `VectorStore` + `InMemoryVectorStore`**（余弦默认）、**`EmbeddingProvider`**（接口，无默认需真实模型）、**events 总线（`EventBus` + `AgentEngineEvent`）**、**流式 `custom` 事件**、**Human-in-the-loop 审批（`approveToolCall`）**、**`TokenCounter` / `ContextCompactor`**（token 预算整轮裁剪）、**`Retriever` / `Reranker`**（`hybridRetrieve`，BM25+向量 RRF）、**guardrail 协议**（`GuardrailRule` + `registerGuardrail`；声明式编译外放 `plugin-guardrails`）、**SessionStore 可插拔**（`SessionStoreBackend` + `InMemorySessionStore`，server 层）、**三层记忆消费**（token 预算整轮裁剪 + 滚动摘要 `Summarizer` + 语义召回 `plugin-memory`）、**混合召回 `hybridRetrieve`（RRF）**（能力插件自建索引复用：BM25 + 向量融合）、**`FunctionSandbox` + `WasiFunctionSandbox`**（WASI 隔离不可信代码） | 用户按接口接入自己的实现即可；三层记忆消费已落地（token 预算 / 滚动摘要 / 语义召回）；**能力实现已外放为 `plugin-*`，core 只留协议 + 注入点**；LLM·检索缓存 属后续 |
-| ⏳ 未落地                             | 多 Agent 编排（`orchestration` 仅 `single`，`spawn` 未实现）、其余待扩展项                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | 见 §2.2 清单                                                                                                                                                       |
+| 状态                                  | 能力                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | 说明                                                                                                                                                               |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ✅ 已达标（有接口 + 有默认 + 可注入） | LLM（`LLMProvider` + openai/anthropic + `providerFactory`）、web 工具（`plugin-web`：web_search / web_fetch + 多搜索 provider）、沙箱（`SandboxBackend` + docker/nsjail/auto）、MCP 工具来源（`ToolSource` + `plugin-mcp`）、Skills（`plugin-skills`：path/npm/git）、**长期记忆 `MemoryBackend` + `InMemoryMemoryBackend`**（`memory.longTerm.backend` 按名解析）、**缓存 `CacheBackend` + `InMemoryCacheBackend`**（`cache.backend` 按名解析）、**向量库 `VectorStore` + `InMemoryVectorStore`**（余弦默认）、**`EmbeddingProvider`**（接口，无默认需真实模型）、**events 总线（`EventBus` + `AgentEngineEvent`）**、**流式 `custom` 事件**、**Human-in-the-loop 审批（`approveToolCall`）**、**`TokenCounter` / `ContextCompactor`**（token 预算整轮裁剪）、**`Retriever` / `Reranker`**（`hybridRetrieve`，BM25+向量 RRF）、**guardrail 协议**（`GuardrailRule` + `registerGuardrail`；声明式编译外放 `plugin-guardrails`）、**SessionStore 可插拔**（`SessionStoreBackend` + `InMemorySessionStore`，server 层）、**三层记忆消费**（token 预算整轮裁剪 + 滚动摘要 `Summarizer` + 语义召回 `plugin-memory`）、**混合召回 `hybridRetrieve`（RRF）**（能力插件自建索引复用：BM25 + 向量融合）、**`FunctionSandbox` + `WasiFunctionSandbox`**（WASI 隔离不可信代码）、**对话历史 `ConversationStore` + `InMemoryConversationStore`**（`session.store` 按名解析；pg 实现在 `plugin-pgvector`，`agent_sessions` / `agent_messages` 表）、**SessionCache 可插拔**（`SessionCacheBackend` + `InMemorySessionCache`，server 层；原 `SessionStore` 改名，与对话历史划清语义）、**存储层迁移机制 + 命名空间隔离**（`plugin-pgvector`：`agent_schema_migrations` 版本表 + `migrations/` 只向前迁移；`agent_vectors` / `agent_memory` 按 `namespace` 隔离、`kind` 区分资产、`embedding_model`+`dimension` 绑定，写入校验维度） | 用户按接口接入自己的实现即可；三层记忆消费已落地（token 预算 / 滚动摘要 / 语义召回）；**能力实现已外放为 `plugin-*`，core 只留协议 + 注入点**；LLM·检索缓存 属后续 |
+| ⏳ 未落地                             | 多 Agent 编排（`orchestration` 仅 `single`，`spawn` 未实现）、其余待扩展项                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | 见 §2.2 清单                                                                                                                                                       |
 
 ### 2.2 动态扩展面：四个扩展出口 + 待扩展清单
 
@@ -90,7 +90,7 @@
 | 日志        | 可插拔 `Logger`（默认 console；pino/OTel 经 options 注入） | 日志非内核必备，可观测真相源在 events 总线 + hooks；结构化后端按需接入            |
 | CLI         | commander                                                  | harness 命令行入口                                                                |
 | 服务        | 内置轻量 HTTP Server                                       | 供 Docker 化后对外提供 API                                                        |
-| Web 前端    | React 19 + Rsbuild + 生态库                                | apps/web 一体化平台（React Router/Query/Zustand 等）                              |
+| 平台前端    | React 19 + Next.js 15 + antd                               | apps/platform 一体化平台（市场 + 实例管理 + 运行）                                |
 | 文档站点    | Rspress                                                    | docs 目录，Rspack 生态文档站                                                      |
 | 容器        | 多阶段 Dockerfile                                          | 配置以卷挂载，支持热更新                                                          |
 
@@ -148,7 +148,7 @@ agent-engine/
 ├── openspec/                  # OpenSpec 规范（specs/ · changes/ · config.yaml）
 ├── docs/                      # 文档站点（Rspress）—— 架构设计、API、使用指南
 ├── apps/
-│   └── web/                   # @lhx-agent-engine/web —— WebApp（React 19 + Rsbuild）
+│   └── platform/              # @lhx-agent-engine/platform —— 平台应用（Next.js 15 + Drizzle）
 ├── packages/
 │   ├── core/                  # @lhx-agent-engine/core   —— 内核执行引擎（最核心；只留引擎 + 协议）
 │   │   └── src/
@@ -178,7 +178,6 @@ agent-engine/
 │   │       ├── loader/        #   yaml/json5/jiti 加载器
 │   │       └── resolve/       #   配置级归一化（env 插值 / $ref / extends，后续）
 │   ├── cli/                   # @lhx-agent-engine/cli   —— 命令行入口
-│   ├── server/                # @lhx-agent-engine/server —— HTTP 服务（Docker 部署）
 │   └── plugins/               # 能力插件（plugin-rules/skills/documents/memory/web/mcp/guardrails/files/bash/git/otel）+ preset-default
 ├── examples/                  # 垂直领域 Agent 配置示例
 │   ├── devops-agent/
@@ -194,7 +193,8 @@ agent-engine/
 ```text
                      ┌── cli
 config ← core ←┼── plugins
-                     └── apps ── server ──(HTTP API)──▶ web
+                     └── apps ── platform（市场 + 实例管理 + 运行）
+                     └── agents（自托管宿主，目录扫描 + TS hook）
 
 docs/（Rspress）为独立站点，无运行时依赖
 ```
@@ -203,8 +203,8 @@ docs/（Rspress）为独立站点，无运行时依赖
 - `core`：依赖 `config` 的类型，实现引擎。
 - `cli`：依赖 `core` 与 `config`。
 - `plugins`：依赖 `core` 的协议（能力外置）。
-- `apps/server`：HTTP 服务，依赖 `core` + `config` + `preset-default`。
-- `apps/web`：通过 HTTP API 调用 `server`，并复用 `config` 的 Zod Schema（表单校验、编辑器补全）。
+- `apps/platform`：平台应用，依赖 `core` + `config` + `preset-default` + `plugin-pgvector`；业务库（platform schema）与引擎库隔离。
+- `agents/`：自托管/开发模式宿主（Next.js），目录扫描 + TS hook，保留为参考实现。
 
 ---
 
@@ -524,6 +524,7 @@ embedding:
   provider: openai-compatible
   baseURL: https://api.openai.com/v1
   model: text-embedding-3-small
+  dimension: 1536
 
 hooks:
   - plugin: builtin.logger
@@ -636,27 +637,24 @@ interface PluginContext {
 
 ---
 
-## 9. WebApp（apps/web）
+## 9. 平台应用（apps/platform）
 
-**定位**：配置管理 + 运行一体化的平台（可视化编辑 Agent 配置 + 运行对话 + 查看日志/观测）。
+**定位**：市场 + agent 实例管理 + 运行一体化（上架 / 安装 / 配置编辑 / 运行对话 / 查看历史）。
 
 **技术栈**（React 最新版 + 生态库，优先三方库）：
 
-| 能力       | 选型                                                      |
-| ---------- | --------------------------------------------------------- |
-| 框架       | React 19                                                  |
-| 构建       | Rsbuild（Rspack 生态，与 Rspress/tsdown 统一）            |
-| 路由       | React Router                                              |
-| 服务端状态 | TanStack Query                                            |
-| 表单       | React Hook Form + Zod（**直接复用 config 包的 Schema**）  |
-| 客户端状态 | Zustand                                                   |
-| UI 组件    | shadcn/ui（Radix + Tailwind）                             |
-| 样式       | Tailwind CSS                                              |
-| 配置编辑   | Monaco Editor（JSON/YAML 编辑，复用 Schema 做校验与补全） |
-| 编排可视化 | React Flow（多 Agent 拓扑）                               |
-| 数据展示   | TanStack Table                                            |
+| 能力     | 选型                                                 |
+| -------- | ---------------------------------------------------- |
+| 框架     | React 19 + Next.js 15（App Router）                  |
+| 构建     | Next.js（dev / build 一体）                          |
+| 路由     | Next App Router                                      |
+| UI 组件  | antd 6 + @ant-design/icons                           |
+| 数据访问 | Drizzle（platform schema，业务库）                   |
+| 配置编辑 | 复用 `config` 包 Zod Schema 的表单组件               |
+| 后续可加 | Monaco Editor（JSON/YAML）、React Flow（编排可视化） |
 
-> 关键点：前端表单校验、编辑器补全、类型提示**全部复用 config 包的同一份 Zod Schema**，让「单一事实来源」延伸到 UI 层。
+> 关键点：表单校验、类型提示**复用 config 包的同一份 Zod Schema**（表单组件由 apps/platform 迁入 `src/components/config/`），
+> 且写入路径统一经 `sanitizeConfigValue` → Zod → `deepFreeze` 安全防线。
 
 ---
 
@@ -717,7 +715,7 @@ pnpm typecheck          # 全仓类型检查（tsc --noEmit）
 pnpm spell              # cspell 拼写检查
 pnpm test               # 运行测试（Rstest）
 pnpm test:watch         # 监听模式
-pnpm web:dev            # apps/web 开发（React 19 + Rsbuild）
+pnpm --filter @lhx-agent-engine/platform dev   # apps/platform 开发
 pnpm docs:dev           # Rspress 文档站开发
 
 # 通过 CLI 运行一个垂直领域 Agent（M4 落地后生效）
@@ -761,7 +759,7 @@ pnpm --filter @lhx-agent-engine/cli run agent run \
 
 - 多阶段构建：`node:20-alpine` → 安装依赖 → 构建 → 精简运行时镜像。
 - 配置通过 **卷挂载** `agents/` 目录，支持不改镜像即热更新 Agent。
-- 服务由 `@lhx-agent-engine/server` 对外提供 HTTP API，`cli` 用于交互/批处理。
+- 平台由 `apps/platform` 对外提供 HTTP API；`packages/cli` 用于交互/批处理与自托管。
 
 ```yaml
 # docker-compose.yml（示意）
@@ -778,7 +776,7 @@ services:
     depends_on: [pgvector, redis]
 
   web:
-    build: ./apps/web
+    build: ./apps/platform
     ports: ['3000:80']
 
   pgvector:
@@ -800,7 +798,7 @@ services:
 2. **M2 配置化能力**（✅ 已完成）：hooks、rules、skills、plugins 系统 + system-prompt 组装 + 会话 memory + 内置通用原语工具（`todo` / `datetime` / `web_search` / `web_fetch`）+ 执行沙箱（`SandboxBackend`：docker / nsjail 双后端，bash 默认禁用，rtk 输出压缩）+ 内置 plugin（`@lhx-agent-engine/plugin-files` / `@lhx-agent-engine/plugin-bash` / `@lhx-agent-engine/plugin-git`）。
 3. **M3 扩展接入**（**进行中**）：✅ ① MCP client（`connectMcpServer`/`connectMcpServers`，stdio + http（streamable-http/sse）transport）；✅ ④ config resolve 层（`resolveAgentConfig`：AgentConfig→AgentLoop 一键装配 + `CapabilityBundle` 统一）；✅ 流式输出（`chatCompletionStream` + NDJSON 端点）；✅ `onInit`/`onSessionStart`/`onSessionEnd` 三个 hook；✅ 会话生命周期（server `SessionStoreBackend` + `sessionId` 复用 + `DELETE /sessions/:id`）；✅ ReAct loop 强化（并行 tool_calls、工具重试+退避、`AbortSignal` 取消、`finishReason` 续写、`execution` 预算配置）；✅ 真思考透传（DeepSeek R1 `reasoning_content` → `ChatMessage.reasoning` + 前端「思考/回复」分开）；✅ ② 长期记忆（三层记忆：token 预算整轮裁剪 + 滚动摘要 + embedding 语义召回）；✅ ⑤ FunctionSandbox（`FunctionSandbox` + `WasiFunctionSandbox`，WASI）；✅ guardrail 声明式配置轴（`guardrails` + `compileGuardrails`）；✅ SessionStore 可插拔（`SessionStoreBackend` + `InMemorySessionStore`）；✅ 日志可插拔（`Logger` + `consoleLogger` 默认，移除 pino）。剩余：③ 多 Agent 编排（独立 `@lhx-agent-engine/orchestration` 包）。
 4. **M4 服务化**（**部分完成**）：✅ server HTTP API（`/api/agent/run` 非流式 + `/api/agent/run/stream` NDJSON + `DELETE /api/agent/sessions/:id`，可插拔 `Logger`（默认 console）、session 复用、`SessionStoreBackend`）。剩余：CLI（`packages/cli` 仍是 stub）。
-5. **M5 平台与文档**（**部分完成**）：✅ apps/web 三栏编辑器 + 流式 chat + 模型供应商预设 + security preset + 配置导出（省略默认值减负）。剩余：docs（Rspress）、Docker 编排、示例垂直领域 Agent。
+5. **M5 平台与文档**（**部分完成**）：✅ apps/platform 配置编辑器 + 流式 chat + 模型供应商预设 + security preset + 配置导出（省略默认值减负）。剩余：docs（Rspress）、Docker 编排、示例垂直领域 Agent。
 6. **内核瘦身（能力外放，✅ 已完成）**：rules / skills / documents / 语义记忆 / web / mcp / 声明式 guardrail 编译 全部外放为 `packages/plugins/plugin-*`，core 只留引擎 + 协议（`Retriever` / `hybridRetrieve` / `ToolSource` / `ContextContributor` / guardrail 协议）；`@lhx-agent-engine/preset-default` 聚合并据 config 切片激活；模型采样参数（`topP` / `frequencyPenalty` / `presencePenalty` / `stop` / `seed`）归一化透传（「配置缺省 + 调用覆盖」，顺带修复 `temperature` / `maxTokens` 未生效）。
 
 ### 复盘纪要（截至 M3 中期）
@@ -863,7 +861,7 @@ M2 落地及 M3 推进过程中沉淀的坑点与约定，后续开发直接复�
 3. **远程 MCP headers 的 `${VAR}` 插值**：扫描器读 mcps yaml 字面透传，`${GITHUB_TOKEN}` 未替换（当前 github 示例因此连接失败；需换无需 token 的远程端点，或接 env 插值）。
 4. **多租户 skill 存储**：`install` 现为 `-g` 全局 `~/.agents/skills`（单租户假设）。云端需 `SkillStore` 抽象 per-tenant（命名空间 + 租户身份 + 来源审查/人在环）。先不着急，但抽象要预留。
 5. **web_search/web_fetch 引用来源 URL 引导**：工具已返回 `{title,url,snippet}`，缺「引导模型在回答中引用来源 URL」的 description 注入。
-6. **前端 DocumentsForm**（sources/chunking/topK）：apps/web 缺该表单。
+6. **前端 DocumentsForm**（sources/chunking/topK）：apps/platform 缺该表单。
 7. **CLI 仍 stub**：`packages/cli` 只有 name/version，`run` 命令未实现。
 8. **docs（Rspress）+ Docker 编排**。
 

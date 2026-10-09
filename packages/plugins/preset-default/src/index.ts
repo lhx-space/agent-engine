@@ -67,7 +67,13 @@ export function createPresetPluginFactories(config: AgentConfig): Record<string,
     // 可观测（opt-in 经 config.plugins 声明；exporter 由用户经 OTel SDK 配置）。
     '@lhx-agent-engine/plugin-otel': () => createOtelPlugin(),
     // pgvector 持久化（opt-in 经 config.plugins 声明；连接串读 DATABASE_URL）。
-    '@lhx-agent-engine/plugin-pgvector': () => createPgvectorPlugin(),
+    // namespace 按 agent 名注入：多 agent 共用一库时记忆与向量互不串味。
+    '@lhx-agent-engine/plugin-pgvector': () =>
+      createPgvectorPlugin({
+        namespace: config.name,
+        dimension: config.embedding?.dimension,
+        embeddingModel: embedding?.name,
+      }),
     // redis 缓存（opt-in 经 config.plugins 声明；连接串读 REDIS_URL）。
     '@lhx-agent-engine/plugin-redis': () => createRedisPlugin(),
   };

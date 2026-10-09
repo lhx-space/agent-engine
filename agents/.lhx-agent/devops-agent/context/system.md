@@ -18,10 +18,13 @@ plugins:
 memory:
   longTerm:
     backend: pg # 选中 PgMemoryBackend；语义召回需配合 embedding（DeepSeek 无 embeddings）
+session:
+  store: pg # 对话历史落 pg（agent_sessions / agent_messages），刷新页面可续接
 embedding:
   provider: openai-compatible
   baseURL: http://localhost:11434/v1 # 本地 ollama
   model: bge-m3
+  dimension: 1024 # bge-m3 维度；存储层据此建 vector(1024) 并做写入校验
 cache:
   backend: redis # 选中 RedisCacheBackend
 guardrails:

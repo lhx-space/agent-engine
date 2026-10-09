@@ -20,6 +20,8 @@
     "MD041": false,
     // 代码块风格：围栏 ```，与 Prettier 一致
     "MD046": { "style": "fenced" },
+    // 表格列分隔符不强制对齐（能力表等含超长单元格，aligned 风格不可行）
+    "MD060": { "style": "compact" },
     // 行内代码反引号
     "MD048": { "style": "backtick" },
   },

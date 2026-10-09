@@ -5,7 +5,10 @@ schema: spec-driven
 context: |
   Tech stack: TypeScript (strict, 5.x), Node.js >= 20, pnpm workspace monorepo.
   Build: tsdown + Turborepo; Lint: Rslint; Format: Prettier; Spell: cspell; Test: Rstest.
-  Docs: Rspress (docs/); Web: React 19 + Rsbuild (apps/web).
+  Docs: Rspress (docs/); Web UI: Next.js 15 (apps/platform). Platform: Next.js 15 (apps/platform).
+  Persistence: engine schema (sessions / messages / vectors / memory, migrated by plugin-pgvector,
+  no ORM) and platform schema (marketplace / installations / agent instances, Drizzle).
+  The two layers are isolated: no cross-schema FKs, only string id linkage.
 
   Architecture: self-built agent kernel execution engine (harness).
   Core idea: "Configuration as Agent" —— 配置即 Agent，垂直领域差异收敛到配置层，内核零改动。
@@ -13,7 +16,7 @@ context: |
 
   LLM: default DeepSeek (OpenAI-compatible API); Anthropic / ollama 可插拔，不引入 LangChain/LangGraph。
   Memory: session context + long-term（生产 pgvector，开发 in-memory）。
-  Dependency direction: config ← core ← cli / server ←(HTTP API) apps/web。
+  Dependency direction: config ← core ← cli / platform (apps/platform, HTTP API)。
 
   Conventions:
   - Conventional Commits（feat/fix/docs/refactor/test/chore）。

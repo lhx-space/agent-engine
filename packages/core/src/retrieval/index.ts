@@ -1,4 +1,10 @@
-export type { VectorStore, VectorRecord, VectorMatch } from './vector-store';
+export type {
+  VectorStore,
+  VectorRecord,
+  VectorMatch,
+  VectorQueryFilter,
+  VectorKind,
+} from './vector-store';
 export { InMemoryVectorStore } from './vector-store';
 export type { Retriever, RetrievalCandidate } from './retriever';
 export { noopRetriever } from './retriever';
