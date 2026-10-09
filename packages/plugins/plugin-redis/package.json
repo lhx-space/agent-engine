@@ -47,7 +47,7 @@
   },
   "dependencies": {
     "@lhx-agent-engine/core": "workspace:*",
-    "ioredis": "^5.4.1"
+    "ioredis": "^6.0.0"
   },
   "engines": {
     "node": ">=18.18.0"
